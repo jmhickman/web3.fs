@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Types\Types.fs" />
+    <Compile Include="RPCFunctions.fs" />
+    <Compile Include="RPCConnector.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FSharp.Data" Version="4.2.7" />
+    <PackageReference Include="FSharp.Json" Version="0.4.1" />
+  </ItemGroup>
+</Project>
