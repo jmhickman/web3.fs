@@ -24,24 +24,21 @@ module RPCConnector =
             $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcmsg.method}","params":[{bindRPCParam rpcmsg.paramlist}], "id":1}}"""
 
     let rpcConnector url (rpcVersion: string) (mbox: HttpRPCMailbox) =
-        printfn "Entered into rpcConnector..."
 
         let rec receiveLoop () =
             async {
                 let! msg = mbox.Receive()
                 let (ChannelMessageAndReply (rpcmessage, reply)) = msg
 
-                needsBlockArgs rpcmessage.method
+                rpcmessage.method
+                |> needsBlockArgs
                 |> formatRPCString rpcmessage rpcVersion
-                |> fun s ->
-                    printfn $"{s}"
-                    s
                 |> fun r ->
                     Http.RequestString(url, headers = [ ContentType HttpContentTypes.Json ], body = TextRequest r)
                 |> fun s -> RPCResponse.Parse s
                 |> fun s -> reply.Reply s
 
-                do! receiveLoop ()
+                return! receiveLoop ()
             }
 
         receiveLoop ()
