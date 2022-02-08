@@ -7,15 +7,17 @@ Dissatisfaction with existing solutions for interacting with Ethereum and other 
 
 ### Progress
 
-Planning stages, fewer than 1000 lines written.
+Basic functionality cobbled in. Not ready for use. It will probably explode, or be silly.
 
 ### Deps and Reqs
 
-Pulling in Nethereum.Hex and Nethereum.ABI because I don't want to mess with that stuff.
+Removed Nethereum deps (for now). 
+FSharp.Data
+FSharp.Json
 Writing in .Net 6
 
 First code coming soon.
 
 ### Code of Conduct
 
-I'm a dictator and I rule with an iron fist. I expressly reject CoCs.
+I'm a dictator and I rule with an iron fist. I explicitly reject CoCs.
