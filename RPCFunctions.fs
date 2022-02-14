@@ -7,9 +7,11 @@ module Helpers =
     open Types
     open FSharp.Json
 
+
     ///
     /// validators for the RPC data formats QUANTITY, DATA, TAG, ADDRESS
     ///
+
 
     let validateTxnType t =
         let reg = new Regex("^0x([0-9,a-f,A-F]){1,2}$")
@@ -67,9 +69,11 @@ module Helpers =
             "Call/TXN object 'data' value is missing or not valid"
             |> Error
 
+
     ///
     /// Parameter list handlers
     ///
+
 
     let jsonConfig =
         JsonConfig.create (serializeNone = SerializeNone.Omit, unformatted = true)
@@ -83,9 +87,11 @@ module Helpers =
         |> List.fold (fun acc s -> $"""{acc}"{s}", """) ""
         |> fun s -> s.TrimEnd(',', ' ')
 
+
     ///
     /// Hex and bigint functions
     ///
+
 
     let prepend0x s = "0x" + s
 
@@ -130,9 +136,13 @@ module Helpers =
     let hexToBigInt hexString =
         bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
 
+    let strip0xAndConvertToBigInt = strip0x >> hexToBigInt
+
+
     ///
     /// Wei/ETH conversion
     ///
+
 
     // Returns a string representation because most use-cases for dealing in
     // 'ETH' are on the human side of an interface.
