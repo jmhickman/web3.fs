@@ -64,10 +64,9 @@ module RPCConnector =
         ||> startRpcConnector
         |> channelMessage
 
-    let makeEthCall (rpcConnection: HttpRPCMessage -> RPCResponse.Root) method eParams =
+    let makeEthCall (rpcConnection: HttpRPCMessage -> Result<RPCResponse.Root, string>) method eParams =
         validateRPCParams eParams
         |> Result.bind (fun _params ->
             rpcConnection
                 { method = method |> wrapEthMethod
-                  paramlist = _params |> EthParam }
-            |> Ok)
+                  paramlist = _params |> EthParam })

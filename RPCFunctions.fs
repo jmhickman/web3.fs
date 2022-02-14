@@ -26,11 +26,13 @@ module Helpers =
         | false -> None
 
     let validateData s =
-        let reg = new Regex("^0x([0-9a-f]{2})*|0$")
+        let reg = new Regex("^0x([0-9a-f]{2})*$")
 
         match reg.Match(s).Success with
         | true -> Some s
-        | false -> None
+        | false ->
+            printfn "none branch"
+            None
 
     let validateAddress s =
         let reg = new Regex("^0x[0-9,a-f,A-F]{40}$")
