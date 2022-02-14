@@ -20,9 +20,10 @@ module Types =
 
     // Experiment with making this one sample as inclusive as possible and see if it handles the minimal case(s) properly. Better to have just one.
     [<Literal>]
-    let sample = """{"jsonrpc":"2.0","id":67,"result":"g"}"""
+    let success = """{"jsonrpc":"2.0","id":67,"result":"g"}"""
 
-    type RPCResponse = JsonProvider<sample>
+    type RPCResponse = JsonProvider<success>
+
     //type RPCBlockResponse = JsonProvider<"./Samples/blocksample.json">
 
 
@@ -296,5 +297,5 @@ module Types =
     /// MailboxProcessor types
     ///
 
-    type MailboxChannel = ChannelMessageAndReply of HttpRPCMessage * AsyncReplyChannel<RPCResponse.Root>
+    type MailboxChannel = ChannelMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, string>>
     type HttpRPCMailbox = MailboxProcessor<MailboxChannel>

@@ -59,6 +59,7 @@ module Helpers =
               chainId = validateQuantity unvalidatedRpcParam.uchainId
               accessList = unvalidatedRpcParam.uaccessList |> Some
               data = d }
+            |> EthParam1559Call
             |> Ok
         | None ->
             "Call/TXN object 'data' value is missing or not valid"
