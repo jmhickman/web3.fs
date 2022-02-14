@@ -89,7 +89,11 @@ module Helpers =
 
     let prepend0x s = "0x" + s
 
-    let strip0x (s: string) = s.TrimStart([| '0'; 'x' |])
+    let strip0x (s: string) =
+        if s.StartsWith("0x") then
+            s.Remove(0, 2)
+        else
+            s
 
     /// Based on blessed code found at https://stu.dev/bigint-to-string-in-any-base-fsharp/
     let bigintToIntList _base input =
@@ -123,7 +127,7 @@ module Helpers =
         else
             "0" + res
 
-    let hexToBigint hexString =
+    let hexToBigInt hexString =
         bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
 
     ///
