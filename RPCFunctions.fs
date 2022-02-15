@@ -1,5 +1,9 @@
 namespace web3.fs
 
+///
+/// Helpers for library-wide functionality
+///
+
 module Helpers =
     open System.Globalization
     open System.Text.RegularExpressions
@@ -32,9 +36,7 @@ module Helpers =
 
         match reg.Match(s).Success with
         | true -> Some s
-        | false ->
-            printfn "none branch"
-            None
+        | false -> None
 
     let validateAddress s =
         let reg = new Regex("^0x[0-9,a-f,A-F]{40}$")
@@ -44,8 +46,8 @@ module Helpers =
         | false -> None
 
     // The purpose of this function isn't to construct calls/txns that will
-    // always be accepted by the node. Rather, it is simply to ensure that
-    // data passed into a call/txn is internally consistent with the expected
+    // always be accepted by the node. Rather, it is to ensure that data
+    // passed into a call/txn is internally consistent with the expected
     // hex formats. Only data has an explicit check, since any valid call
     // must include something in the data field. Misformatted inputs will be
     // converted to None (which will be omitted on serialization).
@@ -78,7 +80,7 @@ module Helpers =
     let jsonConfig =
         JsonConfig.create (serializeNone = SerializeNone.Omit, unformatted = true)
 
-    /// Create a serialized Json representation of the Eth 1559 transaction object with the config above.
+    /// Create a serialized Json representation of call
     let createJsonObj (ethParams: EthParam1559Call) = Json.serializeEx jsonConfig ethParams
 
     /// For 'dumb' list-style parameter types.
@@ -112,6 +114,7 @@ module Helpers =
 
         loop _base input []
 
+    // partial application for hexadecimal
     let bigintToHexList = bigintToIntList 16
 
     let intListToString input =
@@ -136,6 +139,7 @@ module Helpers =
     let hexToBigInt hexString =
         bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
 
+    // convenience partial application
     let strip0xAndConvertToBigInt = strip0x >> hexToBigInt
 
 
@@ -164,13 +168,31 @@ module Helpers =
         let wei = xs.PadRight(18, '0').Remove(18)
         bigint.Parse(e + wei)
 
+
+///
+/// RPC method module
+///
+
+
 module RPCMethodFunctions =
     open Types
+
+
+    ///
+    /// lifters
+    ///
+
 
     let wrapEthMethod m = m |> EthMethod
     let wrapShhMethod m = m |> ShhMethod
     let wrapNetMethod m = m |> NetMethod
     let wrapWeb3Method m = m |> Web3Method
+
+
+    ///
+    /// Convert calltype into json string representation
+    ///
+
 
     let bindEthMethod (m: EthMethod) =
         match m with
@@ -219,10 +241,13 @@ module RPCMethodFunctions =
         | EthMethod.SubmitHashRate -> "eth_submitHashRate"
         | EthMethod.UninstallFilter -> "eth_uninstallFilter"
 
+    // placeholder
     let bindNetMethod m = ""
 
+    // placeholder
     let bindShhMethod m = ""
 
+    // placeholder
     let bindWeb3Method m = ""
 
     let bindRPCMethod method =
@@ -232,13 +257,33 @@ module RPCMethodFunctions =
         | ShhMethod m -> bindShhMethod m
         | Web3Method m -> bindWeb3Method m
 
+
+///
+/// RPC Parameter module
+///
+
+
 module RPCParamFunctions =
     open Types
     open Helpers
 
+
+    ///
+    /// lifters
+    ///
+
+
     let wrapEthParams p = p |> EthParam
     let wrapNetParams p = p |> NetParam
     let wrapWeb3Params p = p |> Web3Param
+
+
+    ///
+    /// Convert call params into json string representation. Some params
+    /// will apparently be deprecated soon, if not already. Log types
+    /// not yet implemented.
+    ///
+
 
     let bindEthParam (p: EthParam) =
         match p with
@@ -282,7 +327,8 @@ module RPCParamFunctions =
         | EthParamSubmitWork p -> concatParamString p
         | EthParamSubmitHashRate p -> concatParamString p
         | EthParamUninstallFilter p -> concatParamString p
-        | _ -> ""
+        | _ -> "" //not great
+
 
     let bindRPCParam p =
         match p with

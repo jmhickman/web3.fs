@@ -8,15 +8,19 @@ module Types =
     open FSharp.Data
     open FSharp.Json
 
+
     ///
     /// Misc types
     ///
 
+
     let weiDiv = 1000000000000000000I
+
 
     ///
     /// Type Provider parser setup
     ///
+
 
     // Experiment with making this one sample as inclusive as possible and see if it handles the minimal case(s) properly. Better to have just one.
     [<Literal>]
@@ -24,6 +28,7 @@ module Types =
 
     type RPCResponse = JsonProvider<success>
 
+    // read how to fix this, will address later
     //type RPCBlockResponse = JsonProvider<"./Samples/blocksample.json">
 
 
@@ -31,21 +36,24 @@ module Types =
     /// Transaction Envelope types
     ///
 
+
     let EARLIEST = "earliest"
     let LATEST = "latest"
     let PENDING = "pending"
     let ZERO = "0x0"
 
-    //
+    // just aliases, may adapt validators later to emit stronger types
     type TxnType = string
     type Quantity = string
     type Data = string
     type Address = string
     type AccessList = (Address * Data list) list
 
+
     ///
     /// RPC Parameter Types
     ///
+
 
     type UnvalidatedEthParam1559Call =
         { utxnType: string
@@ -60,13 +68,12 @@ module Types =
           uaccessList: AccessList
           uchainId: string }
 
-
     type EthParamAccounts = string list
     type EthParamBlockNumber = string list
 
-    // Many of these values are listed as Options, but in practice will almost never be 'None.'
-    // This is just laziness and not wanting to write two different verification functions for
-    // optioned vs non-optioned types.
+    // There is a tremendous amount of leeway in acceptable RPC messages in terms of what is
+    // included. This makes the type pretty gross-looking. data is the only properly 'required'
+    // value, and in practice toAddr and from will be present as well (but not always!)
     type EthParam1559Call =
         { [<JsonField("type")>]
           txnType: TxnType option // Seems optional, needs research.
@@ -74,9 +81,9 @@ module Types =
           [<JsonField("to")>]
           toAddr: Address option // Missing to is fine, if deploying a contract
           from: Address option // Missing 'from' is not great, may cause errors if wallet or node can't determine sender
-          gas: Quantity option // Missing gas is fine, if talking to wallet
-          value: Quantity option // Missing value is fine, if making a Call. May still be fine if txn isn't payble
-          data: Data // Calls, txn and deploys should always have a data value
+          gas: Quantity option // Missing gas limit is fine, if talking to wallet
+          value: Quantity option // Missing value is fine, if making a Call. May still be fine if txn isn't payable
+          data: Data // Calls, txn and deploys should always have a valid data value
           maxPriorityFeePerGas: Quantity option // Missing gas is fine, if talking to wallet
           maxFeePerGas: Quantity option // Missing gas is fine, if talking to wallet
           accessList: AccessList option // Typically empty
@@ -98,6 +105,7 @@ module Types =
     type EthParamGetFilterChanges = string list
     type EthParamGetFilterLogs = string list
 
+    // provisional
     type EthParamGetLogs =
         { fromBlock: string option
           toBlock: string option
@@ -119,6 +127,7 @@ module Types =
     type EthParamHashrate = string list
     type EthParamMining = string list
 
+    // provisional
     type EthParamNewFilter =
         { fromBlock: string option
           toBlock: string option
@@ -204,9 +213,11 @@ module Types =
         | NetParam of NetParam
         | Web3Param of Web3Param
 
+
     ///
     /// RPC Method Types
     ///
+
 
     [<RequireQualifiedAccess>]
     type EthMethod =
@@ -285,17 +296,21 @@ module Types =
         | ShhMethod of ShhMethod
         | Web3Method of Web3Method
 
+
     ///
     /// RPC Message type
     ///
+
 
     type HttpRPCMessage =
         { method: RPCMethod
           paramlist: RPCParams }
 
+
     ///
     /// MailboxProcessor types
     ///
+
 
     type MailboxChannel = ChannelMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, string>>
     type HttpRPCMailbox = MailboxProcessor<MailboxChannel>

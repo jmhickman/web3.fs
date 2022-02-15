@@ -9,6 +9,12 @@ module RPCConnector =
     open RPCMethodFunctions
     open RPCParamFunctions
 
+
+    ///
+    /// RPC helpers
+    ///
+
+
     let needsBlockArgs (m: RPCMethod) =
         match m with
         | EthMethod _m ->
@@ -24,6 +30,12 @@ module RPCConnector =
         | false ->
             $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcmsg.method}","params":[{bindRPCParam rpcmsg.paramlist}], "id":1}}"""
 
+
+    ///
+    /// RPC connection
+    ///
+
+
     let rpcConnector url (rpcVersion: string) (mbox: HttpRPCMailbox) =
 
         let rec receiveLoop () =
@@ -31,22 +43,21 @@ module RPCConnector =
                 let! msg = mbox.Receive()
                 let (ChannelMessageAndReply (rpcmessage, reply)) = msg
 
-                let response =
-                    rpcmessage.method
-                    |> needsBlockArgs
-                    |> formatRPCString rpcmessage rpcVersion
-                    |> fun rpcString ->
-                        Http.RequestString(
-                            url,
-                            headers = [ ContentType HttpContentTypes.Json ],
-                            body = TextRequest rpcString
-                        )
-                    |> fun resp ->
-                        match RPCResponse.Parse resp with
-                        | x when x.Result.Contains("error") ->
-                            Error "RPC error message: {x.Result}"
-                            |> reply.Reply
-                        | x -> x |> Ok |> reply.Reply
+                rpcmessage.method
+                |> needsBlockArgs
+                |> formatRPCString rpcmessage rpcVersion
+                |> fun rpcString ->
+                    Http.RequestString(
+                        url,
+                        headers = [ ContentType HttpContentTypes.Json ],
+                        body = TextRequest rpcString
+                    )
+                |> fun resp ->
+                    let j = RPCResponse.Parse resp
+
+                    match j.JsonValue.TryGetProperty("error") with
+                    | Some e -> $"RPC error message: {e}" |> Error |> reply.Reply
+                    | None -> j |> Ok |> reply.Reply
 
                 do! receiveLoop ()
             }
@@ -56,14 +67,19 @@ module RPCConnector =
     let startRpcConnector (url: string) rpcVersion =
         MailboxProcessor.Start(rpcConnector url rpcVersion)
 
+    // abstracting the PostAndReply away from the caller
     let channelMessage (mbox: HttpRPCMailbox) (rpcMessage: HttpRPCMessage) =
         mbox.PostAndReply(fun c -> ChannelMessageAndReply(rpcMessage, c))
 
+    // kick off the connection setup, returns partially applied RPC endpoint
+    // Can be used in lieu of makeEthCall if the consumer wants more control
+    // over how the call is handled
     let createWeb3Connection url rpcVersion =
         (url, rpcVersion)
         ||> startRpcConnector
         |> channelMessage
 
+    // convenience function to handle common RPC case
     let makeEthCall (rpcConnection: HttpRPCMessage -> Result<RPCResponse.Root, string>) method eParams =
         validateRPCParams eParams
         |> Result.bind (fun _params ->
