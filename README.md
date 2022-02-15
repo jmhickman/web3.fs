@@ -77,6 +77,7 @@ let unverifiedrecordThree =
 
 printfn "Normal call:"
 
+// (HttpRPCMessage -> Result<FSharp.Data.JsonProvider<...>.Root, string>) -> EthMethod -> UnvalidatedEthParam1559Call -> Result<FSharp.Data.JsonProvider<...>.Root, string>
 makeEthCall web3 EthMethod.Call unverifiedrecordOne
 |> printfn "%A\n"
 
