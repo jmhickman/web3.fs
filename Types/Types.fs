@@ -314,3 +314,38 @@ module Types =
 
     type MailboxChannel = ChannelMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, string>>
     type HttpRPCMailbox = MailboxProcessor<MailboxChannel>
+
+
+    ///
+    /// Sketching in some Contract types
+    ///
+
+    type EVMFunctionHash = EVMFunctionHash of string
+
+    type StateMutability =
+        | Payable
+        | Pure
+        | View
+        | Nonpayable
+
+    type EVMFunction =
+        { name: string
+          hash: EVMFunctionHash
+          config: StateMutability } //constant, payable, statemutability
+
+    // placeholder junk
+    type EVMEvent = int
+
+    type EVMError = int
+
+    type ABI = ABI of string
+
+    type Contract =
+        { address: Address
+          abi: ABI
+          functions: EVMFunction list
+          events: EVMEvent list
+          errors: EVMError list
+          constructor: EVMFunction
+          fallback: EVMFunction
+          receive: EVMFunction }
