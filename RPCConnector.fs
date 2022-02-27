@@ -10,9 +10,9 @@ module RPCConnector =
     open RPCParamFunctions
 
 
-    ///
-    /// RPC helpers
-    ///
+    //
+    // RPC helpers
+    //
 
 
     let needsBlockArgs (m: RPCMethod) =
@@ -31,9 +31,9 @@ module RPCConnector =
             $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcmsg.method}","params":[{bindRPCParam rpcmsg.paramlist}], "id":1}}"""
 
 
-    ///
-    /// RPC connection
-    ///
+    //
+    // RPC connection
+    //
 
 
     let rpcConnector url (rpcVersion: string) (mbox: HttpRPCMailbox) =

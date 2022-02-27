@@ -9,17 +9,17 @@ module Types =
     open FSharp.Json
 
 
-    ///
-    /// Misc types
-    ///
+    //
+    // Misc types
+    //
 
 
     let weiDiv = 1000000000000000000I
 
 
-    ///
-    /// Type Provider parser setup
-    ///
+    //
+    // Type Provider parser setup
+    //
 
 
     // Experiment with making this one sample as inclusive as possible and see if it handles the minimal case(s) properly. Better to have just one.
@@ -28,13 +28,19 @@ module Types =
 
     type RPCResponse = JsonProvider<success>
 
-    // read how to fix this, will address later
+    [<Literal>]
+    let sampleABI =
+        """[{"type":"error","inputs": [{"name":"available","type":"uint256"},{"name":"required","type":"uint256"}],"name":"InsufficientBalance"}, {"type":"event","inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],"name":"Event"}, {"type":"event","inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],"name":"Event2"}, {"type":"function","inputs": [{"name":"a","type":"uint256"}],"name":"foo","outputs": []}]"""
+
+    type ParsedABI = JsonProvider<sampleABI, SampleIsList=true>
+
+    // found how to fix this, will address later
     //type RPCBlockResponse = JsonProvider<"./Samples/blocksample.json">
 
 
-    ///
-    /// Transaction Envelope types
-    ///
+    //
+    // Transaction Envelope types
+    //
 
 
     let EARLIEST = "earliest"
@@ -50,9 +56,9 @@ module Types =
     type AccessList = (Address * Data list) list
 
 
-    ///
-    /// RPC Parameter Types
-    ///
+    //
+    // RPC Parameter Types
+    //
 
 
     type UnvalidatedEthParam1559Call =
@@ -214,9 +220,9 @@ module Types =
         | Web3Param of Web3Param
 
 
-    ///
-    /// RPC Method Types
-    ///
+    //
+    // RPC Method Types
+    //
 
 
     [<RequireQualifiedAccess>]
@@ -297,9 +303,9 @@ module Types =
         | Web3Method of Web3Method
 
 
-    ///
-    /// RPC Message type
-    ///
+    //
+    // RPC Message type
+    //
 
 
     type HttpRPCMessage =
@@ -307,38 +313,61 @@ module Types =
           paramlist: RPCParams }
 
 
-    ///
-    /// MailboxProcessor types
-    ///
+    //
+    // MailboxProcessor types
+    //
 
 
     type MailboxChannel = ChannelMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, string>>
     type HttpRPCMailbox = MailboxProcessor<MailboxChannel>
 
 
-    ///
-    /// Sketching in some Contract types
-    ///
+    //
+    // Sketching in some Contract types
+    //
+
+    type IntermediateFunction = (option<JsonValue> * option<JsonValue>)
+
+    type CanonicalFunctionRepresentation = CanonicalFunctionRepresentation of string
 
     type EVMFunctionHash = EVMFunctionHash of string
 
     type StateMutability =
-        | Payable
         | Pure
         | View
         | Nonpayable
+        | Payable
 
     type EVMFunction =
         { name: string
           hash: EVMFunctionHash
-          config: StateMutability } //constant, payable, statemutability
+          config: StateMutability }
+
+
+    type EVMEvent = { name: string; hash: EVMFunctionHash }
 
     // placeholder junk
-    type EVMEvent = int
-
     type EVMError = int
 
+    type PartialEVMFunction =
+        { name: string
+          hash: EVMFunctionHash option
+          config: StateMutability option }
+
+    type PartialEVMEvent =
+        { name: string
+          hash: EVMFunctionHash option }
+
+    type PartialEVMFunctionTypes =
+        | PartialEVMFunction of PartialEVMFunction
+        | PartialEVMEvent of PartialEVMEvent
+
     type ABI = ABI of string
+
+    type EVMFunctionTypes =
+        | EVMFunction of EVMFunction
+        | EVMEvent of EVMEvent
+        | EVMError of EVMError
 
     type Contract =
         { address: Address

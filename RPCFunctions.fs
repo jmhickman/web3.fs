@@ -1,8 +1,8 @@
 namespace web3.fs
 
-///
-/// Helpers for library-wide functionality
-///
+//
+// Helpers for library-wide functionality
+//
 
 module Helpers =
     open System.Globalization
@@ -12,9 +12,9 @@ module Helpers =
     open FSharp.Json
 
 
-    ///
-    /// validators for the RPC data formats QUANTITY, DATA, TAG, ADDRESS
-    ///
+    //
+    // validators for the RPC data formats QUANTITY, DATA, TAG, ADDRESS
+    //
 
 
     let validateTxnType t =
@@ -72,9 +72,9 @@ module Helpers =
             |> Error
 
 
-    ///
-    /// Parameter list handlers
-    ///
+    //
+    // Parameter list handlers
+    //
 
 
     let jsonConfig =
@@ -90,9 +90,9 @@ module Helpers =
         |> fun s -> s.TrimEnd(',', ' ')
 
 
-    ///
-    /// Hex and bigint functions
-    ///
+    //
+    // Hex and bigint functions
+    //
 
 
     let prepend0x s = "0x" + s
@@ -114,7 +114,7 @@ module Helpers =
 
         loop _base input []
 
-    // partial application for hexadecimal
+    /// partial application for hexadecimal
     let bigintToHexList = bigintToIntList 16
 
     let intListToString input =
@@ -125,9 +125,9 @@ module Helpers =
     let bigintToHex num =
         num |> bigintToHexList |> intListToString
 
-    // If conversion will be used in an eth DATA value, it must be two chars
-    // per byte. Necessary if this hex value will also be converted back to
-    // a bigint, as length is used to imply the sign.
+    /// If conversion will be used in an eth DATA value, it must be two chars
+    /// per byte. Necessary if this hex value will also be converted back to
+    /// a bigint, as length is used to imply the sign.
     let bigintToHexPadded num =
         let res = num |> bigintToHexList |> intListToString
 
@@ -139,23 +139,23 @@ module Helpers =
     let hexToBigInt hexString =
         bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
 
-    // convenience partial application
+    /// A partial application for convenience, does what it says
     let strip0xAndConvertToBigInt = strip0x >> hexToBigInt
 
 
-    ///
-    /// Wei/ETH conversion
-    ///
+    //
+    // Wei/ETH conversion
+    //
 
 
-    // Returns a string representation because most use-cases for dealing in
-    // 'ETH' are on the human side of an interface.
+    /// Returns a string representation because most use-cases for dealing in
+    /// 'ETH' are on the human side of an interface.
     let convertWeiToEth wei =
         let (eth, frac) = bigint.DivRem(wei, weiDiv)
         let rem = frac.ToString().PadLeft(18, '0')
         $"{eth.ToString()}.{rem.Remove(17)}"
 
-    // Much like the above, returns a bigint for working in wei on the RPC-side of the interface.
+    /// Much like the above, returns a bigint for working in wei on the RPC-side of the interface.
     let convertEthToWei (eth: string) =
         let _eth =
             match not (eth.Contains('.')) with
@@ -169,18 +169,18 @@ module Helpers =
         bigint.Parse(e + wei)
 
 
-///
-/// RPC method module
-///
+//
+// RPC method module
+//
 
 
 module RPCMethodFunctions =
     open Types
 
 
-    ///
-    /// lifters
-    ///
+    //
+    // lifters
+    //
 
 
     let wrapEthMethod m = m |> EthMethod
@@ -189,9 +189,9 @@ module RPCMethodFunctions =
     let wrapWeb3Method m = m |> Web3Method
 
 
-    ///
-    /// Convert calltype into json string representation
-    ///
+    //
+    // Convert calltype into json string representation
+    //
 
 
     let bindEthMethod (m: EthMethod) =
@@ -258,9 +258,9 @@ module RPCMethodFunctions =
         | Web3Method m -> bindWeb3Method m
 
 
-///
-/// RPC Parameter module
-///
+//
+// RPC Parameter module
+//
 
 
 module RPCParamFunctions =
@@ -268,9 +268,9 @@ module RPCParamFunctions =
     open Helpers
 
 
-    ///
-    /// lifters
-    ///
+    //
+    // lifters
+    //
 
 
     let wrapEthParams p = p |> EthParam
@@ -278,12 +278,11 @@ module RPCParamFunctions =
     let wrapWeb3Params p = p |> Web3Param
 
 
-    ///
-    /// Convert call params into json string representation. Some params
-    /// will apparently be deprecated soon, if not already. Log types
-    /// not yet implemented.
-    ///
-
+    //
+    // Convert call params into json string representation. Some params
+    // will apparently be deprecated soon, if not already. Log types
+    // not yet implemented.
+    //
 
     let bindEthParam (p: EthParam) =
         match p with
