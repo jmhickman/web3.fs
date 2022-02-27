@@ -14,6 +14,7 @@ Basic functionality cobbled in. Not ready for use. It will probably explode, or 
 Removed Nethereum deps (for now). 
 FSharp.Data
 FSharp.Json
+SHA3Core
 Writing in .Net 6
 
 ### Code of Conduct
