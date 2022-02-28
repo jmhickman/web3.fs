@@ -189,7 +189,6 @@ module Helpers =
 
     let newKeccakDigest () = new Keccak(KeccakBitType.K256)
 
-    let returnFunctionSelector (canonicalFunction: CanonicalFunctionRepresentation) =
-        let digest = newKeccakDigest ()
+    let returnFunctionSelector (digest: Keccak) (canonicalFunction: CanonicalFunctionRepresentation) =
         let (CanonicalFunctionRepresentation rep) = canonicalFunction
         (prepend0x (digest.Hash(rep).Remove(8)))

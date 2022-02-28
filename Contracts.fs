@@ -66,3 +66,4 @@ module ContractFunctions =
             | None -> $"""{funcName}()"""
 
         inputBind _funcName _inputs
+        |> CanonicalFunctionRepresentation
