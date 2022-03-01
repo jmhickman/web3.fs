@@ -1,7 +1,7 @@
 namespace web3.fs
-///
-/// Types for working with Ethereum connections
-///
+//
+// Types for working with Ethereum connections
+//
 
 module Types =
 
@@ -326,42 +326,66 @@ module Types =
     // Sketching in some Contract types
     //
 
-    type IntermediateFunction = (option<JsonValue> * option<JsonValue>)
+    ///
+    type IntermediateFunctionRepresentation =
+        (option<JsonValue> * option<JsonValue> * option<JsonValue> * option<JsonValue>)
 
-    type CanonicalFunctionRepresentation = CanonicalFunctionRepresentation of string
+    type IntermediateEventRepresentation = (option<JsonValue> * option<JsonValue> * option<JsonValue>)
 
-    type EVMFunctionHash = EVMFunctionHash of string
+    /// Result of the 'flattening' of the JSON representation of an EVM function. Used as the input to
+    /// the Keccak (SHA3) hash generated to provide the 'function selector' of a function and
+    /// only relevant for that purpose.
+    type CanonicalRepresentation =
+        | CanonicalFunctionRepresentation of string
+        | CanonicalEventRepresentation of string
 
+    type EVMFunctionInputs = EVMFunctionInputs of string
+
+    type EVMFunctionOutputs = EVMFunctionOutputs of string
+
+    /// The first 4 bytes of the Keccak256 hash of the function's canonical representation.
+    type EVMSelector =
+        | EVMFunctionHash of string
+        | EVMEventSelector of string
+
+    /// Describes the mutability of the function.
+    /// Pure: No reads from blockchain state, no writes to blockchain state.
+    /// View: Reads state, no writes to blockchain state.
+    /// Nonpayable: Doesn't require an amount of ETH in the 'value' parameter of the txn object. Changes chain state.
+    /// Payable: Accepts a value from the 'value' parameter of the txn object. Changes chain state.
     type StateMutability =
         | Pure
         | View
         | Nonpayable
         | Payable
 
+    /// Represents a single function exposed by a Solidity contract.
+    /// name: Name of the function from the source code
+    /// hash: The 'function selector' hash, the Keccak256 hash of the 'canonical representation' of the function.
+    /// config: payable, constant, and mutability description of the function.
     type EVMFunction =
         { name: string
-          hash: EVMFunctionHash
+          hash: EVMSelector
+          inputs: string
+          outputs: string
+          //constant: string
+          //payable: string
           config: StateMutability }
 
 
-    type EVMEvent = { name: string; hash: EVMFunctionHash }
+    /// Represents an event emitted by the EVM runtime during execution. Events may be listened for
+    /// and acted upon.
+    type EVMEvent =
+        { name: string
+          anonymous: bool
+          inputs: string
+          hash: EVMSelector }
 
     // placeholder junk
     type EVMError = int
 
-    type PartialEVMFunction =
-        { name: string
-          hash: EVMFunctionHash option
-          config: StateMutability option }
-
-    type PartialEVMEvent =
-        { name: string
-          hash: EVMFunctionHash option }
-
-    type PartialEVMFunctionTypes =
-        | PartialEVMFunction of PartialEVMFunction
-        | PartialEVMEvent of PartialEVMEvent
-
+    /// Supplied to the JsonValue parser. Emitted by the solc compiler and
+    /// other tooling to describe a contract written in solidity
     type ABI = ABI of string
 
     type EVMFunctionTypes =
@@ -369,6 +393,8 @@ module Types =
         | EVMEvent of EVMEvent
         | EVMError of EVMError
 
+    /// Represents an entire contract.
+    /// Fallback function doesn't have a name.
     type Contract =
         { address: Address
           abi: ABI

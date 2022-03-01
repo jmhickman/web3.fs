@@ -11,6 +11,7 @@ module Helpers =
     open SHA3Core.Keccak
 
 
+
     //
     // validators for the RPC data formats QUANTITY, DATA, TAG, ADDRESS
     //
@@ -189,6 +190,10 @@ module Helpers =
 
     let newKeccakDigest () = new Keccak(KeccakBitType.K256)
 
-    let returnFunctionSelector (digest: Keccak) (canonicalFunction: CanonicalFunctionRepresentation) =
-        let (CanonicalFunctionRepresentation rep) = canonicalFunction
-        (prepend0x (digest.Hash(rep).Remove(8)))
+    let returnFunctionSelector (digest: Keccak) (rep: CanonicalRepresentation) =
+        match rep with
+        | CanonicalFunctionRepresentation r ->
+            digest.Hash(r).Remove(8)
+            |> prepend0x
+            |> EVMFunctionHash
+        | CanonicalEventRepresentation r -> digest.Hash(r) |> prepend0x |> EVMEventSelector
