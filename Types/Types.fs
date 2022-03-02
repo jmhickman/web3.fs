@@ -323,84 +323,142 @@ module Types =
 
 
     //
-    // Sketching in some Contract types
+    // Contract types
     //
 
     ///
+    /// Set of tupled values created during Json parsing and filtering
     type IntermediateFunctionRepresentation =
         (option<JsonValue> * option<JsonValue> * option<JsonValue> * option<JsonValue>)
 
+
+    ///
+    /// Set of tupled values created during Json parsing and filtering
     type IntermediateEventRepresentation = (option<JsonValue> * option<JsonValue> * option<JsonValue>)
 
+
+    ///
+    /// Set of tupled values created during Json parsing and filtering
+    type IntermediateErrorRepresentation = (option<JsonValue> * option<JsonValue>)
+
+
+    ///
     /// Result of the 'flattening' of the JSON representation of an EVM function. Used as the input to
     /// the Keccak (SHA3) hash generated to provide the 'function selector' of a function and
     /// only relevant for that purpose.
+    ///
     type CanonicalRepresentation =
         | CanonicalFunctionRepresentation of string
         | CanonicalEventRepresentation of string
+        | CanonicalErrorRepresentation of string
 
+
+    ///
+    /// Output of the process of extracting EVM function strings from Json
     type EVMFunctionInputs = EVMFunctionInputs of string
 
+
+    ///
+    /// Output of the process of extracting EVM function strings from Json
     type EVMFunctionOutputs = EVMFunctionOutputs of string
 
+
+    ///
     /// The first 4 bytes of the Keccak256 hash of the function's canonical representation.
     type EVMSelector =
         | EVMFunctionHash of string
         | EVMEventSelector of string
 
+
+    ///
     /// Describes the mutability of the function.
     /// Pure: No reads from blockchain state, no writes to blockchain state.
     /// View: Reads state, no writes to blockchain state.
     /// Nonpayable: Doesn't require an amount of ETH in the 'value' parameter of the txn object. Changes chain state.
     /// Payable: Accepts a value from the 'value' parameter of the txn object. Changes chain state.
+    ///
     type StateMutability =
         | Pure
         | View
         | Nonpayable
         | Payable
 
+
+    ///
     /// Represents a single function exposed by a Solidity contract.
     /// name: Name of the function from the source code
     /// hash: The 'function selector' hash, the Keccak256 hash of the 'canonical representation' of the function.
     /// config: payable, constant, and mutability description of the function.
+    ///
     type EVMFunction =
         { name: string
           hash: EVMSelector
-          inputs: string
-          outputs: string
+          inputs: EVMFunctionInputs
+          outputs: EVMFunctionOutputs
           //constant: string
           //payable: string
           config: StateMutability }
 
-
-    /// Represents an event emitted by the EVM runtime during execution. Events may be listened for
-    /// and acted upon.
+    ///
+    /// Represents an event emitted by the EVM runtime during execution.
+    /// Events may be listened for and acted upon.
+    ///
     type EVMEvent =
         { name: string
           anonymous: bool
-          inputs: string
+          inputs: EVMFunctionInputs
           hash: EVMSelector }
 
-    // placeholder junk
-    type EVMError = int
+    ///
+    /// Represents the Error function type of a Solidity contract.
+    type EVMError =
+        { name: string
+          inputs: EVMFunctionInputs
+          hash: EVMSelector }
 
+
+    ///
     /// Supplied to the JsonValue parser. Emitted by the solc compiler and
-    /// other tooling to describe a contract written in solidity
+    /// other tooling to describe a contract written in solidity.
     type ABI = ABI of string
 
+
+    ///
+    /// Represents the types of Solidity functions.
     type EVMFunctionTypes =
         | EVMFunction of EVMFunction
         | EVMEvent of EVMEvent
         | EVMError of EVMError
 
-    /// Represents an entire contract.
-    /// Fallback function doesn't have a name.
-    type Contract =
-        { address: Address
-          abi: ABI
+
+    ///
+    /// Represents an undeployed contract and therefore doesn't have an address.
+    /// May add in estimated gas to deploy and constructor arguments later.
+    ///
+    type UndeployedContract =
+        { abi: ABI
           functions: EVMFunction list
           events: EVMEvent list
           errors: EVMError list
           constructor: EVMFunction
           fallback: EVMFunction
-          receive: EVMFunction }
+          receive: EVMFunction
+          bytecode: string } // might need some checking?
+
+
+    ///
+    /// Represents a deployed contract.
+    type DeployedContract =
+        { address: Address
+          abi: ABI
+          functions: EVMFunction list
+          events: EVMEvent list
+          errors: EVMError list
+          deployedConstructorArguments: string // todo, probably involves some RPC calls to retrieve
+          fallback: string
+          receive: string }
+
+
+    ///
+    /// Represents a failure of the JsonValue parser to consume the ABI.
+    type ContractParseFailure = ContractParseFailure of string

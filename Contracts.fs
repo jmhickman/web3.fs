@@ -10,22 +10,18 @@ module ContractFunctions =
 
 
     ///
-    /// Performs ABI parsing and emits the AsArray() for of the output
-    let parseABIAndEmitArray = fun abi -> JsonValue.Parse(abi) |> fun a -> a.AsArray()
-
-
-    ///
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for functions and returns
     /// an Option for the name, inputs, outputs and the state mutability parameter.
     ///
     let tryGetFunctionProperties (jvals: JsonValue array) =
         jvals
-        |> Array.filter (fun i -> i.GetProperty("type").InnerText() = "function") // Just functions now
+        |> Array.filter (testPropertyInnerText "function")
         |> Array.map (fun i ->
             (i.TryGetProperty("name"),
              i.TryGetProperty("inputs"),
              i.TryGetProperty("outputs"),
              i.TryGetProperty("statemutability")))
+
 
     ///
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for events and returns
@@ -33,8 +29,19 @@ module ContractFunctions =
     ///
     let tryGetEventProperties (jvals: JsonValue array) =
         jvals
-        |> Array.filter (fun i -> i.GetProperty("type").InnerText() = "event")
+        |> Array.filter (testPropertyInnerText "event")
         |> Array.map (fun i -> (i.TryGetProperty("name"), i.TryGetProperty("inputs"), i.TryGetProperty("anonymous")))
+
+
+    ///
+    /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for errors and returns
+    /// an Option for the name and inputs.
+    ///
+    let tryGetErrorProperties (jvals: JsonValue array) =
+        jvals
+        |> Array.filter (testPropertyInnerText "error") // Just functions now
+        |> Array.map (fun i -> (i.TryGetProperty("name"), i.TryGetProperty("inputs")))
+
 
     ///
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for the constructor and
@@ -43,8 +50,9 @@ module ContractFunctions =
     ///
     let tryGetConstructorProperties (jvals: JsonValue array) =
         jvals
-        |> Array.filter (fun p -> p.GetProperty("type").InnerText() = "constructor")
+        |> Array.filter (testPropertyInnerText "constructor")
         |> Array.map (fun i -> (i.TryGetProperty("inputs")))
+
 
     ///
     /// Given a JsonValue parsed output of an exported ABI, this discovers the presence of an explicit
@@ -53,7 +61,7 @@ module ContractFunctions =
     ///
     let tryGetReceive (jvals: JsonValue array) =
         jvals
-        |> Array.filter (fun p -> p.GetProperty("type").InnerText() = "receive")
+        |> Array.filter (testPropertyInnerText "receive")
         |> Array.tryHead
 
 
@@ -62,10 +70,12 @@ module ContractFunctions =
     /// 'fallback' function. The fallback may only have an empty argument tuple, or a bytes argument
     /// that the EVM will fill with the calldata of the txn that hit the fallback. It may only return a
     /// bytes as output. It may be payable.
+    ///
     let tryGetFallback (jvals: JsonValue array) =
         jvals
-        |> Array.filter (fun p -> p.GetProperty("type").InnerText() = "fallback")
+        |> Array.filter (testPropertyInnerText "fallback")
         |> Array.tryHead
+
 
     ///
     /// Recursively send tupled components through the function in order to extract and format nested values properly.
@@ -83,6 +93,7 @@ module ContractFunctions =
             |> fun s -> String.Join(',', s)
             |> fun s -> $"({s})"
         | _ -> ""
+
 
     ///
     /// Returns the state mutability parameter of the EVM function, given a JsonValue option.
@@ -133,7 +144,6 @@ module ContractFunctions =
 
     ///
     /// When supplied with an IntermediateFunctionRepresentation, returns the corresponding EVMFunction record.
-    ///
     let returnEVMFunction (digest: Keccak) (interFunc: IntermediateFunctionRepresentation) =
 
         let _funcName, _inputs, _outputs, _stateMut = interFunc
@@ -148,8 +158,8 @@ module ContractFunctions =
 
         { name = name
           hash = hash
-          inputs = inputs
-          outputs = returnInputs _outputs
+          inputs = inputs |> EVMFunctionInputs
+          outputs = returnInputs _outputs |> EVMFunctionOutputs
           config = returnStateMutability _stateMut }
 
 
@@ -169,29 +179,103 @@ module ContractFunctions =
 
         { name = name
           anonymous = anon
-          inputs = inputs
+          inputs = inputs |> EVMFunctionInputs
           hash = hash }
 
+
     ///
-    /// When supplied with a Contracts ABI in Json format, returns a list of all functions as
-    /// EVMFunctions. A Keccak hash digest is required to generate function selectors. It is
-    /// recommended to create a digest and then partially apply this function for convenience
+    /// When supplied with an IntermediateErrorRepresentation, returns the corresponding EVMError record.
+    let returnEVMError (digest: Keccak) (interError: IntermediateErrorRepresentation) =
+
+        let _errName, _inputs = interError
+
+        let name = returnFunctionName _errName
+        let inputs = returnInputs _inputs
+
+        let hash =
+            ($"{name}{inputs}" |> CanonicalErrorRepresentation)
+            |> returnFunctionSelector digest
+
+        { name = name
+          inputs = inputs |> EVMFunctionInputs
+          hash = hash }
+
+
     ///
-    let parseABIForFunctions (digest: Keccak) (json: string) =
+    /// When supplied with a Solidity contract ABI in Json format, returns a list of all functions as
+    /// EVMFunctions. A Keccak hash digest is required to generate function selectors.
+    ///
+    let parseABIForFunctions (digest: Keccak) (json: JsonValue array) =
         json
-        |> parseABIAndEmitArray
         |> tryGetFunctionProperties
         |> Array.map (returnEVMFunction digest)
         |> Array.toList
 
 
     ///
-    /// When supplied with a Contracts ABI in Json format, returns a list of all events as
-    /// EVMEvents. A Keccak hash digest is required to generate event selectors. It is
-    /// recommended to create a digest and then partially apply this function for convenience
+    /// When supplied with a Solidity contract ABI in Json format, returns a list of EVMEvents.
+    /// A Keccak hash digest is required to generate event selectors.
     ///
-    let parseABIForEvents (digest: Keccak) (json: string) =
+    let parseABIForEvents (digest: Keccak) (json: JsonValue array) =
         json
-        |> parseABIAndEmitArray
         |> tryGetEventProperties
         |> Array.map (returnEVMEvent digest)
+        |> Array.toList
+
+
+    ///
+    /// When supplied with a Solidity contract ABI in Json format, returns a tuple of the contructor,
+    /// the presence of a fallback function, and receive function if found.
+    ///
+    let parseABIForConstructorFallbackReceive (digest: Keccak) (json: JsonValue array) =
+
+        let constructor =
+            match tryGetConstructorProperties json with
+            | [| Some r |] ->
+                let x = $"constructor{collapseTuples r}"
+                (x, digest.Hash(x))
+            | _ -> ("constructor()", "0x90fa17bb")
+
+        let fallback = tryGetFallback json |> returnInputs
+        let receive = tryGetReceive json |> returnInputs
+        (constructor, fallback, receive)
+
+    ///
+    /// When supplied with a Solidity contract ABI in Json format, returns a list of EVMErrors.
+    /// A Keccak hash digest is required to generate function selectors.
+    ///
+    let parseABIForErrors (digest: Keccak) (json: JsonValue array) =
+        json
+        |> tryGetErrorProperties
+        |> Array.map (returnEVMError digest)
+        |> Array.toList
+
+
+    ///
+    /// Returns a Result containing either a DeployedContract for interaction, or an error indicating
+    /// a failure of the JsonValue parser to yield a top-level representation of the ABI. Can be partially
+    /// applied if many contracts will be loaded from a map() of addresses and ABIs
+    ///
+    let loadDeployedContract digest address abi : Result<DeployedContract, ContractParseFailure> =
+        let (ABI _abi) = abi
+
+        match JsonValue.TryParse(_abi) with
+        | Some json ->
+            let _j = json.AsArray()
+            let _flist = parseABIForFunctions digest _j
+            let _evntlist = parseABIForEvents digest _j
+            let _errlist = parseABIForErrors digest _j
+            let _, fallback, receive = parseABIForConstructorFallbackReceive digest _j
+
+            { address = address
+              abi = abi
+              functions = _flist
+              events = _evntlist
+              errors = _errlist
+              deployedConstructorArguments = ""
+              fallback = fallback
+              receive = receive }
+            |> Ok
+        | None ->
+            ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse"
+            |> Error

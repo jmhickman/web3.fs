@@ -173,8 +173,14 @@ module Helpers =
     // Contract helpers
     //
 
-
+    ///
+    /// Returns the text of the "type" property.
     let getInnerTypeText (jval: JsonValue) = jval.GetProperty("type").InnerText()
+
+    ///
+    /// Predicate for filters
+    let testPropertyInnerText (s: string) (jval: JsonValue) =
+        jval.GetProperty("type").InnerText() = s
 
     /// Checks if the JsonValue 'type' value is tuple. Tupled values are treated differently in the logic.
     let checkForTuple (jval: JsonValue) =
@@ -197,3 +203,7 @@ module Helpers =
             |> prepend0x
             |> EVMFunctionHash
         | CanonicalEventRepresentation r -> digest.Hash(r) |> prepend0x |> EVMEventSelector
+        | CanonicalErrorRepresentation r ->
+            digest.Hash(r).Remove(8)
+            |> prepend0x
+            |> EVMFunctionHash
