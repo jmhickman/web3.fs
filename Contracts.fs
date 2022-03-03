@@ -9,6 +9,32 @@ module ContractFunctions =
     open Types
 
 
+
+    ///
+    /// Returns the text of the "type" property.
+    let getInnerTypeText (jval: JsonValue) = jval.GetProperty("type").InnerText()
+
+    ///
+    /// Predicate for filters
+    let testPropertyInnerText (s: string) (jval: JsonValue) =
+        jval.GetProperty("type").InnerText() = s
+
+    ///
+    /// Checks if the JsonValue 'type' value is tuple. Tupled values are treated differently in the logic.
+    let checkForTuple (jval: JsonValue) =
+        if (getInnerTypeText jval).StartsWith("tuple") then
+            true
+        else
+            false
+
+    ///
+    /// Tupled values in the ABI can be 'tuple' 'tuple[]' or 'tuple[k]'. Grab the glyphs if present for appending to the end
+    /// of the joined strings later.
+    ///
+    let extractEnder (jval: JsonValue) =
+        jval.GetProperty("type").InnerText().Substring(5)
+
+
     ///
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for functions and returns
     /// an Option for the name, inputs, outputs and the state mutability parameter.

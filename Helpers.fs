@@ -11,12 +11,12 @@ module Helpers =
     open SHA3Core.Keccak
 
 
-
     //
     // validators for the RPC data formats QUANTITY, DATA, TAG, ADDRESS
     //
 
-
+    ///
+    /// Verifies the correctness of the Transaction type of a call.
     let validateTxnType t =
         let reg = new Regex("^0x([0-9,a-f,A-F]){1,2}$")
 
@@ -24,6 +24,9 @@ module Helpers =
         | true -> Some t
         | false -> None
 
+
+    ///
+    /// Verifies the correctness of QUANTITY data in a call.
     let validateQuantity s =
         let reg = new Regex("^0x([1-9a-f]+[0-9a-f]*|0)$")
 
@@ -31,6 +34,8 @@ module Helpers =
         | true -> Some s
         | false -> None
 
+    ///
+    /// Verifies the correctness of DATA data in a call.
     let validateData s =
         let reg = new Regex("^0x([0-9a-f]{2})*$")
 
@@ -38,6 +43,8 @@ module Helpers =
         | true -> Some s
         | false -> None
 
+    ///
+    /// Verifies the correctness of ADDRESS data in a call.
     let validateAddress s =
         let reg = new Regex("^0x[0-9,a-f,A-F]{40}$")
 
@@ -45,12 +52,12 @@ module Helpers =
         | true -> Some s
         | false -> None
 
-    // The purpose of this function isn't to construct calls/txns that will
-    // always be accepted by the node. Rather, it is to ensure that data
-    // passed into a call/txn is internally consistent with the expected
-    // hex formats. Only data has an explicit check, since any valid call
-    // must include something in the data field. Misformatted inputs will be
-    // converted to None (which will be omitted on serialization).
+    ///
+    /// When supplied with an UnvalidatedEthParam1559Call, returns a Result. The purpose
+    /// is to ensure that the data supplied in each field is consistent with requirements
+    /// for each type. Note that the resulting EthParam1559Call is not guaranteed to
+    /// succeed or be syntactically valid EVM bytecode.
+    ///
     let validateRPCParams (unvalidatedRpcParam: UnvalidatedEthParam1559Call) =
         match validateData unvalidatedRpcParam.udata with
         | Some d ->
@@ -80,10 +87,11 @@ module Helpers =
     let jsonConfig =
         JsonConfig.create (serializeNone = SerializeNone.Omit, unformatted = true)
 
-    /// Create a serialized Json representation of call
+    /// Serializes a 1559 call to Json for sending in an RPC message.
     let createJsonObj (ethParams: EthParam1559Call) = Json.serializeEx jsonConfig ethParams
 
-    /// For 'dumb' list-style parameter types.
+    ///
+    /// Creates a parameter list for RPC calls that take such a flat list format.
     let concatParamString (list: string list) =
         list
         |> List.fold (fun acc s -> $"""{acc}"{s}", """) ""
@@ -94,15 +102,21 @@ module Helpers =
     // Hex and bigint functions
     //
 
-
+    ///
+    /// Prepends a hexadecimal specifier to a string.
     let prepend0x s = "0x" + s
 
+
+    ///
+    /// Removes a hexadecimal specifier from a string.
     let strip0x (s: string) =
         if s.StartsWith("0x") then
             s.Remove(0, 2)
         else
             s
 
+
+    ///
     /// Based on blessed code found at https://stu.dev/bigint-to-string-in-any-base-fsharp/
     let bigintToIntList _base input =
         let rec loop (_base: int) input digits =
@@ -114,20 +128,26 @@ module Helpers =
 
         loop _base input []
 
-    /// partial application for hexadecimal
+
+    /// Partial application for convenience to set hexadecimal processing.
     let bigintToHexList = bigintToIntList 16
+
 
     let intListToString input =
         input
         |> List.fold (fun acc (x: int) -> $"""{acc}{x.ToString("X").ToLower()}""") ""
 
-    // If going into a QUANTITY or used for eth-context representation, don't pad
+    ///
+    /// Returns a hexadecimal string with no padding. Useful for QUANTITY values in
+    /// the ABI.
     let bigintToHex num =
         num |> bigintToHexList |> intListToString
 
-    /// If conversion will be used in an eth DATA value, it must be two chars
-    /// per byte. Necessary if this hex value will also be converted back to
-    /// a bigint, as length is used to imply the sign.
+
+    ///
+    /// Returns a hexadecimal string prepended with a 0 if necessary to adhere to
+    /// ABI two's compliment storage for DATA types.
+    ///
     let bigintToHexPadded num =
         let res = num |> bigintToHexList |> intListToString
 
@@ -136,9 +156,15 @@ module Helpers =
         else
             "0" + res
 
+
+    ///
+    /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
+    /// so mind what strings are passed in.
     let hexToBigInt hexString =
         bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
 
+
+    ///
     /// A partial application for convenience, does what it says
     let strip0xAndConvertToBigInt = strip0x >> hexToBigInt
 
@@ -147,15 +173,15 @@ module Helpers =
     // Wei/ETH conversion
     //
 
-
-    /// Returns a string representation because most use-cases for dealing in
-    /// 'ETH' are on the human side of an interface.
+    ///
+    /// Returns a string representation of the conversion of wei to Eth.
     let convertWeiToEth wei =
         let (eth, frac) = bigint.DivRem(wei, weiDiv)
         let rem = frac.ToString().PadLeft(18, '0')
         $"{eth.ToString()}.{rem.Remove(17)}"
 
-    /// Much like the above, returns a bigint for working in wei on the RPC-side of the interface.
+    ///
+    /// Returns a bigint for working in wei.
     let convertEthToWei (eth: string) =
         let _eth =
             match not (eth.Contains('.')) with
@@ -174,26 +200,7 @@ module Helpers =
     //
 
     ///
-    /// Returns the text of the "type" property.
-    let getInnerTypeText (jval: JsonValue) = jval.GetProperty("type").InnerText()
-
-    ///
-    /// Predicate for filters
-    let testPropertyInnerText (s: string) (jval: JsonValue) =
-        jval.GetProperty("type").InnerText() = s
-
-    /// Checks if the JsonValue 'type' value is tuple. Tupled values are treated differently in the logic.
-    let checkForTuple (jval: JsonValue) =
-        if (getInnerTypeText jval).StartsWith("tuple") then
-            true
-        else
-            false
-
-    /// Tupled values in the ABI can be 'tuple' 'tuple[]' or 'tuple[k]'. Grab the glyphs if present for appending to the end
-    /// of the joined strings later.
-    let extractEnder (jval: JsonValue) =
-        jval.GetProperty("type").InnerText().Substring(5)
-
+    /// Returns a Keccak hasher properly configured for 256bit hashes
     let newKeccakDigest () = new Keccak(KeccakBitType.K256)
 
     let returnFunctionSelector (digest: Keccak) (rep: CanonicalRepresentation) =
