@@ -3,23 +3,20 @@ Functional library for interacting with Web3 facilities
 
 ### Motivation
 
-Dissatisfaction with existing solutions for interacting with Ethereum and other EVM chains. Hope to add support for Substrate-based chains later.
+Dissatisfaction with existing solutions for interacting with Ethereum and other EVM chains in .Net. Hope to add support for Substrate-based chains later.
 
 ### Progress
 
-Basic functionality cobbled in. Not ready for use. It will probably explode, or be silly. 
+Basic functionality cobbled in, including RPC communications (but unformatted results) and a basic representation of Solidity contracts.  
+Not ready for use. It will probably explode, or be silly. 
 
 ### Deps and Reqs
 
-Removed Nethereum deps (for now). 
-FSharp.Data
-FSharp.Json
-SHA3Core
-Writing in .Net 6
-
-### Code of Conduct
-
-I'm a dictator and I rule with an iron fist. I explicitly reject CoCs.
+Removed Nethereum deps (for now).  
+FSharp.Data  
+FSharp.Json  
+SHA3Core  
+Writing in .Net 6  
 
 ### Example Use
 
@@ -144,3 +141,7 @@ RPC error message: {
 improperly formatted data value:
 Call/TXN object 'data' value is missing or not valid
 ```
+
+### Code of Conduct
+
+I'm a dictator and I rule with an iron fist. I explicitly reject CoCs.
