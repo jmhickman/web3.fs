@@ -109,13 +109,22 @@ module ABIFunctions =
         
         // A description of the following code is in order, I think. 
         //
-        // First, the EVM expects arguments to functions to be placed in a
+        // A typical 'canonical' function signature might look like this:
+        // `someFunction(uint256,address,bytes24,int64)`
+        //
+        // A simple type is like `address`, `uint256`, and sized byte sequences
+        // like `bytes24`. 
+        //
+        // Dynamic types are arrays of simple types or tuples, and `bytes` 
+        // sequences, like `address[]`, `uint256[]` and `(address,uint256)[]`
+        //
+        // The EVM expects function call arguments to be placed in a
         // certain order. Most simple types are placed directly in sequence
         // based on their order in the function signature. However, dynamic 
         // types require extra work. They leave an offset to their location 
-        // where, and their contents are only appended after all other
-        // simple values in the current tuple contents are exhausted. The EVM
-        // will evaluate the offset to the dynamic contents, where it expects to 
+        // in the argument string, and the contents are only appended after all other
+        // simple values in the current tuple are exhausted. The EVM will look for
+        // the dynamic contents at the offset value, where it expects to 
         // find a count of the members of the dynamic type (a true count in most 
         // cases except `bytes`, which are a count of the hex bytes instead).
         //
