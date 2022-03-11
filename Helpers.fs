@@ -1,6 +1,8 @@
 namespace web3.fs
 
 module Helpers =
+    open System
+    open System.Text
     open System.Globalization
     open System.Text.RegularExpressions
 
@@ -13,9 +15,13 @@ module Helpers =
 
 
     //
-    // validators for the RPC data formats QUANTITY, DATA, TAG, ADDRESS
+    // RPC Data validation
     //
 
+    ///
+    /// Returns a string option after evaluating an input with a regex provided
+    /// to the function.
+    /// 
     let validateInputs (reg: string) t =
         let reg = new Regex(reg)
         match reg.Match(t).Success with
@@ -25,18 +31,15 @@ module Helpers =
     ///
     /// Verifies the correctness of the Transaction type of a call.
     let validateTxnType t = validateInputs "^0x([0-9,a-f,A-F]){1,2}$" t
-        
     
     ///
     /// Verifies the correctness of QUANTITY data in a call.
     let validateQuantity s = validateInputs "^0x([1-9a-f]+[0-9a-f]*|0)$" s
-        
-
+    
     ///
     /// Verifies the correctness of DATA data in a call.
     let validateData s = validateInputs "^0x([0-9a-f]{2})*$" s
-        
-
+    
     ///
     /// Verifies the correctness of ADDRESS data in a call.
     let validateAddress s = validateInputs "^0x[0-9,a-f,A-F]{40}$" s
@@ -73,7 +76,8 @@ module Helpers =
     // Parameter handlers
     //
 
-
+    ///
+    /// Sets Json output to be compliant with RPC expectations.
     let jsonConfig =
         JsonConfig.create (serializeNone = SerializeNone.Omit, unformatted = true)
 
@@ -165,25 +169,12 @@ module Helpers =
         bigint.Parse(e + wei)
 
 
-    //
-    // Contract helpers
-    //
-
+    
     ///
     /// Returns a Keccak hasher properly configured for 256bit hashes
     let newKeccakDigest () = new Keccak(KeccakBitType.K256)
 
-    let returnFunctionSelector (digest: Keccak) (rep: CanonicalRepresentation) =
-        match rep with
-        | CanonicalFunctionRepresentation r ->
-            digest.Hash(r).Remove(8)
-            |> prepend0x
-            |> EVMFunctionHash
-        | CanonicalEventRepresentation r -> 
-            digest.Hash(r) 
-            |> prepend0x 
-            |> EVMEventSelector
-        | CanonicalErrorRepresentation r ->
-            digest.Hash(r).Remove(8)
-            |> prepend0x
-            |> EVMFunctionHash
+    let formatToBytes (s: string) = 
+        Encoding.ASCII.GetBytes(s)
+        |> Array.map (fun (x : byte) -> String.Format("{0:X2}", x))
+        |> String.concat ""

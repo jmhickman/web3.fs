@@ -52,8 +52,8 @@ module Types =
     type TxnType = string
     type Quantity = string
     type Data = string
-    type Address = string
-    type AccessList = (Address * Data list) list
+    type EthAddress = string
+    type AccessList = (EthAddress * Data list) list
 
 
     //
@@ -85,8 +85,8 @@ module Types =
           txnType: TxnType option // Seems optional, needs research.
           nonce: Quantity option // Missing nonce is fine, if talking to a wallet
           [<JsonField("to")>]
-          toAddr: Address option // Missing to is fine, if deploying a contract
-          from: Address option // Missing 'from' is not great, may cause errors if wallet or node can't determine sender
+          toAddr: EthAddress option // Missing to is fine, if deploying a contract
+          from: EthAddress option // Missing 'from' is not great, may cause errors if wallet or node can't determine sender
           gas: Quantity option // Missing gas limit is fine, if talking to wallet
           value: Quantity option // Missing value is fine, if making a Call. May still be fine if txn isn't payable
           data: Data // Calls, txn and deploys should always have a valid data value
@@ -449,7 +449,7 @@ module Types =
     ///
     /// Represents a deployed contract.
     type DeployedContract =
-        { address: Address
+        { address: EthAddress
           abi: ABI
           functions: EVMFunction list
           events: EVMEvent list
