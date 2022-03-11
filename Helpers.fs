@@ -4,53 +4,43 @@ module Helpers =
     open System.Globalization
     open System.Text.RegularExpressions
 
-    open Types
     open FSharp.Json
-    open FSharp.Data
     open SHA3Core.Enums
     open SHA3Core.Keccak
+    
+    open Types
+    
 
 
     //
     // validators for the RPC data formats QUANTITY, DATA, TAG, ADDRESS
     //
 
-    ///
-    /// Verifies the correctness of the Transaction type of a call.
-    let validateTxnType t =
-        let reg = new Regex("^0x([0-9,a-f,A-F]){1,2}$")
-
+    let validateInputs (reg: string) t =
+        let reg = new Regex(reg)
         match reg.Match(t).Success with
         | true -> Some t
         | false -> None
-
-
+    
+    ///
+    /// Verifies the correctness of the Transaction type of a call.
+    let validateTxnType t = validateInputs "^0x([0-9,a-f,A-F]){1,2}$" t
+        
+    
     ///
     /// Verifies the correctness of QUANTITY data in a call.
-    let validateQuantity s =
-        let reg = new Regex("^0x([1-9a-f]+[0-9a-f]*|0)$")
-
-        match reg.Match(s).Success with
-        | true -> Some s
-        | false -> None
+    let validateQuantity s = validateInputs "^0x([1-9a-f]+[0-9a-f]*|0)$" s
+        
 
     ///
     /// Verifies the correctness of DATA data in a call.
-    let validateData s =
-        let reg = new Regex("^0x([0-9a-f]{2})*$")
-
-        match reg.Match(s).Success with
-        | true -> Some s
-        | false -> None
+    let validateData s = validateInputs "^0x([0-9a-f]{2})*$" s
+        
 
     ///
     /// Verifies the correctness of ADDRESS data in a call.
-    let validateAddress s =
-        let reg = new Regex("^0x[0-9,a-f,A-F]{40}$")
-
-        match reg.Match(s).Success with
-        | true -> Some s
-        | false -> None
+    let validateAddress s = validateInputs "^0x[0-9,a-f,A-F]{40}$" s
+        
 
     ///
     /// When supplied with an UnvalidatedEthParam1559Call, returns a Result. The purpose
@@ -80,16 +70,18 @@ module Helpers =
 
 
     //
-    // Parameter list handlers
+    // Parameter handlers
     //
 
 
     let jsonConfig =
         JsonConfig.create (serializeNone = SerializeNone.Omit, unformatted = true)
 
+    
     /// Serializes a 1559 call to Json for sending in an RPC message.
     let createJsonObj (ethParams: EthParam1559Call) = Json.serializeEx jsonConfig ethParams
 
+    
     ///
     /// Creates a parameter list for RPC calls that take such a flat list format.
     let concatParamString (list: string list) =
@@ -115,33 +107,11 @@ module Helpers =
         else
             s
 
-
-    ///
-    /// Based on blessed code found at https://stu.dev/bigint-to-string-in-any-base-fsharp/
-    let bigintToIntList _base input =
-        let rec loop (_base: int) input digits =
-            let (quotient, remainder) = bigint.DivRem(input, bigint _base)
-
-            match quotient with
-            | zero when zero = 0I -> int remainder :: digits
-            | _ -> loop _base quotient (int remainder :: digits)
-
-        loop _base input []
-
-
-    /// Partial application for convenience to set hexadecimal processing.
-    let bigintToHexList = bigintToIntList 16
-
-
-    let intListToString input =
-        input
-        |> List.fold (fun acc (x: int) -> $"""{acc}{x.ToString("X").ToLower()}""") ""
-
     ///
     /// Returns a hexadecimal string with no padding. Useful for QUANTITY values in
     /// the ABI.
     let bigintToHex num =
-        num |> bigintToHexList |> intListToString
+        num |> fun n -> bigint.Parse(n).ToString("X")
 
 
     ///
@@ -149,7 +119,7 @@ module Helpers =
     /// ABI two's compliment storage for DATA types.
     ///
     let bigintToHexPadded num =
-        let res = num |> bigintToHexList |> intListToString
+        let res = num |> fun n -> bigint.Parse(n).ToString("X")
 
         if (res.Length % 2 = 0) then
             res
@@ -165,7 +135,7 @@ module Helpers =
 
 
     ///
-    /// A partial application for convenience, does what it says
+    /// A composition for convenience, does what it says
     let strip0xAndConvertToBigInt = strip0x >> hexToBigInt
 
 
@@ -209,7 +179,10 @@ module Helpers =
             digest.Hash(r).Remove(8)
             |> prepend0x
             |> EVMFunctionHash
-        | CanonicalEventRepresentation r -> digest.Hash(r) |> prepend0x |> EVMEventSelector
+        | CanonicalEventRepresentation r -> 
+            digest.Hash(r) 
+            |> prepend0x 
+            |> EVMEventSelector
         | CanonicalErrorRepresentation r ->
             digest.Hash(r).Remove(8)
             |> prepend0x

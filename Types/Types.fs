@@ -462,3 +462,67 @@ module Types =
     ///
     /// Represents a failure of the JsonValue parser to consume the ABI.
     type ContractParseFailure = ContractParseFailure of string
+
+
+    //
+    /// Representations of EVM types in simplistic form. There is no effort made to 
+    /// check that provided values of these types conform to any limitation of said
+    /// types. 
+    /// 
+    /// **Warning** Note that while the Solidity documentation assert various `fixed`
+    /// and `ufixed` types (describing very large floats with ranges of precision
+    /// of whole and fractional parts), they are currently only partially 
+    /// implemented in the EVM and so are unsupported here at this time.
+    /// 
+    type EVMDatatype =
+    | Tuple of EVMDatatype list //
+    | TupleArray of EVMDatatype list //
+    | Address of string //
+    | AddressArraySz of string list
+    | AddressArray of string list //
+    | Uint8 of string //
+    | Uint32 of string //
+    | Uint64 of string // 
+    | Uint128 of string //
+    | Uint256 of string //
+    | Uint8ArraySz of string  list //
+    | Uint32ArraySz of string  list //
+    | Uint64ArraySz of string  list //
+    | Uint128ArraySz of string  list //
+    | Uint256ArraySz of string  list //
+    | Uint8Array of string  list //
+    | Uint32Array of string  list //
+    | Uint64Array of string  list //
+    | Uint128Array of string  list //
+    | Uint256Array of string  list //
+    | Int8 of string //
+    | Int32 of string //
+    | Int64 of string //
+    | Int128 of string //
+    | Int256 of string //
+    | Int8ArraySz of string list //
+    | Int32ArraySz of string list //
+    | Int64ArraySz of string list //
+    | Int128ArraySz of string list //
+    | Int256ArraySz of string list //
+    | Int8Array of string list //
+    | Int32Array of string list //
+    | Int64Array of string list //
+    | Int128Array of string list //
+    | Int256Array of string list //
+    | Bool of bool //
+    | BoolArraySz of bool list
+    | BoolArray of bool list
+    | BytesSz of string //
+    | BytesSzArraySz of string list // 
+    | BytesSzArray of string list // 
+    | Bytes of string // 
+    | BytesArraySz of EVMDatatype list // 
+    | BytesArray of EVMDatatype list // 
+    | Function of string //
+    | FunctionArray of string list //
+    | FunctionArraySz of string list //
+    | String of string // 
+    | StringArraySz of EVMDatatype list //
+    | StringArray of EVMDatatype list //
+    | Blob of string //

@@ -8,7 +8,23 @@ module ContractFunctions =
     open Helpers
     open Types
 
-
+    ///
+    /// Returns a function selector given a configured Keccak instance and the
+    /// canonical representation of a function.
+    let returnFunctionSelector (digest: Keccak) (rep: CanonicalRepresentation) =
+        match rep with
+        | CanonicalFunctionRepresentation r ->
+            digest.Hash(r).Remove(8)
+            |> prepend0x
+            |> EVMFunctionHash
+        | CanonicalEventRepresentation r -> 
+            digest.Hash(r) 
+            |> prepend0x 
+            |> EVMEventSelector
+        | CanonicalErrorRepresentation r ->
+            digest.Hash(r).Remove(8)
+            |> prepend0x
+            |> EVMFunctionHash
 
     ///
     /// Returns the text of the "type" property.
@@ -123,7 +139,7 @@ module ContractFunctions =
 
     ///
     /// Returns the state mutability parameter of the EVM function, given a JsonValue option.
-    /// Defaults to 'nonpayble' as is the spec.
+    /// Defaults to 'nonpayable' as is the spec.
     ///
     let returnStateMutability (b: JsonValue option) =
         match b with
