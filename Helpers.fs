@@ -23,7 +23,7 @@ module Helpers =
     /// to the function.
     /// 
     let validateInputs (reg: string) t =
-        let reg = new Regex(reg)
+        let reg = Regex(reg)
         match reg.Match(t).Success with
         | true -> Some t
         | false -> None
@@ -150,7 +150,7 @@ module Helpers =
     ///
     /// Returns a string representation of the conversion of wei to Eth.
     let convertWeiToEth wei =
-        let (eth, frac) = bigint.DivRem(wei, weiDiv)
+        let eth, frac = bigint.DivRem(wei, weiDiv)
         let rem = frac.ToString().PadLeft(18, '0')
         $"{eth.ToString()}.{rem.Remove(17)}"
 
@@ -163,7 +163,7 @@ module Helpers =
             | false -> eth
 
         let xa = _eth.Split('.')
-        let (x, xs) = (xa.[0], xa.[1])
+        let x, xs = (xa.[0], xa.[1])
         let e = x.TrimStart('0')
         let wei = xs.PadRight(18, '0').Remove(18)
         bigint.Parse(e + wei)
@@ -171,7 +171,7 @@ module Helpers =
     
     ///
     /// Returns a Keccak hasher properly configured for 256bit hashes
-    let newKeccakDigest () = new Keccak(KeccakBitType.K256)
+    let newKeccakDigest () = Keccak(KeccakBitType.K256)
 
     let formatToBytes (s: string) = 
         Encoding.ASCII.GetBytes(s)

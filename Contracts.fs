@@ -28,17 +28,17 @@ module ContractFunctions =
 
     ///
     /// Returns the text of the "type" property.
-    let getInnerTypeText (jval: JsonValue) = jval.GetProperty("type").InnerText()
+    let getInnerTypeText (jVal: JsonValue) = jVal.GetProperty("type").InnerText()
 
     ///
     /// Predicate for filters
-    let testPropertyInnerText (s: string) (jval: JsonValue) =
-        jval.GetProperty("type").InnerText() = s
+    let testPropertyInnerText (s: string) (jVal: JsonValue) =
+        jVal.GetProperty("type").InnerText() = s
 
     ///
     /// Checks if the JsonValue 'type' value is tuple. Tupled values are treated differently in the logic.
-    let checkForTuple (jval: JsonValue) =
-        if (getInnerTypeText jval).StartsWith("tuple") then
+    let checkForTuple (jVal: JsonValue) =
+        if (getInnerTypeText jVal).StartsWith("tuple") then
             true
         else
             false
@@ -47,16 +47,16 @@ module ContractFunctions =
     /// Tupled values in the ABI can be 'tuple' 'tuple[]' or 'tuple[k]'. Grab the glyphs if present for appending to the end
     /// of the joined strings later.
     ///
-    let extractEnder (jval: JsonValue) =
-        jval.GetProperty("type").InnerText().Substring(5)
+    let extractEnder (jVal: JsonValue) =
+        jVal.GetProperty("type").InnerText().Substring(5)
 
 
     ///
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for functions and returns
     /// an Option for the name, inputs, outputs and the state mutability parameter.
     ///
-    let tryGetFunctionProperties (jvals: JsonValue array) =
-        jvals
+    let tryGetFunctionProperties (jVals: JsonValue array) =
+        jVals
         |> Array.filter (testPropertyInnerText "function")
         |> Array.map (fun i ->
             (i.TryGetProperty("name"),
@@ -69,8 +69,8 @@ module ContractFunctions =
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for events and returns
     /// an option for the name, inputs, and the anonymous parameter.
     ///
-    let tryGetEventProperties (jvals: JsonValue array) =
-        jvals
+    let tryGetEventProperties (jVals: JsonValue array) =
+        jVals
         |> Array.filter (testPropertyInnerText "event")
         |> Array.map (fun i -> (i.TryGetProperty("name"), i.TryGetProperty("inputs"), i.TryGetProperty("anonymous")))
 
@@ -79,8 +79,8 @@ module ContractFunctions =
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for errors and returns
     /// an Option for the name and inputs.
     ///
-    let tryGetErrorProperties (jvals: JsonValue array) =
-        jvals
+    let tryGetErrorProperties (jVals: JsonValue array) =
+        jVals
         |> Array.filter (testPropertyInnerText "error") // Just functions now
         |> Array.map (fun i -> (i.TryGetProperty("name"), i.TryGetProperty("inputs")))
 
@@ -90,8 +90,8 @@ module ContractFunctions =
     /// returns its inputs. Constructors never have a name or outputs. Only useful for deploying a contract
     /// programmatically.
     ///
-    let tryGetConstructorProperties (jvals: JsonValue array) =
-        jvals
+    let tryGetConstructorProperties (jVals: JsonValue array) =
+        jVals
         |> Array.filter (testPropertyInnerText "constructor")
         |> Array.map (fun i -> (i.TryGetProperty("inputs")))
 
@@ -101,8 +101,8 @@ module ContractFunctions =
     /// 'receive' function. Receive functions have no inputs, must be 'payable', and may not have outputs.
     /// Thus, this function only returns the presence of a receive function only.
     ///
-    let tryGetReceive (jvals: JsonValue array) =
-        jvals
+    let tryGetReceive (jVals: JsonValue array) =
+        jVals
         |> Array.filter (testPropertyInnerText "receive")
         |> Array.tryHead
 
@@ -113,8 +113,8 @@ module ContractFunctions =
     /// that the EVM will fill with the calldata of the txn that hit the fallback. It may only return a
     /// bytes as output. It may be payable.
     ///
-    let tryGetFallback (jvals: JsonValue array) =
-        jvals
+    let tryGetFallback (jVals: JsonValue array) =
+        jVals
         |> Array.filter (testPropertyInnerText "fallback")
         |> Array.tryHead
 
@@ -209,9 +209,9 @@ module ContractFunctions =
     /// When supplied with an IntermediateEventRepresentation, returns the corresponding EVMEvent record.
     let returnEVMEvent (digest: Keccak) (interEvent: IntermediateEventRepresentation) =
 
-        let _evntName, _inputs, _anon = interEvent
+        let _eventName, _inputs, _anon = interEvent
 
-        let name = returnFunctionName _evntName
+        let name = returnFunctionName _eventName
         let anon = returnAnonymous _anon
         let inputs = returnInputs _inputs
 
@@ -266,7 +266,7 @@ module ContractFunctions =
 
 
     ///
-    /// When supplied with a Solidity contract ABI in Json format, returns a tuple of the contructor,
+    /// When supplied with a Solidity contract ABI in Json format, returns a tuple of the constructor,
     /// the presence of a fallback function, and receive function if found.
     ///
     let parseABIForConstructorFallbackReceive (digest: Keccak) (json: JsonValue array) =
@@ -304,16 +304,16 @@ module ContractFunctions =
         match JsonValue.TryParse(_abi) with
         | Some json ->
             let _j = json.AsArray()
-            let _flist = parseABIForFunctions digest _j
-            let _evntlist = parseABIForEvents digest _j
-            let _errlist = parseABIForErrors digest _j
+            let _fList = parseABIForFunctions digest _j
+            let _eventList = parseABIForEvents digest _j
+            let _errList = parseABIForErrors digest _j
             let _, fallback, receive = parseABIForConstructorFallbackReceive digest _j
 
             { address = address
               abi = abi
-              functions = _flist
-              events = _evntlist
-              errors = _errlist
+              functions = _fList
+              events = _eventList
+              errors = _errList
               deployedConstructorArguments = ""
               fallback = fallback
               receive = receive }

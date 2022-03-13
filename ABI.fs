@@ -44,10 +44,10 @@ module ABIFunctions =
         match int' with
         | x when x.Sign = -1 -> 
             x.ToString("X").ToLowerInvariant() |> padTo32BytesLeftF
-        | x when x.Sign = 1 ->
+        | x when x.Sign >= 0 ->
             x.ToString("X").ToLowerInvariant() |> padTo32BytesLeft
-        | _ as x ->
-            x.ToString("X").ToLowerInvariant() |> padTo32BytesLeft
+        | x -> x.ToString("X").ToLowerInvariant() |> padTo32BytesLeft
+        
 
     ///
     /// Find the hexadecimal representation of the current 'offset'/position
@@ -271,11 +271,11 @@ module ABIFunctions =
                 | BytesArraySz bsArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ (unpackInputAndProcess bsArr "" (0 + bsArr.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (bsArr.Length))
+                    unpackInputAndProcess tail acc (cursor + bsArr.Length)
                 | BytesArray bsArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ returnCountOfItems bsArr |> fun s -> s + (unpackInputAndProcess bsArr "" (0 + bsArr.Length)) |> Blob ] 
-                    unpackInputAndProcess tail acc (cursor + (bsArr.Length))
+                    unpackInputAndProcess tail acc (cursor + bsArr.Length)
                 | String st -> 
                     let acc = acc + returnCurrentOffset cursor
                     let bs = st |> formatToBytes
@@ -285,11 +285,11 @@ module ABIFunctions =
                 | StringArraySz sArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ (unpackInputAndProcess sArr "" (0 + sArr.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (sArr.Length))
+                    unpackInputAndProcess tail acc (cursor + sArr.Length)
                 | StringArray sArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ returnCountOfItems sArr |> fun s -> s + (unpackInputAndProcess sArr "" (0 + sArr.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (sArr.Length))
+                    unpackInputAndProcess tail acc (cursor + sArr.Length)
                 | Tuple t ->
                     let acc = acc + returnCurrentOffset cursor
                     let blob = unpackInputAndProcess t "" (0 + t.Length) 

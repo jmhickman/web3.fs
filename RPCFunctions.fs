@@ -37,7 +37,7 @@ module RPCMethodFunctions =
         | EthMethod.GasPrice -> "eth_gasPrice"
         | EthMethod.GetBalance -> "eth_getBalance"
         | EthMethod.GetBlockByHash -> "eth_getBlockByHash"
-        | EthMethod.GetBlockbyNumber -> "eth_getBlockByNumber"
+        | EthMethod.GetBlockByNumber -> "eth_getBlockByNumber"
         | EthMethod.GetBlockTransactionCountByHash -> "eth_getBlockTransactionCountByHash"
         | EthMethod.GetBlockTransactionCountByNumber -> "eth_getBlockTransactionCountByNumber"
         | EthMethod.GetCode -> "eth_getCode"

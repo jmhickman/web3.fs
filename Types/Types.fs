@@ -238,7 +238,7 @@ module Types =
         | GasPrice
         | GetBalance
         | GetBlockByHash
-        | GetBlockbyNumber
+        | GetBlockByNumber
         | GetBlockTransactionCountByHash
         | GetBlockTransactionCountByNumber
         | GetCode
@@ -310,7 +310,7 @@ module Types =
 
     type HttpRPCMessage =
         { method: RPCMethod
-          paramlist: RPCParams }
+          paramList: RPCParams }
 
 
     //
@@ -329,17 +329,17 @@ module Types =
     ///
     /// Set of tupled values created during Json parsing and filtering
     type IntermediateFunctionRepresentation =
-        (option<JsonValue> * option<JsonValue> * option<JsonValue> * option<JsonValue>)
+        option<JsonValue> * option<JsonValue> * option<JsonValue> * option<JsonValue>
 
 
     ///
     /// Set of tupled values created during Json parsing and filtering
-    type IntermediateEventRepresentation = (option<JsonValue> * option<JsonValue> * option<JsonValue>)
+    type IntermediateEventRepresentation = option<JsonValue> * option<JsonValue> * option<JsonValue>
 
 
     ///
     /// Set of tupled values created during Json parsing and filtering
-    type IntermediateErrorRepresentation = (option<JsonValue> * option<JsonValue>)
+    type IntermediateErrorRepresentation = option<JsonValue> * option<JsonValue>
 
 
     ///

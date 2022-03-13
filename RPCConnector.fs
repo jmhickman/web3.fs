@@ -26,9 +26,9 @@ module RPCConnector =
     let formatRPCString (rpcMsg: HttpRPCMessage) rpcVersion blockArgs =
         match blockArgs with
         | true ->
-            $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcMsg.method}","params":[{bindRPCParam rpcMsg.paramlist}, "latest"], "id":1}}"""
+            $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcMsg.method}","params":[{bindRPCParam rpcMsg.paramList}, "latest"], "id":1}}"""
         | false ->
-            $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcMsg.method}","params":[{bindRPCParam rpcMsg.paramlist}], "id":1}}"""
+            $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcMsg.method}","params":[{bindRPCParam rpcMsg.paramList}], "id":1}}"""
 
 
     //
@@ -85,7 +85,7 @@ module RPCConnector =
         |> Result.bind (fun _params ->
             rpcConnection
                 { method = method |> wrapEthMethod
-                  paramlist = _params |> EthParam })
+                  paramList = _params |> EthParam })
 
     // Above to makeEthRPCCall rpc method params, explicitly for non-1559 call object transactions
     // makeEthCall rpc {from; txntype} contract functionName args
