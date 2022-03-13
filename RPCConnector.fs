@@ -23,12 +23,12 @@ module RPCConnector =
             | _ -> false
         | _ -> false
 
-    let formatRPCString (rpcmsg: HttpRPCMessage) rpcVersion blockArgs =
+    let formatRPCString (rpcMsg: HttpRPCMessage) rpcVersion blockArgs =
         match blockArgs with
         | true ->
-            $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcmsg.method}","params":[{bindRPCParam rpcmsg.paramlist}, "latest"], "id":1}}"""
+            $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcMsg.method}","params":[{bindRPCParam rpcMsg.paramlist}, "latest"], "id":1}}"""
         | false ->
-            $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcmsg.method}","params":[{bindRPCParam rpcmsg.paramlist}], "id":1}}"""
+            $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcMsg.method}","params":[{bindRPCParam rpcMsg.paramlist}], "id":1}}"""
 
 
     //
@@ -41,11 +41,11 @@ module RPCConnector =
         let rec receiveLoop () =
             async {
                 let! msg = mbox.Receive()
-                let (ChannelMessageAndReply (rpcmessage, reply)) = msg
+                let (ChannelMessageAndReply (rpcMessage, reply)) = msg
 
-                rpcmessage.method
+                rpcMessage.method
                 |> needsBlockArgs
-                |> formatRPCString rpcmessage rpcVersion
+                |> formatRPCString rpcMessage rpcVersion
                 |> fun rpcString ->
                     Http.RequestString(
                         url,
@@ -86,3 +86,7 @@ module RPCConnector =
             rpcConnection
                 { method = method |> wrapEthMethod
                   paramlist = _params |> EthParam })
+
+    // Above to makeEthRPCCall rpc method params, explicitly for non-1559 call object transactions
+    // makeEthCall rpc {from; txntype} contract functionName args
+    // makeEthTxn rpc {from; txntype} contract functionName args value

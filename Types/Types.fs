@@ -463,6 +463,7 @@ module Types =
     /// Represents a failure of the JsonValue parser to consume the ABI.
     type ContractParseFailure = ContractParseFailure of string
 
+    type LoadContractResult = Result<DeployedContract, ContractParseFailure>
 
     //
     /// Representations of EVM types in simplistic form. There is no effort made to 

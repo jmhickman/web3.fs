@@ -105,7 +105,7 @@ module ABIFunctions =
     /// will tell me how to format `function` inputs into the Remix deployed contracts 
     /// interaction functionality.
     ///
-    let createInputBytestring (evmDatatypeList: EVMDatatype list) =
+    let createInputByteString (evmDatatypeList: EVMDatatype list) =
         
         // A description of the following code is in order, I think. 
         //
@@ -134,7 +134,7 @@ module ABIFunctions =
         // array. 
         //
         // Due to their extra complication, dynamic types carry the notion of the 
-        // 'cursor.' This is a simple abtraction that tracks the next available 
+        // 'cursor.' This is a simple abstraction that tracks the next available 
         // 'slot' that a blob of data may be placed. The cursor is initialized
         // beyond the end of the array, which looks strange but is the desired 
         // behavior, as this is the first 'slot' to place a dynamic type's contents.
@@ -178,36 +178,36 @@ module ABIFunctions =
                     unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
                 | Uint256 u ->
                     unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
-                | Uint8ArraySz uarr -> 
-                    unpackInputAndProcess tail (acc + (uarr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
-                | Uint32ArraySz uarr ->
-                    unpackInputAndProcess tail (acc + (uarr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
-                | Uint64ArraySz uarr ->
-                    unpackInputAndProcess tail (acc + (uarr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
-                | Uint128ArraySz uarr ->
-                    unpackInputAndProcess tail (acc + (uarr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
-                | Uint256ArraySz uarr ->
-                    unpackInputAndProcess tail (acc + (uarr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
-                | Uint8Array uarr -> 
+                | Uint8ArraySz uArr -> 
+                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
+                | Uint32ArraySz uArr ->
+                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
+                | Uint64ArraySz uArr ->
+                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
+                | Uint128ArraySz uArr ->
+                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
+                | Uint256ArraySz uArr ->
+                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
+                | Uint8Array uArr -> 
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uarr.Length)
-                | Uint32Array uarr ->
+                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + uArr.Length)
+                | Uint32Array uArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uarr.Length)
-                | Uint64Array uarr ->
+                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + uArr.Length)
+                | Uint64Array uArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uarr.Length)
-                | Uint128Array uarr ->
+                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + uArr.Length)
+                | Uint128Array uArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uarr.Length)
-                | Uint256Array uarr ->
+                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + uArr.Length)
+                | Uint256Array uArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uarr.Length)
+                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + uArr.Length)
                 | Int8 i -> 
                     unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
                 | Int32 i -> 
@@ -218,42 +218,42 @@ module ABIFunctions =
                     unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
                 | Int256 i -> 
                     unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
-                | Int8ArraySz iarr -> 
-                    unpackInputAndProcess tail (acc + (iarr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
-                | Int32ArraySz iarr ->
-                    unpackInputAndProcess tail (acc + (iarr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
-                | Int64ArraySz iarr ->
-                    unpackInputAndProcess tail (acc + (iarr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
-                | Int128ArraySz iarr ->
-                    unpackInputAndProcess tail (acc + (iarr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
-                | Int256ArraySz iarr ->
-                    unpackInputAndProcess tail (acc + (iarr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
-                | Int8Array iarr -> 
+                | Int8ArraySz iArr -> 
+                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
+                | Int32ArraySz iArr ->
+                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
+                | Int64ArraySz iArr ->
+                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
+                | Int128ArraySz iArr ->
+                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
+                | Int256ArraySz iArr ->
+                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
+                | Int8Array iArr -> 
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iarr.Length)
-                | Int32Array iarr ->
+                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + iArr.Length)
+                | Int32Array iArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iarr.Length)
-                | Int64Array iarr ->
+                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + iArr.Length)
+                | Int64Array iArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iarr.Length)
-                | Int128Array iarr ->
+                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + iArr.Length)
+                | Int128Array iArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iarr.Length)
-                | Int256Array iarr ->
+                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + iArr.Length)
+                | Int256Array iArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iarr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iarr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iarr.Length)
+                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + iArr.Length)
                 | Bool b -> unpackInputAndProcess tail (acc + convertBoolToInt b) cursor
-                | BoolArraySz barr -> unpackInputAndProcess tail (acc + (barr |> List.map(fun i -> convertBoolToInt i) |> String.concat "")) cursor
-                | BoolArray barr -> 
+                | BoolArraySz bArr -> unpackInputAndProcess tail (acc + (bArr |> List.map convertBoolToInt |> String.concat "")) cursor
+                | BoolArray bArr -> 
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ barr |> List.fold (fun acc s -> $"{acc}{convertBoolToInt s}") (returnCountOfItems barr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + barr.Length)
+                    let tail = tail @ [ bArr |> List.fold (fun acc s -> $"{acc}{convertBoolToInt s}") (returnCountOfItems bArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + bArr.Length)
                 | BytesSz b -> 
                     unpackInputAndProcess tail (acc + $"{b |> strip0x |> padTo32BytesRight}") cursor
                 | BytesSzArraySz bs -> 
@@ -268,28 +268,28 @@ module ABIFunctions =
                     let blob = bs.Length |> byteDivide2 |> formatTypes padTo32BytesLeft |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
                     let tail = tail @ [ blob |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (blob.Length / 64))
-                | BytesArraySz bsarr ->
+                | BytesArraySz bsArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ (unpackInputAndProcess bsarr "" (0 + bsarr.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (bsarr.Length))
-                | BytesArray bsarr ->
+                    let tail = tail @ [ (unpackInputAndProcess bsArr "" (0 + bsArr.Length)) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + (bsArr.Length))
+                | BytesArray bsArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ returnCountOfItems bsarr |> fun s -> s + (unpackInputAndProcess bsarr "" (0 + bsarr.Length)) |> Blob ] 
-                    unpackInputAndProcess tail acc (cursor + (bsarr.Length))
+                    let tail = tail @ [ returnCountOfItems bsArr |> fun s -> s + (unpackInputAndProcess bsArr "" (0 + bsArr.Length)) |> Blob ] 
+                    unpackInputAndProcess tail acc (cursor + (bsArr.Length))
                 | String st -> 
                     let acc = acc + returnCurrentOffset cursor
                     let bs = st |> formatToBytes
                     let blob = bs.Length |> byteDivide2 |> formatTypes padTo32BytesLeft |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
                     let tail = tail @ [ blob |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (blob.Length / 64))
-                | StringArraySz sarr ->
+                | StringArraySz sArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ (unpackInputAndProcess sarr "" (0 + sarr.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (sarr.Length))
-                | StringArray sarr ->
+                    let tail = tail @ [ (unpackInputAndProcess sArr "" (0 + sArr.Length)) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + (sArr.Length))
+                | StringArray sArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ returnCountOfItems sarr |> fun s -> s + (unpackInputAndProcess sarr "" (0 + sarr.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (sarr.Length))
+                    let tail = tail @ [ returnCountOfItems sArr |> fun s -> s + (unpackInputAndProcess sArr "" (0 + sArr.Length)) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + (sArr.Length))
                 | Tuple t ->
                     let acc = acc + returnCurrentOffset cursor
                     let blob = unpackInputAndProcess t "" (0 + t.Length) 
@@ -303,10 +303,10 @@ module ABIFunctions =
                     unpackInputAndProcess tail (acc + $"{f |> strip0x |> padTo32BytesRight }") cursor
                 | FunctionArraySz farr ->
                     unpackInputAndProcess tail (acc + (farr |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
-                | FunctionArray farr -> 
+                | FunctionArray fArr -> 
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ farr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems farr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + farr.Length)
+                    let tail = tail @ [ fArr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems fArr) |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + fArr.Length)
                 | Blob blob -> unpackInputAndProcess tail (acc + blob) cursor
             | [] -> acc
 

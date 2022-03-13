@@ -168,7 +168,6 @@ module Helpers =
         let wei = xs.PadRight(18, '0').Remove(18)
         bigint.Parse(e + wei)
 
-
     
     ///
     /// Returns a Keccak hasher properly configured for 256bit hashes

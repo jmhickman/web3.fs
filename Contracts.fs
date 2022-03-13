@@ -298,7 +298,7 @@ module ContractFunctions =
     /// a failure of the JsonValue parser to yield a top-level representation of the ABI. Can be partially
     /// applied if many contracts will be loaded from a map() of addresses and ABIs
     ///
-    let loadDeployedContract digest address abi : Result<DeployedContract, ContractParseFailure> =
+    let loadDeployedContract digest address abi : LoadContractResult =
         let (ABI _abi) = abi
 
         match JsonValue.TryParse(_abi) with
