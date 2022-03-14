@@ -128,7 +128,7 @@ module ABIFunctions =
         // find a count of the members of the dynamic type (a true count in most 
         // cases except `bytes`, which are a count of the hex bytes instead).
         //
-        // In the simple case, this code will simply format the datatype according
+        // In the simple case, this code will format the datatype according
         // to the rules, and place it in order as it was encountered. In sized 
         // array cases, the logic is much the same, repeated for all members of the
         // array. 

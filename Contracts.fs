@@ -25,7 +25,31 @@ module ContractFunctions =
             digest.Hash(r).Remove(8)
             |> prepend0x
             |> EVMFunctionHash
-
+    
+    ///
+    /// Returns upwrapped EVMSelector value for use in transaction object construction.
+    let bindEVMSelector a =
+        match a with
+        | EVMFunctionHash s -> s
+        | EVMEventSelector s -> s
+    
+    let bindCanonicalRepresentation a =
+        match a with
+        | CanonicalFunctionRepresentation s -> s
+        | CanonicalEventRepresentation s -> s
+        | CanonicalErrorRepresentation s -> s
+        
+        
+    ///
+    /// Returns upwrapped EVMFunctionInput string
+    let bindEVMFunctionInputs a = function EVMFunctionInputs s -> s
+    
+    
+    ///
+    /// Returns upwrapped EVMFunctionOutput string
+    let bindEVMFunctionOutputs a = function EVMFunctionOutputs s -> s
+    
+    
     ///
     /// Returns the text of the "type" property.
     let getInnerTypeText (jVal: JsonValue) = jVal.GetProperty("type").InnerText()
@@ -295,10 +319,11 @@ module ContractFunctions =
 
     ///
     /// Returns a Result containing either a DeployedContract for interaction, or an error indicating
-    /// a failure of the JsonValue parser to yield a top-level representation of the ABI. Can be partially
-    /// applied if many contracts will be loaded from a map() of addresses and ABIs
+    /// a failure of the JsonValue parser to yield a top-level representation of the ABI. `chainId` is in hex notation,
+    /// such as '0x01' (mainnet) or '0x04' (rinkeby). Can be partially applied if many contracts will be loaded from a
+    /// map() of addresses, network and ABIs.
     ///
-    let loadDeployedContract digest address abi : LoadContractResult =
+    let loadDeployedContract digest address chainId abi : LoadContractResult =
         let (ABI _abi) = abi
 
         match JsonValue.TryParse(_abi) with
@@ -316,7 +341,8 @@ module ContractFunctions =
               errors = _errList
               deployedConstructorArguments = ""
               fallback = fallback
-              receive = receive }
+              receive = receive
+              chainId = chainId }
             |> Ok
         | None ->
             ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse"

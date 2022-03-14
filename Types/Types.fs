@@ -24,7 +24,8 @@ module Types =
 
     // Experiment with making this one sample as inclusive as possible and see if it handles the minimal case(s) properly. Better to have just one.
     [<Literal>]
-    let success = """{"jsonrpc":"2.0","id":67,"result":"g"}"""
+    let success =
+        """{"jsonrpc":"2.0","id":67,"result":"g"}"""
 
     type RPCResponse = JsonProvider<success>
 
@@ -310,7 +311,8 @@ module Types =
 
     type HttpRPCMessage =
         { method: RPCMethod
-          paramList: RPCParams }
+          paramList: RPCParams
+          blockHeight: string}
 
 
     //
@@ -372,10 +374,10 @@ module Types =
 
     ///
     /// Describes the mutability of the function.
-    /// Pure: No reads from blockchain state, no writes to blockchain state.
-    /// View: Reads state, no writes to blockchain state.
-    /// Nonpayable: Doesn't require an amount of ETH in the 'value' parameter of the txn object. Changes chain state.
-    /// Payable: Accepts a value from the 'value' parameter of the txn object. Changes chain state.
+    /// * Pure: No reads from blockchain state, no writes to blockchain state.
+    /// * View: Reads state, no writes to blockchain state.
+    /// * Nonpayable: Doesn't require an amount of ETH in the 'value' parameter of the txn object. Changes chain state.
+    /// * Payable: Accepts a value from the 'value' parameter of the txn object. Changes chain state.
     ///
     type StateMutability =
         | Pure
@@ -386,9 +388,9 @@ module Types =
 
     ///
     /// Represents a single function exposed by a Solidity contract.
-    /// name: Name of the function from the source code
-    /// hash: The 'function selector' hash, the Keccak256 hash of the 'canonical representation' of the function.
-    /// config: payable, constant, and mutability description of the function.
+    /// * name: Name of the function from the source code
+    /// * hash: The 'function selector' hash, the Keccak256 hash of the 'canonical representation' of the function.
+    /// * config: payable, constant, and mutability description of the function.
     ///
     type EVMFunction =
         { name: string
@@ -431,6 +433,11 @@ module Types =
         | EVMError of EVMError
 
 
+    type FunctionIndicator =
+        | IndicatedFunction of EVMFunction
+        | ByString of string
+
+    
     ///
     /// Represents an undeployed contract and therefore doesn't have an address.
     /// May add in estimated gas to deploy and constructor arguments later.
@@ -456,74 +463,93 @@ module Types =
           errors: EVMError list
           deployedConstructorArguments: string // todo, probably involves some RPC calls to retrieve
           fallback: string
-          receive: string }
+          receive: string
+          chainId: string }
 
 
     ///
     /// Represents a failure of the JsonValue parser to consume the ABI.
     type ContractParseFailure = ContractParseFailure of string
 
+    
+    ///
+    /// Container for the result of attempting to load a contract from its ABI
     type LoadContractResult = Result<DeployedContract, ContractParseFailure>
 
+
     //
-    /// Representations of EVM types in simplistic form. There is no effort made to 
+    /// Representations of EVM types in simplistic form. There is no effort made to
     /// check that provided values of these types conform to any limitation of said
-    /// types. 
-    /// 
+    /// types.
+    ///
     /// **Warning** Note that while the Solidity documentation assert various `fixed`
     /// and `ufixed` types (describing very large floats with ranges of precision
-    /// of whole and fractional parts), they are currently only partially 
+    /// of whole and fractional parts), they are currently only partially
     /// implemented in the EVM and so are unsupported here at this time.
-    /// 
+    ///
     type EVMDatatype =
-    | Tuple of EVMDatatype list //
-    | TupleArray of EVMDatatype list //
-    | Address of string //
-    | AddressArraySz of string list
-    | AddressArray of string list //
-    | Uint8 of string //
-    | Uint32 of string //
-    | Uint64 of string // 
-    | Uint128 of string //
-    | Uint256 of string //
-    | Uint8ArraySz of string  list //
-    | Uint32ArraySz of string  list //
-    | Uint64ArraySz of string  list //
-    | Uint128ArraySz of string  list //
-    | Uint256ArraySz of string  list //
-    | Uint8Array of string  list //
-    | Uint32Array of string  list //
-    | Uint64Array of string  list //
-    | Uint128Array of string  list //
-    | Uint256Array of string  list //
-    | Int8 of string //
-    | Int32 of string //
-    | Int64 of string //
-    | Int128 of string //
-    | Int256 of string //
-    | Int8ArraySz of string list //
-    | Int32ArraySz of string list //
-    | Int64ArraySz of string list //
-    | Int128ArraySz of string list //
-    | Int256ArraySz of string list //
-    | Int8Array of string list //
-    | Int32Array of string list //
-    | Int64Array of string list //
-    | Int128Array of string list //
-    | Int256Array of string list //
-    | Bool of bool //
-    | BoolArraySz of bool list
-    | BoolArray of bool list
-    | BytesSz of string //
-    | BytesSzArraySz of string list // 
-    | BytesSzArray of string list // 
-    | Bytes of string // 
-    | BytesArraySz of EVMDatatype list // 
-    | BytesArray of EVMDatatype list // 
-    | Function of string //
-    | FunctionArray of string list //
-    | FunctionArraySz of string list //
-    | String of string // 
-    | StringArraySz of EVMDatatype list //
-    | StringArray of EVMDatatype list //
-    | Blob of string //
+        | Tuple of EVMDatatype list //
+        | TupleArray of EVMDatatype list //
+        | Address of string //
+        | AddressArraySz of string list
+        | AddressArray of string list //
+        | Uint8 of string //
+        | Uint32 of string //
+        | Uint64 of string //
+        | Uint128 of string //
+        | Uint256 of string //
+        | Uint8ArraySz of string list //
+        | Uint32ArraySz of string list //
+        | Uint64ArraySz of string list //
+        | Uint128ArraySz of string list //
+        | Uint256ArraySz of string list //
+        | Uint8Array of string list //
+        | Uint32Array of string list //
+        | Uint64Array of string list //
+        | Uint128Array of string list //
+        | Uint256Array of string list //
+        | Int8 of string //
+        | Int32 of string //
+        | Int64 of string //
+        | Int128 of string //
+        | Int256 of string //
+        | Int8ArraySz of string list //
+        | Int32ArraySz of string list //
+        | Int64ArraySz of string list //
+        | Int128ArraySz of string list //
+        | Int256ArraySz of string list //
+        | Int8Array of string list //
+        | Int32Array of string list //
+        | Int64Array of string list //
+        | Int128Array of string list //
+        | Int256Array of string list //
+        | Bool of bool //
+        | BoolArraySz of bool list
+        | BoolArray of bool list
+        | BytesSz of string //
+        | BytesSzArraySz of string list //
+        | BytesSzArray of string list //
+        | Bytes of string //
+        | BytesArraySz of EVMDatatype list //
+        | BytesArray of EVMDatatype list //
+        | Function of string //
+        | FunctionArray of string list //
+        | FunctionArraySz of string list //
+        | String of string //
+        | StringArraySz of EVMDatatype list //
+        | StringArray of EVMDatatype list //
+        | Blob of string //
+
+    
+    ///
+    /// Convenience record that groups together various parameters that a user may wish to remain static between
+    /// calls or txns.
+    /// 
+    type ContractConstants =
+        { address: EthAddress
+          transactionType: string option
+          maxFeePerGas: string option
+          maxPriorityFeePerGas: string option
+          data: EVMDatatype list option
+          blockHeight: string option }
+

@@ -7,15 +7,17 @@ namespace web3.fs
 module RPCMethodFunctions =
     open Types
 
-
-    //
-    // lifters
-    //
-
-
+    ///
+    /// Lifts parameter
     let wrapEthMethod m = m |> EthMethod
+    ///
+    /// Lifts parameter
     let wrapShhMethod m = m |> ShhMethod
+    ///
+    /// Lifts parameter
     let wrapNetMethod m = m |> NetMethod
+    ///
+    /// Lifts parameter
     let wrapWeb3Method m = m |> Web3Method
 
 
@@ -97,14 +99,14 @@ module RPCParamFunctions =
     open Types
     open Helpers
 
-
-    //
-    // lifters
-    //
-
-
+    ///
+    /// Lifts parameter
     let wrapEthParams p = p |> EthParam
+    ///
+    /// Lifts parameter
     let wrapNetParams p = p |> NetParam
+    ///
+    /// Lifts parameter
     let wrapWeb3Params p = p |> Web3Param
 
 
@@ -170,3 +172,5 @@ module RPCParamFunctions =
             | _ -> bindEthParam e
         | NetParam e -> ""
         | Web3Param e -> ""
+
+    
