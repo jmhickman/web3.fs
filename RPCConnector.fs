@@ -248,7 +248,6 @@ module RPCConnector =
           uaccessList = []
           uchainId = contract.chainId }
         
-        |> fun a -> printfn $"{a}"; a
         |> validateRPCParams
         |> Result.bind
             (fun _params ->
