@@ -1,16 +1,22 @@
 namespace web3.fs
 
+open web3.fs.Types
+
 module ContractFunctions =
     open System
     open FSharp.Data
     open SHA3Core.Keccak
 
     open Helpers
-    open Types
-
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Unwrappers/binders
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
     ///
     /// Returns a function selector given a configured Keccak instance and the
     /// canonical representation of a function.
+    /// 
     let returnFunctionSelector (digest: Keccak) (rep: CanonicalRepresentation) =
         match rep with
         | CanonicalFunctionRepresentation r ->
@@ -26,6 +32,7 @@ module ContractFunctions =
             |> prepend0x
             |> EVMFunctionHash
     
+    
     ///
     /// Returns upwrapped EVMSelector value for use in transaction object construction.
     let bindEVMSelector a =
@@ -33,6 +40,9 @@ module ContractFunctions =
         | EVMFunctionHash s -> s
         | EVMEventSelector s -> s
     
+    
+    ///
+    /// Returns unwrapped canonical representation of a function, event or error.
     let bindCanonicalRepresentation a =
         match a with
         | CanonicalFunctionRepresentation s -> s
@@ -41,32 +51,36 @@ module ContractFunctions =
         
         
     ///
-    /// Returns upwrapped EVMFunctionInput string
-    let bindEVMFunctionInputs a = function EVMFunctionInputs s -> s
+    /// Returns upwrapped EVMFunctionInput string.
+    let bindEVMFunctionInputs = function EVMFunctionInputs s -> s
     
     
     ///
-    /// Returns upwrapped EVMFunctionOutput string
-    let bindEVMFunctionOutputs a = function EVMFunctionOutputs s -> s
+    /// Returns upwrapped EVMFunctionOutput string.
+    let bindEVMFunctionOutputs = function EVMFunctionOutputs s -> s
+    
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // JsonValue functions for testing/extracting properties
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     
     ///
     /// Returns the text of the "type" property.
     let getInnerTypeText (jVal: JsonValue) = jVal.GetProperty("type").InnerText()
 
+    
     ///
     /// Predicate for filters
     let testPropertyInnerText (s: string) (jVal: JsonValue) =
         jVal.GetProperty("type").InnerText() = s
 
+    
     ///
     /// Checks if the JsonValue 'type' value is tuple. Tupled values are treated differently in the logic.
-    let checkForTuple (jVal: JsonValue) =
-        if (getInnerTypeText jVal).StartsWith("tuple") then
-            true
-        else
-            false
+    let checkForTuple (jVal: JsonValue) = (getInnerTypeText jVal).StartsWith("tuple") 
 
+    
     ///
     /// Tupled values in the ABI can be 'tuple' 'tuple[]' or 'tuple[k]'. Grab the glyphs if present for appending to the end
     /// of the joined strings later.
@@ -142,7 +156,12 @@ module ContractFunctions =
         |> Array.filter (testPropertyInnerText "fallback")
         |> Array.tryHead
 
-
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Contract function, event and error extraction
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     ///
     /// Recursively send tupled components through the function in order to extract and format nested values properly.
     /// Non-tupled values are concatenated directly. ()'s inserted as needed.
@@ -201,10 +220,7 @@ module ContractFunctions =
     let returnAnonymous (b: JsonValue option) =
         match b with
         | Some jVal ->
-            if jVal.AsBoolean() = true then
-                true
-            else
-                false
+            jVal.AsBoolean()
         | None -> false
 
 
@@ -317,6 +333,11 @@ module ContractFunctions =
         |> Array.toList
 
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Contract representation functions
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     ///
     /// Returns a Result containing either a DeployedContract for interaction, or an error indicating
     /// a failure of the JsonValue parser to yield a top-level representation of the ABI. `chainId` is in hex notation,
@@ -339,7 +360,6 @@ module ContractFunctions =
               functions = _fList
               events = _eventList
               errors = _errList
-              deployedConstructorArguments = ""
               fallback = fallback
               receive = receive
               chainId = chainId }
@@ -347,3 +367,27 @@ module ContractFunctions =
         | None ->
             ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse"
             |> Error
+
+    
+    ///
+    /// Returns an UndeployedContract for use in `deployEthContract`. 
+    let returnUndeployedContract digest bytecode constructorArguments chainId abi =
+        let (ABI _abi) = abi
+        
+        match JsonValue.TryParse(_abi) with
+        | Some json ->
+            let _j = json.AsArray()
+            let (_, hash), _, _ = parseABIForConstructorFallbackReceive digest _j
+            {
+                abi = abi
+                constructor = (hash |> EVMFunctionHash)
+                bytecode = bytecode
+                chainId = chainId
+                constructorArguments = constructorArguments
+            }
+            |> Ok
+        | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error
+        
+    
+    //let convertToDeployedContract (newContract: UndeployedContract) (address: EthAddress) : DeployedContract =
+        

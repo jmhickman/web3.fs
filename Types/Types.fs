@@ -13,9 +13,7 @@ module Types =
     // Misc types
     //
 
-
     let weiDiv = 1000000000000000000I
-
 
     //
     // Type Provider parser setup
@@ -35,10 +33,13 @@ module Types =
 
     type ParsedABI = JsonProvider<sampleABI, SampleIsList=true>
 
+    [<Literal>]
+    let sampleBytecode =
+        """{"functionDebugData":{},"generatedSources":[],"linkReferences":{},"object":"608060405234801561001057600080fd5b5061027a806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c806357172feb14610030575b600080fd5b61004a600480360381019061004591906100db565b610060565b6040516100579190610133565b60405180910390f35b600060019050919050565b600061007e61007984610173565b61014e565b90508281526020810184848401111561009a57610099610224565b5b6100a58482856101b0565b509392505050565b600082601f8301126100c2576100c161021f565b5b81356100d284826020860161006b565b91505092915050565b6000602082840312156100f1576100f061022e565b5b600082013567ffffffffffffffff81111561010f5761010e610229565b5b61011b848285016100ad565b91505092915050565b61012d816101a4565b82525050565b60006020820190506101486000830184610124565b92915050565b6000610158610169565b905061016482826101bf565b919050565b6000604051905090565b600067ffffffffffffffff82111561018e5761018d6101f0565b5b61019782610233565b9050602081019050919050565b60008115159050919050565b82818337600083830152505050565b6101c882610233565b810181811067ffffffffffffffff821117156101e7576101e66101f0565b5b80604052505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b600080fd5b600080fd5b600080fd5b600080fd5b6000601f19601f830116905091905056fea264697066735822122019ba83a5b2836d1ab300440fc2bcaaa96772566d18c40aaa128366bf6a3ed13a64736f6c63430008070033","opcodes":"PUSH10x80PUSH10x40MSTORECALLVALUEDUP1ISZEROPUSH20x10JUMPIPUSH10x0DUP1REVERTJUMPDESTPOPPUSH20x27ADUP1PUSH20x20PUSH10x0CODECOPYPUSH10x0RETURNINVALIDPUSH10x80PUSH10x40MSTORECALLVALUEDUP1ISZEROPUSH20x10JUMPIPUSH10x0DUP1REVERTJUMPDESTPOPPUSH10x4CALLDATASIZELTPUSH20x2BJUMPIPUSH10x0CALLDATALOADPUSH10xE0SHRDUP1PUSH40x57172FEBEQPUSH20x30JUMPIJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH20x4APUSH10x4DUP1CALLDATASIZESUBDUP2ADDSWAP1PUSH20x45SWAP2SWAP1PUSH20xDBJUMPJUMPDESTPUSH20x60JUMPJUMPDESTPUSH10x40MLOADPUSH20x57SWAP2SWAP1PUSH20x133JUMPJUMPDESTPUSH10x40MLOADDUP1SWAP2SUBSWAP1RETURNJUMPDESTPUSH10x0PUSH10x1SWAP1POPSWAP2SWAP1POPJUMPJUMPDESTPUSH10x0PUSH20x7EPUSH20x79DUP5PUSH20x173JUMPJUMPDESTPUSH20x14EJUMPJUMPDESTSWAP1POPDUP3DUP2MSTOREPUSH10x20DUP2ADDDUP5DUP5DUP5ADDGTISZEROPUSH20x9AJUMPIPUSH20x99PUSH20x224JUMPJUMPDESTJUMPDESTPUSH20xA5DUP5DUP3DUP6PUSH20x1B0JUMPJUMPDESTPOPSWAP4SWAP3POPPOPPOPJUMPJUMPDESTPUSH10x0DUP3PUSH10x1FDUP4ADDSLTPUSH20xC2JUMPIPUSH20xC1PUSH20x21FJUMPJUMPDESTJUMPDESTDUP2CALLDATALOADPUSH20xD2DUP5DUP3PUSH10x20DUP7ADDPUSH20x6BJUMPJUMPDESTSWAP2POPPOPSWAP3SWAP2POPPOPJUMPJUMPDESTPUSH10x0PUSH10x20DUP3DUP5SUBSLTISZEROPUSH20xF1JUMPIPUSH20xF0PUSH20x22EJUMPJUMPDESTJUMPDESTPUSH10x0DUP3ADDCALLDATALOADPUSH80xFFFFFFFFFFFFFFFFDUP2GTISZEROPUSH20x10FJUMPIPUSH20x10EPUSH20x229JUMPJUMPDESTJUMPDESTPUSH20x11BDUP5DUP3DUP6ADDPUSH20xADJUMPJUMPDESTSWAP2POPPOPSWAP3SWAP2POPPOPJUMPJUMPDESTPUSH20x12DDUP2PUSH20x1A4JUMPJUMPDESTDUP3MSTOREPOPPOPJUMPJUMPDESTPUSH10x0PUSH10x20DUP3ADDSWAP1POPPUSH20x148PUSH10x0DUP4ADDDUP5PUSH20x124JUMPJUMPDESTSWAP3SWAP2POPPOPJUMPJUMPDESTPUSH10x0PUSH20x158PUSH20x169JUMPJUMPDESTSWAP1POPPUSH20x164DUP3DUP3PUSH20x1BFJUMPJUMPDESTSWAP2SWAP1POPJUMPJUMPDESTPUSH10x0PUSH10x40MLOADSWAP1POPSWAP1JUMPJUMPDESTPUSH10x0PUSH80xFFFFFFFFFFFFFFFFDUP3GTISZEROPUSH20x18EJUMPIPUSH20x18DPUSH20x1F0JUMPJUMPDESTJUMPDESTPUSH20x197DUP3PUSH20x233JUMPJUMPDESTSWAP1POPPUSH10x20DUP2ADDSWAP1POPSWAP2SWAP1POPJUMPJUMPDESTPUSH10x0DUP2ISZEROISZEROSWAP1POPSWAP2SWAP1POPJUMPJUMPDESTDUP3DUP2DUP4CALLDATACOPYPUSH10x0DUP4DUP4ADDMSTOREPOPPOPPOPJUMPJUMPDESTPUSH20x1C8DUP3PUSH20x233JUMPJUMPDESTDUP2ADDDUP2DUP2LTPUSH80xFFFFFFFFFFFFFFFFDUP3GTORISZEROPUSH20x1E7JUMPIPUSH20x1E6PUSH20x1F0JUMPJUMPDESTJUMPDESTDUP1PUSH10x40MSTOREPOPPOPPOPJUMPJUMPDESTPUSH320x4E487B7100000000000000000000000000000000000000000000000000000000PUSH10x0MSTOREPUSH10x41PUSH10x4MSTOREPUSH10x24PUSH10x0REVERTJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH10x0PUSH10x1FNOTPUSH10x1FDUP4ADDANDSWAP1POPSWAP2SWAP1POPJUMPINVALIDLOG2PUSH50x69706673580x22SLTKECCAK256NOT0xBADUP40xA50xB2DUP4PUSH140x1AB300440FC2BCAAA96772566D180xC4EXP0xAASLTDUP4PUSH70xBF6A3ED13A6473PUSH160x6C634300080700330000000000000000","sourceMap":"142:117:0:-:0;;;;;;;;;;;;;;;;;;;"}"""
     // found how to fix this, will address later
     //type RPCBlockResponse = JsonProvider<"./Samples/blocksample.json">
 
-
+    type ContractBytecode = JsonProvider<sampleBytecode>
     //
     // Transaction Envelope types
     //
@@ -77,6 +78,7 @@ module Types =
 
     type EthParamAccounts = string list
     type EthParamBlockNumber = string list
+
 
     // There is a tremendous amount of leeway in acceptable RPC messages in terms of what is
     // included. This makes the type pretty gross-looking. data is the only properly 'required'
@@ -312,15 +314,24 @@ module Types =
     type HttpRPCMessage =
         { method: RPCMethod
           paramList: RPCParams
-          blockHeight: string}
+          blockHeight: string }
 
-
+    ///
+    /// Represents a failure of the JsonValue parser to consume the ABI.
+    //type ContractParseFailure = ContractParseFailure of string
+    //type ConnectionError = ConnectionError of string
+    
+    type Web3Error =
+        | ContractParseFailure of string
+        | ConnectionError of string
+        | DataValidatorError of string
+    
     //
     // MailboxProcessor types
     //
 
 
-    type MailboxChannel = ChannelMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, string>>
+    type MailboxChannel = ChannelMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, Web3Error>>
     type HttpRPCMailbox = MailboxProcessor<MailboxChannel>
 
 
@@ -401,6 +412,7 @@ module Types =
           //payable: string
           config: StateMutability }
 
+
     ///
     /// Represents an event emitted by the EVM runtime during execution.
     /// Events may be listened for and acted upon.
@@ -410,6 +422,7 @@ module Types =
           anonymous: bool
           inputs: EVMFunctionInputs
           hash: EVMSelector }
+
 
     ///
     /// Represents the Error function type of a Solidity contract.
@@ -433,50 +446,30 @@ module Types =
         | EVMError of EVMError
 
 
+    ///
+    /// Used during `makeEth_` calls to indicate the function being used in the call. `IndicatedFunction`
+    /// is also returned from the function search helper.
     type FunctionIndicator =
         | IndicatedFunction of EVMFunction
         | ByString of string
 
-    
-    ///
-    /// Represents an undeployed contract and therefore doesn't have an address.
-    /// May add in estimated gas to deploy and constructor arguments later.
-    ///
-    type UndeployedContract =
-        { abi: ABI
-          functions: EVMFunction list
-          events: EVMEvent list
-          errors: EVMError list
-          constructor: EVMFunction
-          fallback: EVMFunction
-          receive: EVMFunction
-          bytecode: string } // might need some checking?
 
+    type FunctionSearchTerm =
+        | Name of string
+        | SearchFunctionHash of EVMSelector
+        | SearchFunctionInputs of EVMFunctionInputs
+        | SearchFunctionOutputs of EVMFunctionOutputs
+        | SearchFunctionMutability of StateMutability
 
-    ///
-    /// Represents a deployed contract.
-    type DeployedContract =
-        { address: EthAddress
-          abi: ABI
-          functions: EVMFunction list
-          events: EVMEvent list
-          errors: EVMError list
-          deployedConstructorArguments: string // todo, probably involves some RPC calls to retrieve
-          fallback: string
-          receive: string
-          chainId: string }
-
-
-    ///
-    /// Represents a failure of the JsonValue parser to consume the ABI.
-    type ContractParseFailure = ContractParseFailure of string
 
     
+
+
     ///
-    /// Container for the result of attempting to load a contract from its ABI
-    type LoadContractResult = Result<DeployedContract, ContractParseFailure>
+    /// 'Object' property of json output from `solc`.
+    type RawContractBytecode = RawContractBytecode of string
 
-
+    
     //
     /// Representations of EVM types in simplistic form. There is no effort made to
     /// check that provided values of these types conform to any limitation of said
@@ -488,63 +481,97 @@ module Types =
     /// implemented in the EVM and so are unsupported here at this time.
     ///
     type EVMDatatype =
-        | Tuple of EVMDatatype list //
-        | TupleArray of EVMDatatype list //
-        | Address of string //
+        | Tuple of EVMDatatype list
+        | TupleArray of EVMDatatype list
+        | Address of string
         | AddressArraySz of string list
-        | AddressArray of string list //
-        | Uint8 of string //
-        | Uint32 of string //
-        | Uint64 of string //
-        | Uint128 of string //
-        | Uint256 of string //
-        | Uint8ArraySz of string list //
-        | Uint32ArraySz of string list //
-        | Uint64ArraySz of string list //
-        | Uint128ArraySz of string list //
-        | Uint256ArraySz of string list //
-        | Uint8Array of string list //
-        | Uint32Array of string list //
-        | Uint64Array of string list //
-        | Uint128Array of string list //
-        | Uint256Array of string list //
-        | Int8 of string //
-        | Int32 of string //
-        | Int64 of string //
-        | Int128 of string //
-        | Int256 of string //
-        | Int8ArraySz of string list //
-        | Int32ArraySz of string list //
-        | Int64ArraySz of string list //
-        | Int128ArraySz of string list //
-        | Int256ArraySz of string list //
-        | Int8Array of string list //
-        | Int32Array of string list //
-        | Int64Array of string list //
-        | Int128Array of string list //
-        | Int256Array of string list //
-        | Bool of bool //
+        | AddressArray of string list
+        | Uint8 of string
+        | Uint32 of string
+        | Uint64 of string
+        | Uint128 of string
+        | Uint256 of string
+        | Uint8ArraySz of string list
+        | Uint32ArraySz of string list
+        | Uint64ArraySz of string list
+        | Uint128ArraySz of string list
+        | Uint256ArraySz of string list
+        | Uint8Array of string list
+        | Uint32Array of string list
+        | Uint64Array of string list
+        | Uint128Array of string list
+        | Uint256Array of string list
+        | Int8 of string
+        | Int32 of string
+        | Int64 of string
+        | Int128 of string
+        | Int256 of string
+        | Int8ArraySz of string list
+        | Int32ArraySz of string list
+        | Int64ArraySz of string list
+        | Int128ArraySz of string list
+        | Int256ArraySz of string list
+        | Int8Array of string list
+        | Int32Array of string list
+        | Int64Array of string list
+        | Int128Array of string list
+        | Int256Array of string list
+        | Bool of bool
         | BoolArraySz of bool list
         | BoolArray of bool list
-        | BytesSz of string //
-        | BytesSzArraySz of string list //
-        | BytesSzArray of string list //
-        | Bytes of string //
-        | BytesArraySz of EVMDatatype list //
-        | BytesArray of EVMDatatype list //
-        | Function of string //
-        | FunctionArray of string list //
-        | FunctionArraySz of string list //
-        | String of string //
-        | StringArraySz of EVMDatatype list //
-        | StringArray of EVMDatatype list //
-        | Blob of string //
+        | BytesSz of string
+        | BytesSzArraySz of string list
+        | BytesSzArray of string list
+        | Bytes of string
+        | BytesArraySz of EVMDatatype list
+        | BytesArray of EVMDatatype list
+        | Function of string
+        | FunctionArray of string list
+        | FunctionArraySz of string list
+        | String of string
+        | StringArraySz of EVMDatatype list
+        | StringArray of EVMDatatype list
+        | Blob of string
 
+
+    ///
+    /// Represents an undeployed contract and therefore doesn't have an address.
+    /// May add in estimated gas to deploy and constructor arguments later.
+    ///
+    type UndeployedContract =
+        { abi: ABI
+          constructor: EVMSelector
+          bytecode: RawContractBytecode
+          chainId: string
+          constructorArguments: EVMDatatype list option}
+
+
+    ///
+    /// Represents a deployed contract.
+    type DeployedContract =
+        { address: EthAddress
+          abi: ABI
+          functions: EVMFunction list
+          events: EVMEvent list
+          errors: EVMError list
+          //deployedConstructorArguments: string // todo, probably involves some RPC calls to retrieve
+          fallback: string
+          receive: string
+          chainId: string }
+        
+        
+    
+
+
+    ///
+    /// Container for the result of attempting to load a contract from its ABI.
+    type LoadContractResult = Result<DeployedContract, Web3Error>    
+    
     
     ///
     /// Convenience record that groups together various parameters that a user may wish to remain static between
     /// calls or txns.
-    /// 
+    ///
     type ContractConstants =
         { address: EthAddress
           transactionType: string option
@@ -552,4 +579,3 @@ module Types =
           maxPriorityFeePerGas: string option
           data: EVMDatatype list option
           blockHeight: string option }
-

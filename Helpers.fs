@@ -1,9 +1,8 @@
 namespace web3.fs
 
-open web3.fs.Types
-
 module Helpers =
     open System
+    open System.IO
     open System.Text
     open System.Globalization
     open System.Text.RegularExpressions
@@ -11,6 +10,8 @@ module Helpers =
     open FSharp.Json
     open SHA3Core.Enums
     open SHA3Core.Keccak
+    
+    open Types
 
 
     ///
@@ -38,14 +39,50 @@ module Helpers =
 
         (txn, maxFeePerGas, maxPriorityFeePerGas, data)
 
-    let bindFunctionIndicator (s: FunctionIndicator) contract =
+    
+    ///
+    /// Used by the `makeEth_` functions to handle users specifying functions by name (string) or by directly supplying
+    /// the function.
+    ///  
+    let bindFunctionIndicator  contract (s: FunctionIndicator) =
         match s with
         | IndicatedFunction f -> f
         | ByString s ->
             contract.functions
             |> List.find (fun p -> p.name = s)
 
-
+    
+    ///
+    /// Returns a list of FunctionIndicators that matched the input FunctionSearchTerm criteria. These 
+    /// FunctionIndicators can be used directly in `makeEth_` calls instead of using `ByString "someFunction"`. This is 
+    /// also a way to find the right function if a contract uses overloads, by filtering for the outputs or inputs.
+    /// 
+    let findFunction (search: FunctionSearchTerm) contract : FunctionIndicator list =
+            match search with
+            | Name s ->
+                contract.functions
+                |> List.filter(fun p -> p.name = s)
+                |> List.map (fun f -> f |> IndicatedFunction)
+            | SearchFunctionHash evmSelector ->
+                contract.functions
+                |> List.filter(fun p -> p.hash = evmSelector)
+                |> List.map (fun f -> f |> IndicatedFunction)
+            | SearchFunctionInputs evmFunctionInputs ->
+                contract.functions
+                |> List.filter(fun p -> p.inputs = evmFunctionInputs)
+                |> List.map (fun f -> f |> IndicatedFunction)
+            | SearchFunctionOutputs evmFunctionOutputs ->
+                contract.functions
+                |> List.filter(fun p -> p.outputs = evmFunctionOutputs)
+                |> List.map (fun f -> f |> IndicatedFunction)
+            | SearchFunctionMutability stateMutability ->
+                contract.functions
+                |> List.filter(fun p -> p.config = stateMutability)
+                |> List.map (fun f -> f |> IndicatedFunction)
+        
+                
+    ///
+    /// Returns a list containing contracts whose import succeeded.  
     let bindDeployedContract r =
         match r with
         | Ok o -> [ o ]
@@ -53,14 +90,14 @@ module Helpers =
             printfn "Contract failed to import"
             []
 
-    //
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC Data validation
-    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    
     ///
-    /// Returns a string option after evaluating an input with a regex provided
-    /// to the function.
-    ///
+    /// Returns a string option after evaluating an input with a regex provided to the function.
     let validateInputs (reg: string) t =
         let reg = Regex(reg)
 
@@ -68,20 +105,24 @@ module Helpers =
         | true -> Some t
         | false -> None
 
+    
     ///
     /// Verifies the correctness of the Transaction type of a call.
     let validateTxnType t =
         validateInputs "^0x([0-9,a-f,A-F]){1,2}$" t
 
+    
     ///
     /// Verifies the correctness of QUANTITY data in a call.
     let validateQuantity s =
         validateInputs "^0x([1-9a-f]+[0-9a-f]*|0)$" s
 
+    
     ///
     /// Verifies the correctness of DATA data in a call.
     let validateData s = validateInputs "^0x([0-9a-f]{2})*$" s
 
+    
     ///
     /// Verifies the correctness of ADDRESS data in a call.
     let validateAddress s =
@@ -111,15 +152,15 @@ module Helpers =
             |> EthParam1559Call
             |> Ok
         | None ->
-            "Call/TXN object 'data' value is missing or not valid"
+            "Call/TXN object 'data' value is missing or not valid" |> DataValidatorError
             |> Error
 
 
-
-    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Parameter handlers
-    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    
     ///
     /// Sets Json output to be compliant with RPC expectations.
     let jsonConfig =
@@ -138,9 +179,9 @@ module Helpers =
         |> fun s -> s.TrimEnd(',', ' ')
 
 
-    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Hex and bigint functions
-    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ///
     /// Prepends a hexadecimal specifier to a string.
@@ -156,8 +197,7 @@ module Helpers =
             s
 
     ///
-    /// Returns a hexadecimal string with no padding. Useful for QUANTITY values in
-    /// the ABI.
+    /// Returns a hexadecimal string with no padding. Useful for QUANTITY values in the ABI.
     let bigintToHex num =
         num |> fun n -> bigint.Parse(n).ToString("X")
 
@@ -179,6 +219,7 @@ module Helpers =
     ///
     /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
     /// so mind what strings are passed in.
+    /// 
     let hexToBigInt hexString =
         bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
 
@@ -188,9 +229,9 @@ module Helpers =
     let strip0xAndConvertToBigInt = strip0x >> hexToBigInt
 
 
-    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Wei/ETH conversion
-    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ///
     /// Returns a string representation of the conversion of wei to Eth.
@@ -199,6 +240,7 @@ module Helpers =
         let rem = frac.ToString().PadLeft(18, '0')
         $"{eth.ToString()}.{rem.Remove(17)}"
 
+    
     ///
     /// Returns a bigint for working in wei.
     let convertEthToWei (eth: string) =
@@ -215,11 +257,14 @@ module Helpers =
 
 
     ///
-    /// Returns a Keccak hasher properly configured for 256bit hashes
+    /// Returns a Keccak hasher properly configured for 256bit hashes.
     let newKeccakDigest = Keccak(KeccakBitType.K256)
 
+    
+    ///
+    /// Returns a string formatted into a hexadecimal representation of its UTF-8 bytes.
     let formatToBytes (s: string) =
-        Encoding.ASCII.GetBytes(s)
+        Encoding.UTF8.GetBytes(s)
         |> Array.map (fun (x: byte) -> String.Format("{0:X2}", x))
         |> String.concat ""
 
@@ -239,3 +284,15 @@ module Helpers =
         data = None
         blockHeight = Some LATEST
     }
+    
+    
+    ///
+    /// Returns the bytecode of a compiled contract from a json file, as in the output of the `solc` binary. Note, the
+    /// path string should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
+    /// slashes, i.e. "c:/users/user/some/more/path/contract.json"
+    /// 
+    let returnBytecodeFromFile (path: string) =
+        let file = new StreamReader(path)
+        let obj = ContractBytecode.Parse(file.ReadToEnd()) |> fun r -> r.Object
+        file.Dispose()
+        obj |> RawContractBytecode

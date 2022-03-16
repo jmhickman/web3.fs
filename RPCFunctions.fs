@@ -1,31 +1,28 @@
 namespace web3.fs
 
-//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC method module
-//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 module RPCMethodFunctions =
     open Types
 
     ///
-    /// Lifts parameter
+    /// Lifts parameter.
     let wrapEthMethod m = m |> EthMethod
     ///
-    /// Lifts parameter
+    /// Lifts parameter.
     let wrapShhMethod m = m |> ShhMethod
     ///
-    /// Lifts parameter
+    /// Lifts parameter.
     let wrapNetMethod m = m |> NetMethod
     ///
-    /// Lifts parameter
+    /// Lifts parameter.
     let wrapWeb3Method m = m |> Web3Method
 
-
-    //
-    // Convert calltype into json string representation
-    //
-
-
+    
+    ///
+    /// Binds EthMethod to a string representation of the desired call.
     let bindEthMethod (m: EthMethod) =
         match m with
         | EthMethod.Accounts -> "eth_accounts"
@@ -82,6 +79,9 @@ module RPCMethodFunctions =
     // placeholder
     let bindWeb3Method m = ""
 
+    
+    ///
+    /// Calls into the correct binder based on the incoming type.
     let bindRPCMethod method =
         match method with
         | EthMethod m -> bindEthMethod m
@@ -90,9 +90,9 @@ module RPCMethodFunctions =
         | Web3Method m -> bindWeb3Method m
 
 
-//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC Parameter module
-//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 module RPCParamFunctions =
@@ -115,7 +115,6 @@ module RPCParamFunctions =
     // will apparently be deprecated soon, if not already. Log types
     // not yet implemented.
     //
-
     let bindEthParam (p: EthParam) =
         match p with
         | EthParamAccounts _ -> ""
@@ -160,7 +159,9 @@ module RPCParamFunctions =
         | EthParamUninstallFilter p -> concatParamString p
         | _ -> "" //not great
 
-
+    
+    ///
+    /// Calls into the correct binder based upon in the incoming type.
     let bindRPCParam p =
         match p with
         | EthParam e ->
@@ -172,5 +173,4 @@ module RPCParamFunctions =
             | _ -> bindEthParam e
         | NetParam e -> ""
         | Web3Param e -> ""
-
     

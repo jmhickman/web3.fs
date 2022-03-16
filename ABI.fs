@@ -5,9 +5,9 @@ module ABIFunctions =
     open Types
     open Helpers
 
-    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // ABI Helpers
-    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ///
     /// Convenience function for mapping boolean values to 32 byte integer equivalents.
@@ -20,22 +20,26 @@ module ABIFunctions =
     /// Returns a string padded on the left to 32 hex bytes.
     let padTo32BytesLeft (s: string) = s.PadLeft(64, '0')
 
+    
     ///
     /// Returns a string padded on the right to 32 hex bytes.
     let padTo32BytesRight (s: string) = s.PadRight(64, '0')
 
+    
     ///
     /// Returns a string padded on the left to 32 hex bytes with 'f'
     /// characters, as a special case for negative integers.
     /// 
     let padTo32BytesLeftF (s: string) = s.PadLeft(64, 'f')
 
+    
     ///
     /// Returns a formatted and padded string representing a EVM 'word' of 32 bytes.
     /// Intended to be used with `padTo32BytesRight` or `padTo32BytesLeft` on 
     /// `bytes` types, numeric types and `string` types. 
     /// 
     let formatTypes (f: string -> string) s = bigint.Parse(s).ToString("X").ToLowerInvariant() |> f
+
 
     ///
     /// Returns the properly padded hexadecimal representation of a signed value.
@@ -66,11 +70,13 @@ module ABIFunctions =
     let returnCountOfItems (items: 'a list) =
         padTo32BytesLeft (items.Length.ToString())
 
+
     ///
     /// Convenience function to compensate for two string characters being one byte
     /// of representation in the `bytes` type.
     /// 
     let byteDivide2 i = (i / 2).ToString()
+
 
     ///
     /// Returns a 'wrapped' formatted bytestring, given a `bytes` EVM datatype. These
