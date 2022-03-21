@@ -10,6 +10,7 @@
     <Compile Include="Contracts.fs" />
     <Compile Include="RPCFunctions.fs" />
     <Compile Include="RPCConnector.fs" />
+    <Compile Include="ReceiptManager.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="4.2.7" />

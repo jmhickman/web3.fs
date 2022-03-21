@@ -6,7 +6,6 @@ module RPCConnector =
     open FSharp.Data
     open FSharp.Data.HttpRequestHeaders
 
-
     open Helpers
     open RPCMethodFunctions
     open RPCParamFunctions
@@ -18,7 +17,7 @@ module RPCConnector =
     // RPC helpers
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    
+
     ///
     /// Returns a Txn object for use in the validation function `ValidateRPCParams`
     let createUnvalidatedTxn
@@ -51,7 +50,7 @@ module RPCConnector =
           uaccessList = []
           uchainId = contract.chainId }
 
-    
+
     ///
     /// Alias for `createUnvalidatedTxn` with the value set to 0.
     let createUnvalidatedCall
@@ -62,8 +61,8 @@ module RPCConnector =
         : UnvalidatedEthParam1559Call =
 
         createUnvalidatedTxn constants contract evmFunction arguments "0"
-        
-    
+
+
     ///
     /// Some RPC calls require a parameter indicating at what block height the call should be performed against. This
     /// finds calls that require it in order to insert a parameter passed in from the user, and ignores it otherwise.
@@ -76,7 +75,7 @@ module RPCConnector =
             | _ -> false
         | _ -> false
 
-    
+
     ///
     /// Returns properly formatted JSON-RPC values to send to the RPC.
     let formatRPCString (rpcMsg: HttpRPCMessage) rpcVersion blockHeight blockArgs =
@@ -98,56 +97,90 @@ module RPCConnector =
         let rec receiveLoop () =
             async {
                 let! msg = mbox.Receive()
-                let (ChannelMessageAndReply (rpcMessage, reply)) = msg
+                
+                let (TransactionMessageAndReply (rpcMessage, reply)) = msg
 
                 rpcMessage.method
                 |> needsBlockArgs
                 |> formatRPCString rpcMessage rpcVersion rpcMessage.blockHeight
                 |> fun rpcString ->
+                    //printfn $"{rpcString}"
                     Http.RequestString(
                         url,
-                        headers = [ ContentType HttpContentTypes.Json ],
+                        headers = [ ContentType HttpContentTypes.Json; Origin "Web3.fs" ],
                         body = TextRequest rpcString
                     )
                 |> fun resp ->
-                    let j = RPCResponse.Parse resp
-
-                    match j.JsonValue.TryGetProperty("error") with
-                    | Some e -> $"RPC error message: {e}" |> ConnectionError |> Error |> reply.Reply
-                    | None -> j |> Ok |> reply.Reply
+                    
+                    let maybe = NullableRPCResponse.Parse resp
+                    match maybe.Result with
+                    | Some _ ->
+                        let j = RPCResponse.Parse resp
+                        match j.JsonValue.TryGetProperty("error") with
+                        | Some e ->
+                            $"RPC error message: {e}"
+                            |> ConnectionError
+                            |> Error
+                            |> reply.Reply
+                        | None ->
+                            j |> Ok |> reply.Reply
+                    | None -> RPCResponse.Parse rpcNullBind |> Ok |> reply.Reply
+                        
 
                 do! receiveLoop ()
             }
 
         receiveLoop ()
 
-    
+
     ///
     /// Returns the MailboxProcessor that oversees Http communications with the RPC
     let startRpcConnector (url: string) rpcVersion =
         MailboxProcessor.Start(rpcConnector url rpcVersion)
 
-    
-    ///
-    /// Function allowing easier pipelining of RPC connection and the two-way communication channel. 
-    let channelMessage (mbox: HttpRPCMailbox) (rpcMessage: HttpRPCMessage) =
-        mbox.PostAndReply(fun c -> ChannelMessageAndReply(rpcMessage, c))
 
-    
+    ///
+    /// Function allowing easier pipelining of RPC connection and the two-way communication channel.
+    let channelMessage (mbox: HttpRPCMailbox) (rpcMessage: HttpRPCMessage) =
+        mbox.PostAndReply(fun c -> TransactionMessageAndReply(rpcMessage, c))
+
+
     ///
     /// Returns a partially applied function ready to take an HttpRPCMessage and send it to the RPC endpoint and
     /// return a Result.
-    /// 
+    ///
     let createWeb3Connection url rpcVersion =
         (url, rpcVersion)
         ||> startRpcConnector
         |> channelMessage
 
-    
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Ethereum call functions using the RPC connection
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
+
+    ///
+    /// Creates an Ethereum RPC request whose purpose is typically to query the RPC node for chain-based or network-
+    /// based data. Examples are retrieving the contents of a block, checking a transaction receipt, or getting an
+    /// account balance.
+    /// * rpcConnection: An activated RPC connection from `createWeb3Connection`
+    /// * method: An EthMethod selector, like `EthMethod.GetBalance`
+    /// * paramList: An EthParam, such as `["0x3872353821064f55df53ad1e2d7255e969f6eac0", "0x9dc3fe"]`
+    /// Note that some EthMethods have no arguments, while others have object arguments. Use `` //TODO Use what?
+    /// in the case of object arguments.
+    ///
+    let makeEthRPCCall
+        (rpcConnection: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>)
+        (method: EthMethod)
+        (paramList: EthParam)
+        =
+
+        rpcConnection
+            { method = method |> wrapEthMethod
+              paramList = paramList |> wrapEthParams
+              blockHeight = LATEST }
+
 
     ///
     /// Creates an Ethereum transaction (a call that changes the state of the blockchain).
@@ -158,7 +191,7 @@ module RPCConnector =
     /// ByString) or a IndicatedFunction (returned by `findFunction`)
     /// * arguments: a list option of EVMDatatypes. May use `None` or `(Some [])` to indicate no arguments.
     /// value: the wei-denominated amount of ETH to send along with a transaction to a `payable` function.
-    /// 
+    ///
     let makeEthTxn
         (rpcConnection: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>)
         constants
@@ -182,7 +215,7 @@ module RPCConnector =
                       paramList = _params |> EthParam
                       blockHeight = blockHeight' })
 
-    
+
     ///
     /// Creates an Ethereum call that does NOT change the state of the blockchain.
     /// * rpcConnection: An activated RPC connection from `createWeb3Connection`
@@ -191,7 +224,7 @@ module RPCConnector =
     /// * evmFunction: FunctionIndicator corresponding to the the function being called. May be a string (cast to a
     /// ByString) or a IndicatedFunction (returned by `findFunction`)
     /// * arguments: a list option of EVMDatatypes. May use `None` or `(Some [])` to indicate no arguments.
-    /// 
+    ///
     let makeEthCall
         (rpcConnection: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>)
         constants
@@ -213,41 +246,43 @@ module RPCConnector =
                     { method = EthMethod.Call |> wrapEthMethod
                       paramList = _params |> EthParam
                       blockHeight = blockHeight' })
-            
-    
+
+
     ///
     /// Creates an Ethereum transaction (a call that changes the state of the blockchain) specifically for deploying
     /// a contract's bytecode.
     /// * rpcConnection: An activated RPC connection from `createWeb3Connection`
     /// * constants: A ContractConstants record.
     /// * contract: A UndeployedContract that is being deployed
-    ///  
+    ///
     let deployEthContract
         (rpcConnection: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>)
         (constants: ContractConstants)
         (contract: UndeployedContract)
         =
-        
+
         let (RawContractBytecode _rawBytecode) = contract.bytecode
         let txn, maxfee, priority, _ = constantsBind constants
 
         let cArgs =
             match contract.constructorArguments with
             | Some a -> a
-            | None -> []                   
-       
+            | None -> []
+
         { utxnType = txn
           unonce = ""
           utoAddr = ""
           ufrom = constants.address
           ugas = ""
           uvalue = "0" |> bigintToHex |> padTo32BytesLeft
-          udata = $"{_rawBytecode}{contract.constructor |> bindEVMSelector}{createInputByteString cArgs}" |> prepend0x
+          udata =
+              $"{_rawBytecode}{contract.constructor |> bindEVMSelector}{createInputByteString cArgs}"
+              |> prepend0x
           umaxFeePerGas = maxfee
           umaxPriorityFeePerGas = priority
           uaccessList = []
           uchainId = contract.chainId }
-        
+
         |> validateRPCParams
         |> Result.bind
             (fun _params ->

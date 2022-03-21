@@ -13,7 +13,11 @@ module Helpers =
     
     open Types
 
-
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Binders
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     ///
     /// Returns unwrapped value and handles the defaults for any `None` cases.
     let constantsBind (c: ContractConstants) =
@@ -255,11 +259,27 @@ module Helpers =
         let wei = xs.PadRight(18, '0').Remove(18)
         bigint.Parse(e + wei)
 
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Miscellaneous
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ///
     /// Returns a Keccak hasher properly configured for 256bit hashes.
     let newKeccakDigest = Keccak(KeccakBitType.K256)
 
+    
+    ///
+    /// The Json RPC type provider returns results that have their own strings wrapped in double quotes. This
+    /// causes issue elsewhere, so this function is used here and there to remove extraneous strings when the values
+    /// must be used in the code. `TrimStart` and `TrimEnd` are specifically used because of potential knock-on effects
+    /// of overzealous quote stripping.
+    /// 
+    let trimParameter (p: string) =
+        p
+        |> fun s -> s.TrimStart('"')
+        |> fun s -> s.TrimEnd('"')    
+    
     
     ///
     /// Returns a string formatted into a hexadecimal representation of its UTF-8 bytes.
