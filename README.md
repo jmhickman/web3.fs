@@ -126,6 +126,35 @@ might become
 or  
 `someContract store $"{addressLookup addr}" countOfItemsMinted"`
 where `addressLookup` is its own partially applied call.
+
+Async monitoring of pending transactions is now in:  
+```
+ dotnet run .\Program.fs
+Making eth transaction to contract 0x94C4E1832fdF7156AC98d7642236aDb1FBcaF276 using the function 'store'...
+Got txn hash "0x592c9825be1460944a4c6636a0099d1c6cb240cddfe7aa814be5cc721c8eb366", waiting for inclusion into chain...
+Got result, checking...
+Success:
+{
+  "blockHash": "0xe50d0b94db5b32afefc232197ecdf5210eb0bf33cb29dfc62684b6a8b01043ef",
+  "blockNumber": "0x9e303a",
+  "contractAddress": null,
+  "cumulativeGasUsed": "0x3bbcd2",
+  "effectiveGasPrice": "0x3b9aca0a",
+  "from": "0x2268b96e204379ee8366505c344ebe5cc34d3a46",
+  "gasUsed": "0x5d34",
+  "logs": [],
+  "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000",
+  "status": "0x1",
+  "to": "0x94c4e1832fdf7156ac98d7642236adb1fbcaf276",
+  "transactionHash": "0x592c9825be1460944a4c6636a0099d1c6cb240cddfe7aa814be5cc721c8eb366",
+  "transactionIndex": "0x27",
+  "type": "0x2"
+}
+```
+
 ### Code of Conduct
 
 I'm a dictator and I rule with an iron fist. I explicitly reject CoCs.

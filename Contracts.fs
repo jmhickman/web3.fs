@@ -81,6 +81,14 @@ module ContractFunctions =
     let checkForTuple (jVal: JsonValue) = (getInnerTypeText jVal).StartsWith("tuple") 
 
     
+    let checkForTupleArray (jVal: JsonValue) =
+        matchEVMInput "tuple\[\]" (getInnerTypeText jVal)
+        
+    
+    let checkForSzTupleArray (jVal: JsonValue) =
+        matchEVMInputSz "tuple\[([0-9]{1,2})\]" (getInnerTypeText jVal)
+    
+    
     ///
     /// Tupled values in the ABI can be 'tuple' 'tuple[]' or 'tuple[k]'. Grab the glyphs if present for appending to the end
     /// of the joined strings later.
@@ -179,7 +187,85 @@ module ContractFunctions =
             |> fun s -> $"({s})"
         | _ -> ""
 
-
+    ///
+    /// Returns an EVMDatatype based on a static lookup of the EVM datatype culled from the ABI. Some definite liberties
+    /// are taken with regards to the exact precision of number types and bytes, arrays, etc. They are typically
+    /// 'upcast' to the largest representation. Multi-dimensional arrays are not supported.
+    /// 
+    let typeLookup evmTypeString =
+      match evmTypeString with
+      | x when matchEVMInput "^address$" x -> Address ""
+      | x when matchEVMInput "^address\[\]$" x -> AddressArray []
+      | x when matchEVMInput "^address\[([0-9]{1,2})\]$" x  ->
+          let count = matchEVMInputSz "^address\[([0-9]{1,2})\]$" x
+          AddressArraySz (List.init count (fun _ -> ""))
+      | x when matchEVMInput "^uint[0-9]{1,3}$" x -> Uint256 ""
+      | x when matchEVMInput "^uint[0-9]{1,3}\[\]$" x -> Uint256Array []
+      | x when matchEVMInput "^uint[0-9]{1,3}\[([0-9]{1,2})\]$" x  ->
+          let count = matchEVMInputSz "uint[0-9]{1,3}\[([0-9]{1,2})\]$" x
+          Uint256ArraySz (List.init count (fun _ -> ""))
+      | x when matchEVMInput "^int[0-9]{1,3}$" x -> Int256 ""
+      | x when matchEVMInput "^int[0-9]{1,3}\[\]$" x -> Int256Array []
+      | x when matchEVMInput "^int[0-9]{1,3}\[([0-9]{1,2})\]$" x  ->
+          let count = matchEVMInputSz "int[0-9]{1,3}\[([0-9]{1,2})\]$" x
+          Int256ArraySz (List.init count (fun _ -> ""))
+      | x when matchEVMInput "^bool" x -> Bool true
+      | x when matchEVMInput "^bool\[\]$" x -> BoolArray []
+      | x when matchEVMInput "^bool\[([0-9]{1,2})\]$" x  ->
+          let count = matchEVMInputSz "^bool\[([0-9]{1,2})\]$" x
+          BoolArraySz (List.init count (fun _ -> true))
+      | x when matchEVMInput "^bytes$" x -> Bytes ""
+      | x when matchEVMInput "^bytes[0-9]{1,3}$" x -> BytesSz ""
+      | x when matchEVMInput "^bytes[0-9]{1,3}\[([0-9]{1,2})\]$" x -> BytesArraySz []
+      | x when matchEVMInput "^bytes[0-9]{1,3}\[([0-9]{1,2})\]$" x  ->
+          let count = matchEVMInputSz "bytes[0-9]{1,3}\[([0-9]{1,2})\]$" x
+          BytesSzArraySz (List.init count (fun _ -> ""))
+      | x when matchEVMInput "^string$" x -> EVMDatatype.String ""
+      | x when matchEVMInput "^function$" x -> EVMDatatype.Function ""
+      | x when matchEVMInput "^function\[([0-9]{1,2})\]$" x -> FunctionArraySz []
+      | x when matchEVMInput "^function\[([0-9]{1,2})\]$" x  ->
+          let count = matchEVMInputSz "function\[([0-9]{1,2})\]$" x
+          FunctionArraySz (List.init count (fun _ -> ""))
+      | _ -> Blob ""
+    
+    
+    ///
+    /// Returns an internal complete representation of a Solidity function's types, with some caveats. Types with
+    /// variable precision are upcast to the largest value type (i.e., uint8 -> uint256) and multi-dimensional
+    /// arrays are not supported.
+    ///  
+    let rec returnEVMTypes (_input: JsonValue) (acc: EVMDatatype list) =
+        match _input with
+        | JsonValue.Array elements ->
+            elements
+            |> Array.toList
+            |> List.collect (fun e ->
+                match e with
+                | x when matchEVMInput "^tuple$" (getInnerTypeText x) ->
+                    [EVMDatatype.Tuple (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
+                | x when matchEVMInput "^tuple\[\]$" (getInnerTypeText x) ->
+                    [EVMDatatype.TupleArray (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
+                | x when matchEVMInput "^tuple\[([0-9]{1,2})\]$" (getInnerTypeText x) ->
+                    let count = matchEVMInputSz "^tuple\[([0-9]{1,2})\]$" (getInnerTypeText x)
+                    [EVMDatatype.TupleArraySz
+                         (List.init count (fun _ ->
+                            EVMDatatype.Tuple (returnEVMTypes (x.GetProperty("components")) acc)))] @ acc
+                | x when matchEVMInput "^bytes\[\]$" (getInnerTypeText x) ->
+                    [EVMDatatype.BytesArray (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
+                | x when matchEVMInput "^bytes\[([0-9]{1,2})\]$" (getInnerTypeText x)  ->
+                    let count = matchEVMInputSz "bytes\[([0-9]{1,2})\]$" (getInnerTypeText x)
+                    [EVMDatatype.BytesArraySz (List.init count (fun _ -> EVMDatatype.Bytes "" ))] @ acc
+                | x when matchEVMInput "^string\[\]$" (getInnerTypeText x) ->
+                    [EVMDatatype.StringArray (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
+                | x when matchEVMInput "^string\[([0-9]{1,2})\]$" (getInnerTypeText x)  ->
+                    let count = matchEVMInputSz "string\[([0-9]{1,2})\]$" (getInnerTypeText x)
+                    [EVMDatatype.StringArraySz (List.init count (fun _ -> EVMDatatype.String "" ))] @ acc
+                | x -> 
+                    getInnerTypeText x |> typeLookup |> fun r ->  [r] @ acc 
+                    )
+            
+        | _ -> []
+        
     ///
     /// Returns the state mutability parameter of the EVM function, given a JsonValue option.
     /// Defaults to 'nonpayable' as is the spec.
@@ -214,7 +300,12 @@ module ContractFunctions =
         | Some jVal -> $"""{collapseTuples jVal}"""
         | None -> $"()"
 
-
+    let returnOutputs (b: JsonValue option) =
+       match b with
+       | Some jVal -> returnEVMTypes jVal []
+       | None -> []
+       
+       
     ///
     /// Returns the anonymous boolean of an EVM event, given a JsonValue option. Defaults to false.
     let returnAnonymous (b: JsonValue option) =
@@ -232,7 +323,7 @@ module ContractFunctions =
 
         let name = returnFunctionName _funcName
         let inputs = returnInputs _inputs
-
+        
         let hash =
             ($"{name}{inputs}"
              |> CanonicalFunctionRepresentation)
@@ -241,7 +332,7 @@ module ContractFunctions =
         { name = name
           hash = hash
           inputs = inputs |> EVMFunctionInputs
-          outputs = returnInputs _outputs |> EVMFunctionOutputs
+          outputs = returnOutputs _outputs 
           config = returnStateMutability _stateMut }
 
 
@@ -390,4 +481,5 @@ module ContractFunctions =
         
     
     //let convertToDeployedContract (newContract: UndeployedContract) (address: EthAddress) : DeployedContract =
-        
+    
+  

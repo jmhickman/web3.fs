@@ -75,10 +75,10 @@ module Helpers =
                 contract.functions
                 |> List.filter(fun p -> p.inputs = evmFunctionInputs)
                 |> List.map (fun f -> f |> IndicatedFunction)
-            | SearchFunctionOutputs evmFunctionOutputs ->
-                contract.functions
-                |> List.filter(fun p -> p.outputs = evmFunctionOutputs)
-                |> List.map (fun f -> f |> IndicatedFunction)
+            //| SearchFunctionOutputs evmFunctionOutputs ->
+            //    contract.functions
+            //    |> List.filter(fun p -> p.outputs = evmFunctionOutputs)
+            //    |> List.map (fun f -> f |> IndicatedFunction)
             | SearchFunctionMutability stateMutability ->
                 contract.functions
                 |> List.filter(fun p -> p.config = stateMutability)
@@ -133,6 +133,17 @@ module Helpers =
         validateInputs "^0x[0-9,a-f,A-F]{40}$" s
 
 
+    let matchEVMInput (reg: string) t =
+        let reg = Regex(reg)
+        reg.Match(t).Success
+        
+    
+    let matchEVMInputSz (reg: string) t =
+        let reg = Regex(reg)
+        let num = reg.Match(t).Groups.Item(1)
+        int(num.Value)
+        
+        
     ///
     /// When supplied with an UnvalidatedEthParam1559Call, returns a Result. The purpose
     /// is to ensure that the data supplied in each field is consistent with requirements

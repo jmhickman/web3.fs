@@ -1,8 +1,12 @@
 namespace web3.fs
 
+open web3.fs.Types
+
 module ABIFunctions =
+    open System
+    open System.Text
     
-    open Types
+    
     open Helpers
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +89,7 @@ module ABIFunctions =
     /// 
     let rec wrapBytesAcrossWords (s: string) (acc: string list) =
         match s with
-        | x when x.Length < 64 -> acc @ [x |> padTo32BytesRight]
+        | x when x.Length <= 64 -> acc @ [x |> padTo32BytesRight]
         | x when x.Length > 64 -> 
             let _x = x.[..63]
             let x = x.[64..]
@@ -94,22 +98,53 @@ module ABIFunctions =
 
     
     ///
-    /// Returns a formatted bytecode string for the 'data' argument in a EthParam1559Call, 
-    /// or other related transaction functions. The EVMDatatype list contains typed 
-    /// arguments for processing recursively, formatted in a nested way similar to how 
-    /// it is specified in Remix or other EVM development environments. 
+    /// Returns the proper count of items in a tuple, taking into account the contents of sized arrays, which consume
+    /// several 'slots' directly without offset or counter. Strings and Bytes need special compensation in the
+    /// calculation, as their space requirements are variable.
     /// 
-    /// **Warning** Currently, there is NO checking if the type specified and its data are 
-    /// conforming; these types are only present in order to determine how they should be 
-    /// formatted and processed into the argument bytecode.
+    let countOfArguments (evmDatatypeList: EVMDatatype list) =
+        
+        let rec countLoop (evmDatatypeList: EVMDatatype list) acc =
+            match evmDatatypeList with
+            | head :: tail ->
+                match head with
+                | BytesSzArraySz bArr -> //
+                    countLoop tail (acc + bArr.Length)
+                | AddressArraySz arr -> //
+                    countLoop tail (acc + arr.Length)
+                | Uint256ArraySz uArr -> //
+                    countLoop tail (acc + uArr.Length)
+                | Int256ArraySz iArr -> //
+                    countLoop tail (acc + iArr.Length)
+                | BoolArraySz bArr -> //
+                    countLoop tail (acc + bArr.Length)
+                | String s ->
+                    let blob = wrapBytesAcrossWords s []
+                    countLoop tail (acc + blob.Length)
+                | Bytes b ->
+                    let blob = wrapBytesAcrossWords b []
+                    countLoop tail (acc + blob.Length) // blob.Length / 2 because it fixed something elsewhere
+                | _ ->
+                    countLoop tail (acc + 1)
+            | [] -> acc
+        countLoop evmDatatypeList 0
+    
     ///
-    /// **Warning** Double arrays `[][]` of the same type are not supported, unless they are
-    /// tuple arrays. 
+    /// Returns a formatted bytecode string for the 'data' argument in a EthParam1559Call, or other related transaction
+    /// functions. The EVMDatatype list contains typed arguments for processing recursively, formatted in a nested way
+    /// similar to how it is specified in Remix or other EVM development environments. 
     /// 
-    /// **Warning** The `function` types are correct according to the docs (treated as a 
-    /// `bytes24`) but I have no way of confirming their correctness in Remix, as no one
-    /// will tell me how to format `function` inputs into the Remix deployed contracts 
-    /// interaction functionality.
+    /// **Warning** Currently, there is NO checking if the type specified and its data are conforming; these types are
+    /// only present in order to determine how they should be formatted and processed into the argument bytecode.
+    ///
+    /// **Warning** Double arrays `[][]` are not supported.
+    /// 
+    /// **Warning** The `function` types are correct according to the docs (treated as a `bytes24`) but I have no way
+    /// of confirming their correctness in Remix, as no one will tell me how to format `function` inputs into the Remix
+    /// deployed contracts functionality. As such, they should be avoided until such time as it can be checked.
+    ///
+    /// **Warning** Integer types are all treated as the widest type. As already noted, there is no bounds-checking
+    /// occuring here.
     ///
     let createInputByteString (evmDatatypeList: EVMDatatype list) =
         
@@ -156,378 +191,438 @@ module ABIFunctions =
         // Overall, this is your standard FSharp recursive function, bent into an 
         // awkward shape due to the requirements of the output. 
         //
-        // If this description was too opaque, that's okay. There is a collection of
-        // inputs and corresponding EVM bytecode outputs at the end of this source
-        // file to help those more visually inclined to understand.
+
     
-        let cursor = evmDatatypeList.Length
-
-
+        let cursor = countOfArguments evmDatatypeList
+                
         let rec unpackInputAndProcess list (acc: string) (cursor: int) : string =
             match list with
             | head :: tail ->
                 match head with
                 | Address a -> unpackInputAndProcess tail (acc + $"{a |> strip0x |> padTo32BytesLeft }") cursor
+                
                 | AddressArraySz arr -> 
                     unpackInputAndProcess tail (acc + (arr |> List.map(strip0x >> fun p -> $"{padTo32BytesLeft p}") |> String.concat "")) cursor
+                
                 | AddressArray arr ->
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ arr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesLeft}") (returnCountOfItems arr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + arr.Length)
-                | Uint8 u -> 
-                    unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
-                | Uint32 u -> 
-                    unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
-                | Uint64 u -> 
-                    unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
-                | Uint128 u ->
-                    unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
-                | Uint256 u ->
-                    unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
-                | Uint8ArraySz uArr -> 
-                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
-                | Uint32ArraySz uArr ->
-                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
-                | Uint64ArraySz uArr ->
-                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
-                | Uint128ArraySz uArr ->
-                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
+                    unpackInputAndProcess tail acc (cursor + arr.Length + 1)
+                
+                | Uint256 u -> unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
+                
                 | Uint256ArraySz uArr ->
                     unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
-                | Uint8Array uArr -> 
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uArr.Length)
-                | Uint32Array uArr ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uArr.Length)
-                | Uint64Array uArr ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uArr.Length)
-                | Uint128Array uArr ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uArr.Length)
+                
                 | Uint256Array uArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uArr.Length)
-                | Int8 i -> 
-                    unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
-                | Int32 i -> 
-                    unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
-                | Int64 i -> 
-                    unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
-                | Int128 i -> 
-                    unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
-                | Int256 i -> 
-                    unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
-                | Int8ArraySz iArr -> 
-                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
-                | Int32ArraySz iArr ->
-                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
-                | Int64ArraySz iArr ->
-                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
-                | Int128ArraySz iArr ->
-                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
+                    unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
+                
+                | Int256 i -> unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
+                
                 | Int256ArraySz iArr ->
-                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
-                | Int8Array iArr -> 
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iArr.Length)
-                | Int32Array iArr ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iArr.Length)
-                | Int64Array iArr ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iArr.Length)
-                | Int128Array iArr ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iArr.Length)
+                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor 
+                
                 | Int256Array iArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iArr.Length)
+                    unpackInputAndProcess tail acc (cursor + iArr.Length + 1)
+                
                 | Bool b -> unpackInputAndProcess tail (acc + convertBoolToInt b) cursor
+                
                 | BoolArraySz bArr -> unpackInputAndProcess tail (acc + (bArr |> List.map convertBoolToInt |> String.concat "")) cursor
+                
                 | BoolArray bArr -> 
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ bArr |> List.fold (fun acc s -> $"{acc}{convertBoolToInt s}") (returnCountOfItems bArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + bArr.Length)
+                    unpackInputAndProcess tail acc (cursor + bArr.Length + 1)
+                
                 | BytesSz b -> 
                     unpackInputAndProcess tail (acc + $"{b |> strip0x |> padTo32BytesRight}") cursor
+                
                 | BytesSzArraySz bs -> 
                     unpackInputAndProcess tail (acc + (bs |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
+                
                 | BytesSzArray bs -> 
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ bs |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems bs) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + bs.Length)
+                    unpackInputAndProcess tail acc (cursor + bs.Length + 1 )
+                
                 | Bytes bs -> 
                     let acc = acc + returnCurrentOffset cursor
                     let bs = bs |> strip0x
-                    let blob = bs.Length |> byteDivide2 |> formatTypes padTo32BytesLeft |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
-                    let tail = tail @ [ blob |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (blob.Length / 64))
+                    let contents = bs.Length |> byteDivide2 |> formatTypes padTo32BytesLeft |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
+                    let tail = tail @ [ contents |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
+                
                 | BytesArraySz bsArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ (unpackInputAndProcess bsArr "" (0 + bsArr.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + bsArr.Length)
+                    let contents = (unpackInputAndProcess bsArr "" (countOfArguments bsArr))
+                    let tail = tail @ [ contents |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64 ))
+                
                 | BytesArray bsArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ returnCountOfItems bsArr |> fun s -> s + (unpackInputAndProcess bsArr "" (0 + bsArr.Length)) |> Blob ] 
-                    unpackInputAndProcess tail acc (cursor + bsArr.Length)
+                    let contents = returnCountOfItems bsArr |> fun s -> s + (unpackInputAndProcess bsArr "" (countOfArguments bsArr))
+                    let tail = tail @ [ contents |> Blob ] 
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
+                
                 | String st -> 
                     let acc = acc + returnCurrentOffset cursor
                     let bs = st |> formatToBytes
-                    let blob = bs.Length |> byteDivide2 |> formatTypes padTo32BytesLeft |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
-                    let tail = tail @ [ blob |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (blob.Length / 64))
+                    let contents =
+                        bs.Length
+                        |> byteDivide2
+                        |> formatTypes padTo32BytesLeft
+                        |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
+                    
+                    let tail = tail @ [contents |> Blob ] 
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
+                
                 | StringArraySz sArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ (unpackInputAndProcess sArr "" (0 + sArr.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + sArr.Length)
+                    let contents = (unpackInputAndProcess sArr "" (countOfArguments sArr))
+                    let tail = tail @ [contents |> Blob]
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
+                
                 | StringArray sArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ returnCountOfItems sArr |> fun s -> s + (unpackInputAndProcess sArr "" (0 + sArr.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + sArr.Length)
+                    let contents = returnCountOfItems sArr |> fun s -> s + (unpackInputAndProcess sArr "" (countOfArguments sArr))
+                    let tail = tail @ [ contents |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64) )
+                
                 | Tuple t ->
                     let acc = acc + returnCurrentOffset cursor
-                    let blob = unpackInputAndProcess t "" (0 + t.Length) 
-                    let tail = tail @ [ blob |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (blob.Length / 64))
-                | TupleArray ta ->
+                    let contents = unpackInputAndProcess t "" (countOfArguments t) 
+                    let tail = tail @ [ contents |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64)) 
+                
+                | TupleArraySz tArr ->
+                    let acc = acc + returnCurrentOffset cursor 
+                    let contents = unpackInputAndProcess tArr "" (countOfArguments tArr) 
+                    let tail = tail @ [ contents |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64)) 
+                
+                | TupleArray tArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ returnCountOfItems ta |> fun s -> s + (unpackInputAndProcess ta "" (0 + ta.Length)) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + ta.Length)
-                | Function f -> 
-                    unpackInputAndProcess tail (acc + $"{f |> strip0x |> padTo32BytesRight }") cursor
-                | FunctionArraySz farr ->
-                    unpackInputAndProcess tail (acc + (farr |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
+                    let contents = returnCountOfItems tArr |> fun s -> s + (unpackInputAndProcess tArr "" (countOfArguments tArr))
+                    let tail = tail @ [ contents |> Blob ]
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64)) 
+                
+                | Function f -> unpackInputAndProcess tail (acc + $"{f |> strip0x |> padTo32BytesRight }") cursor
+                
+                | FunctionArraySz fArr ->
+                    unpackInputAndProcess tail (acc + (fArr |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
+                
                 | FunctionArray fArr -> 
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ fArr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems fArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + fArr.Length)
+                    unpackInputAndProcess tail acc (cursor + fArr.Length + 1)
+                
                 | Blob blob -> unpackInputAndProcess tail (acc + blob) cursor
             | [] -> acc
 
         unpackInputAndProcess evmDatatypeList "" cursor
 
-(*
-    let test00 =
-        [Tuple[Uint256 "0";Int8 "120";AddressArray["0x2247772b1319442401dd04812bdefd7025bffec3";"0x2247772b1319442401dd04812bdefd7025bffec3"]];Tuple[TupleArray[Tuple[Uint256 "0";Int8 "120";AddressArray["0x2247772b1319442401dd04812bdefd7025bffec3";"0x2247772b1319442401dd04812bdefd7025bffec3"]];Tuple[Uint256 "0";Int8 "120";AddressArray["0x2247772b1319442401dd04812bdefd7025bffec3";"0x2247772b1319442401dd04812bdefd7025bffec3"]]];Uint256 "512"]]
-    
-    let test000 =
-        [Tuple[Uint256 "0";Int8 "120";AddressArray["0x2247772b1319442401dd04812bdefd7025bffec3";"0x2247772b1319442401dd04812bdefd7025bffec3"]];Tuple[TupleArray[Tuple[Uint256 "0";Int8 "120";AddressArray["0x2247772b1319442401dd04812bdefd7025bffec3";"0x2247772b1319442401dd04812bdefd7025bffec3"]];Tuple[Uint256 "0";Int8 "120";AddressArray["0x2247772b1319442401dd04812bdefd7025bffec3";"0x2247772b1319442401dd04812bdefd7025bffec3"]]];Uint256 "512"];Tuple[Tuple[TupleArray[Tuple[Uint256 "0";Int8 "120";AddressArray["0x2247772b1319442401dd04812bdefd7025bffec3";"0x2247772b1319442401dd04812bdefd7025bffec3"]];Tuple[Uint256 "0";Int8 "120";AddressArray["0x2247772b1319442401dd04812bdefd7025bffec3";"0x2247772b1319442401dd04812bdefd7025bffec3"]]];Uint256 "512"];Tuple[Uint256 "0";Int8 "120";AddressArray["0x2247772b1319442401dd04812bdefd7025bffec3";"0x2247772b1319442401dd04812bdefd7025bffec3"]]]]
 
-    let test1 = [Uint32 "69"; Bool true] 
+    ///
+    /// Returns a substring for a given beginning offset, returning the entire word.
+    let emitSubstring start (blob: string) =
+        blob.Substring(start, 64)
+        
+        
+    ///
+    /// Returns the substring with a hex specifier prepended. 
+    let emitSubstringPrepend0x start blob =
+        emitSubstring start blob |> fun s -> s.TrimStart('0') |> prepend0x
 
-    let test2 = [BytesSzArraySz["0x414141"; "0x424242"]] 
 
-    let test3 = [BytesSzArray["0x414141"; "0x424242"; "0x434343"]] 
+    ///
+    /// Returns the substring specifically for sized bytes, with a hex specifier prepended. 
+    let emitSubstringPrepend0xBytes start blob =
+        emitSubstring start blob |> fun s -> s.TrimEnd('0') |> prepend0x
+        
+        
+    ///
+    /// Returns an integer value contained in a given substring. This assumes that the count/offset value being
+    /// interpreted is not larger than a signed int. `Int32` is used because `List.init` (where this value is typically used)
+    /// for whatever reason only accepts this type.
+    /// 
+    let emitSubstringAsInt start blob =
+        emitSubstring start blob |> fun i -> Convert.ToInt32(i, 16)
 
-    let test4 = [Bytes "0x414141414141414141414141414141414141414141414141414141414141414141414141" ] 
 
-    let test5 = [BytesArray[ Bytes "0x414141414141414141414141414141414141414141414141414141414141414141414141"; Bytes "0x414141414141414141414141414141414141414141414141414141414141414141414141414141414142"]] // passed
+    ///
+    /// Returns an integer value contained in a given substring, with a byte-length-to-char-length compensator applied.
+    /// `Int32` is used because functions consuming this value assume `int`.
+    /// 
+    let emitSubstringAsOffset blob start =
+        emitSubstring start blob |> fun i -> Convert.ToInt32(i, 16) |> fun i -> i * 2
 
-    let test6 = [BytesArraySz [Bytes "0x6162"; Bytes "0x6263"]] 
 
-    let test7 = [StringArraySz[String "hahahaha"; String "doodyaaah"] ] 
+    ///
+    /// Returns a boolean value after interpreting a substring in a boolean context. Non-0 values are taken as `true`.
+    let emitSubstringAsBool start blob =
+        emitSubstring start blob
+        |> function
+            | "0000000000000000000000000000000000000000000000000000000000000000" -> false
+            | _ -> true
 
-    let test8 = [StringArray[String "hahahaha"; String "doodyaaah"] ] 
 
-    let test9 = [BoolArraySz[true; false; false]] 
+    ///
+    /// Returns a bigint that has been converted to a string, based upon the value contained in a substring.
+    let emitSubstringAsConvertedString start blob =
+        emitSubstring start blob |> hexToBigInt |> fun s -> s.ToString()
 
-    let test10 = [BoolArray[true; true; false]] 
 
-    let test11 = [AddressArraySz["0x2247772b1319442401dd04812bdefd7025bffec3"; "0x2247772b1319442401dd04812bdefd7025bffec3"]] 
-
-    let test12 = [Int8Array["56";"-56"]] 
-
-    let test13 = [Int32Array["565656"; "-565656"]] 
-
-    let test14 = [Int64Array["5656565656565656"; "-5656565656565656"]]
-    
-    let test15 = [Int128Array["-565656565656565656565656565656565656"; "565656565656565656565656565656565656"]]
-    
-    let test16 = [Int256Array["56565656565656565656565656565656565656565656565656565656565656565656565656"; "-56565656565656565656565656565656565656565656565656565656565656565656565656"]] 
-
-    let test17 = [Function "0x2247772b1319442401dd04812bdefd7025bffec3abcdef10"]
-
-    test1
-    0000000000000000000000000000000000000000000000000000000000000045
-    0000000000000000000000000000000000000000000000000000000000000001
-    test2
-    4141410000000000000000000000000000000000000000000000000000000000
-    4242420000000000000000000000000000000000000000000000000000000000
-    test3
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000003
-    4141410000000000000000000000000000000000000000000000000000000000
-    4242420000000000000000000000000000000000000000000000000000000000
-    4343430000000000000000000000000000000000000000000000000000000000
-    test4
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000024
-    4141414141414141414141414141414141414141414141414141414141414141
-    4141414100000000000000000000000000000000000000000000000000000000
-    test5
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000000000000000000000000000000000000000000040
-    00000000000000000000000000000000000000000000000000000000000000a0
-    0000000000000000000000000000000000000000000000000000000000000024
-    4141414141414141414141414141414141414141414141414141414141414141
-    4141414100000000000000000000000000000000000000000000000000000000
-    000000000000000000000000000000000000000000000000000000000000002a
-    4141414141414141414141414141414141414141414141414141414141414141
-    4141414141414141414200000000000000000000000000000000000000000000
-    test6
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000080
-    0000000000000000000000000000000000000000000000000000000000000002
-    6162000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000002
-    6263000000000000000000000000000000000000000000000000000000000000
-    test7
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000080
-    0000000000000000000000000000000000000000000000000000000000000008
-    6861686168616861000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000009
-    646F6F6479616161680000000000000000000000000000000000000000000000
-    test8
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000080
-    0000000000000000000000000000000000000000000000000000000000000008
-    6861686168616861000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000009
-    646F6F6479616161680000000000000000000000000000000000000000000000
-    test9
-    0000000000000000000000000000000000000000000000000000000000000001
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000000
-    test10
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000003
-    0000000000000000000000000000000000000000000000000000000000000001
-    0000000000000000000000000000000000000000000000000000000000000001
-    0000000000000000000000000000000000000000000000000000000000000000
-    test11
-    0000000000000000000000002247772b13194424010404812bdefd7025bffec3
-    0000000000000000000000002247772b13194424010404812bdefd7025bffec3
-    test12
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000000000000000000000000000000000000000000038
-    ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc8
-    test13
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000002
-    000000000000000000000000000000000000000000000000000000000008a198
-    fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff75e68
-    test14
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000000000000000000000000000000014189dd29bb798
-    ffffffffffffffffffffffffffffffffffffffffffffffffffebe7622d644868
-    test15
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000002
-    ffffffffffffffffffffffffffffffffff930efa64a58f62eabdf399dbcc4868
-    00000000000000000000000000000000006cf1059b5a709d15420c662433b798
-    test16
-    0000000000000000000000000000000000000000000000000000000000000020
-    0000000000000000000000000000000000000000000000000000000000000002
-    002003d8d000a8b8843b1d0d7ceb294c4c2ecc156e97db79890cede62433b798
-    ffdffc272fff57477bc4e2f28314d6b3b3d133ea9168248676f31219dbcc4868
-
-    test00
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000100
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000078
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000200
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000100
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000078
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000078
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-
-    test000
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000120
-    0000000000000000000000000000000000000000000000000000000000000340
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000078
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000200
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000100
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000078
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000078
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000260
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000200
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000000000000000000000000000000000000000000040
-    0000000000000000000000000000000000000000000000000000000000000100
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000078
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000078
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000000000000000000000000000000000000000000000
-    0000000000000000000000000000000000000000000000000000000000000078
-    0000000000000000000000000000000000000000000000000000000000000060
-    0000000000000000000000000000000000000000000000000000000000000002
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-    0000000000000000000000002247772b1319442401dd04812bdefd7025bffec3
-*)
+    ///
+    /// Returns the internal typed representation of an EVM function return value. This is typically the result of an
+    /// `EthParam1559Call` or other RPC response. When calling a contract's function from inside web3.fs or elsewhere, the
+    /// RPC response contains a value that is formatted according to the signature of the return type(s). This function
+    /// consumes the return types (captured during the import of a contract using `loadDeployedContract` as well as the
+    /// EVM's formatted return string.
+    ///
+    /// **Warning** The numeric types are represented in web3.fs as the widest version of their type, and the returned types
+    /// will thus all be `__256`. However, the values contained therein will retain their original size.
+    ///
+    /// **Warning** Multidimensional arrays and the `Function` types aren't supported.
+    ///  
+    let createOutputEvmTypes (evmList: EVMDatatype list) (evmOutput: string) =
+            
+            // The general form of these cases is to take in the current position of the work in the `evmOutput` string
+            // derive a floating 'offset' value from it, and then to unpack/manipulate the contents of the string as
+            // needed for each data type's context.
+            //
+            // The sized array types have additional math to account for their contents, because unlike the dynamic
+            // array types, they don't leave an offset at which their contents are stored, but instead the contents are
+            // placed directly at the beginning cursor position. Thus they must advance the cursor more than one 'word'.
+            //
+            // Bytes (and by extension String) types are even more involved, since they can wrap 'words' and thus
+            // extracting their contents is more complex. The Bytes array types also function with a faked offset value,
+            // so placed so that the Bytes handler works properly.
+            let rec unpackOutputAndProcess (evmList: EVMDatatype list) (evmOutput: string) (acc: EVMDatatype list) cursor = 
+                match evmList with
+                | head :: tail ->
+                    match head with
+                    | Tuple t ->
+                        let offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let tupleContents = (0, offset) |> evmOutput.Remove
+                        let acc = acc @ [EVMDatatype.Tuple (unpackOutputAndProcess t tupleContents [] 0)]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | TupleArraySz tArr ->
+                        let offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let tupleContents = (0, offset) |> evmOutput.Remove
+                        let acc = acc @ [TupleArraySz (unpackOutputAndProcess tArr tupleContents [] 0)]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | TupleArray tArr ->
+                        let offset = ((cursor * 64) |> emitSubstringAsOffset evmOutput) + 64
+                        let tupleContents = (0, offset) |> evmOutput.Remove
+                        let acc = acc @ [TupleArray (unpackOutputAndProcess tArr tupleContents [] 0)]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | Address _ ->
+                        let acc = acc @ [(Address $"{emitSubstringPrepend0x (cursor * 64) evmOutput}")]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | AddressArraySz uArr ->
+                        let mutable offset = (cursor * 64)
+                        let arrayContents =
+                            List.init uArr.Length (fun count ->
+                                offset <- offset + (count * 64)
+                                $"{emitSubstringPrepend0x offset evmOutput}")
+                        let acc = acc @ [AddressArraySz arrayContents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + uArr.Length)
+                    
+                    | AddressArray _ ->
+                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput 
+                        let count = emitSubstringAsInt offset evmOutput 
+                        offset <- offset + 64
+                        let contents = List.init count (fun count ->
+                            offset <- offset + (count * 64)
+                            $"{emitSubstringPrepend0x offset evmOutput}")
+                        let acc = acc @ [AddressArray contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | Int256 _ ->
+                        let pointer = cursor * 64
+                        let acc = acc @ [(Int256 $"{emitSubstringAsConvertedString pointer evmOutput}")]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | Int256ArraySz iArr ->
+                        let mutable offset = (cursor * 64)
+                        let contents = List.init iArr.Length (fun count ->
+                            offset <- offset + (count * 64)
+                            $"{emitSubstringAsConvertedString offset evmOutput}")
+                        let acc = acc @ [Int256ArraySz contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + iArr.Length)
+                    
+                    | Int256Array _ ->
+                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let count = emitSubstringAsInt offset evmOutput
+                        offset <- offset + 64
+                        let contents = List.init count (fun count ->
+                            offset <- offset + (count * 64)
+                            $"{emitSubstringAsConvertedString offset evmOutput}")
+                        let acc = acc @ [Int256Array contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | Uint256 _ ->
+                        let pointer = cursor * 64
+                        let acc = acc @ [(Uint256 $"{emitSubstringAsConvertedString pointer evmOutput}")]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | Uint256ArraySz uArr ->
+                        let mutable offset = (cursor * 64)
+                        let contents = List.init uArr.Length (fun count ->
+                            offset <- offset + (count * 64)
+                            $"{emitSubstringAsConvertedString offset evmOutput}")
+                        let acc = acc @ [Uint256ArraySz contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | Uint256Array _ ->
+                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let count = emitSubstringAsInt offset evmOutput
+                        offset <- offset + 64
+                        let contents = List.init count (fun count ->
+                            offset <- offset + (count * 64)
+                            $"{emitSubstringAsConvertedString offset evmOutput}")
+                        let acc = acc @ [Uint256Array contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | Bool _ ->
+                        let pointer = cursor * 64
+                        let acc = acc @ [Bool (emitSubstringAsBool pointer evmOutput)]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | BoolArraySz bArr ->
+                        let mutable offset = (cursor * 64)              
+                        let contents = List.init bArr.Length (fun count ->
+                            offset <- offset + (count * 64)
+                            emitSubstringAsBool offset evmOutput)
+                        let acc = acc @ [BoolArraySz contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + bArr.Length)  
+                    
+                    | BoolArray _ ->
+                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let count = emitSubstringAsInt offset evmOutput
+                        offset <- offset + 64
+                        let contents = List.init count (fun count ->
+                            offset <- offset + (count * 64)
+                            emitSubstringAsBool offset evmOutput)
+                        let acc = acc @ [BoolArray contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | BytesSz _ ->
+                        let pointer = cursor * 64
+                        let acc = acc @ [BytesSz $"{emitSubstringPrepend0xBytes pointer evmOutput}"]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | BytesSzArraySz bArr -> 
+                        let mutable offset = (cursor * 64)
+                        let contents = List.init bArr.Length (fun count ->
+                            offset <- offset + (count * 64)
+                            $"{emitSubstringPrepend0xBytes offset evmOutput}")
+                        let acc = acc @ [BytesSzArraySz contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + bArr.Length)
+                    
+                    | BytesSzArray _ ->
+                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let count = (emitSubstringAsInt (cursor * 64) evmOutput)
+                        offset <- offset + 64
+                        let contents = List.init count (fun count ->
+                            offset <- offset + (count * 64)
+                            $"{emitSubstringPrepend0xBytes offset evmOutput}")
+                        let acc = acc @ [BytesSzArray contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | Bytes _ ->
+                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let count = 2 * emitSubstringAsInt offset evmOutput
+                        offset <- offset + 64
+                        let contents = $"{(offset, count) |> evmOutput.Substring |> prepend0x}"
+                        let acc = acc @ [Bytes contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | BytesArraySz bArr ->
+                        let pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput 
+                        let inner =
+                            List.init bArr.Length (fun count ->
+                                let offset = (emitSubstringAsInt (pointer + (count * 64)) evmOutput) * 2
+                                let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
+                                let arrayContents = 
+                                    fakedOffset + 
+                                    emitSubstring (pointer + offset) evmOutput + 
+                                    evmOutput.Substring((pointer + offset + 64), byteLength) 
+                                unpackOutputAndProcess [Bytes ""] arrayContents [] 0)
+                            |> List.concat
+                        let acc = acc @ [BytesArraySz inner]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | BytesArray _ ->
+                        let mutable pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let count = emitSubstringAsInt pointer evmOutput
+                        pointer <- pointer + 64
+                        let inner =
+                            List.init count (fun count ->
+                                let offset = emitSubstringAsInt (pointer + (count * 64)) evmOutput * 2
+                                let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
+                                let arrayContents =
+                                    fakedOffset +
+                                    emitSubstring (pointer + offset) evmOutput +
+                                    evmOutput.Substring((pointer + offset + 64), byteLength)
+                                unpackOutputAndProcess [Bytes ""] arrayContents [] 0)
+                            |> List.concat
+                        let acc = acc @ [BytesArray inner]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | String _ ->
+                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let count = 2 * emitSubstringAsInt offset evmOutput
+                        offset <- offset + 64
+                        let contents =
+                            $"{evmOutput.Substring(offset, count)
+                               |> Convert.FromHexString
+                               |> Encoding.UTF8.GetString}"
+                        let acc = acc @ [EVMDatatype.String contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | StringArraySz sArr ->
+                        let pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let inner =
+                            List.init sArr.Length (fun count ->
+                                let offset = emitSubstringAsInt (pointer + (count * 64)) evmOutput * 2
+                                let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
+                                let arrayContents = 
+                                    fakedOffset +
+                                    emitSubstring (pointer + offset) evmOutput + 
+                                    evmOutput.Substring((pointer + offset + 64), byteLength) 
+                                unpackOutputAndProcess [EVMDatatype.String ""] arrayContents [] 0)
+                            |> List.concat
+                        let acc = acc @ [StringArraySz inner]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | StringArray _ ->
+                        let mutable pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                        let count = emitSubstringAsInt pointer evmOutput
+                        pointer <- pointer + 64
+                        let contents =
+                            List.init count (fun count ->
+                                let offset = emitSubstringAsInt (pointer + (count * 64)) evmOutput * 2
+                                let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
+                                let arrayContents =
+                                    fakedOffset +
+                                    emitSubstring (pointer + offset) evmOutput +
+                                    evmOutput.Substring((pointer + offset + 64), byteLength)
+                                unpackOutputAndProcess [Bytes ""] arrayContents [] 0)
+                            |> List.concat
+                        let acc = acc @ [StringArray contents]
+                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                    
+                    | _ -> unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                | [] -> acc
+            
+            unpackOutputAndProcess evmList evmOutput [] 0
+            

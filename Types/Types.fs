@@ -59,7 +59,7 @@ module Types =
     let LATEST = "latest"
     let PENDING = "pending"
     let ZERO = "0x0"
-
+    let fakedOffset = "0000000000000000000000000000000000000000000000000000000000000020"
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // EVM data types
@@ -77,56 +77,33 @@ module Types =
     /// but these types don't support 'composition' into such arrays.
     ///
     type EVMDatatype =
-        | Tuple of EVMDatatype list
-        | TupleArray of EVMDatatype list
-        | Address of string
-        | AddressArraySz of string list
-        | AddressArray of string list
-        | Uint8 of string
-        | Uint32 of string
-        | Uint64 of string
-        | Uint128 of string
-        | Uint256 of string
-        | Uint8ArraySz of string list
-        | Uint32ArraySz of string list
-        | Uint64ArraySz of string list
-        | Uint128ArraySz of string list
-        | Uint256ArraySz of string list
-        | Uint8Array of string list
-        | Uint32Array of string list
-        | Uint64Array of string list
-        | Uint128Array of string list
-        | Uint256Array of string list
-        | Int8 of string
-        | Int32 of string
-        | Int64 of string
-        | Int128 of string
-        | Int256 of string
-        | Int8ArraySz of string list
-        | Int32ArraySz of string list
-        | Int64ArraySz of string list
-        | Int128ArraySz of string list
-        | Int256ArraySz of string list
-        | Int8Array of string list
-        | Int32Array of string list
-        | Int64Array of string list
-        | Int128Array of string list
-        | Int256Array of string list
-        | Bool of bool
-        | BoolArraySz of bool list
-        | BoolArray of bool list
-        | BytesSz of string
-        | BytesSzArraySz of string list
-        | BytesSzArray of string list
-        | Bytes of string
-        | BytesArraySz of EVMDatatype list
-        | BytesArray of EVMDatatype list
+        | Tuple of EVMDatatype list //
+        | TupleArray of EVMDatatype list //
+        | TupleArraySz of EVMDatatype list // 
+        | Address of string //
+        | AddressArraySz of string list //
+        | AddressArray of string list //
+        | Uint256 of string //
+        | Uint256ArraySz of string list //
+        | Uint256Array of string list //
+        | Int256 of string //
+        | Int256ArraySz of string list // 
+        | Int256Array of string list //
+        | Bool of bool //
+        | BoolArraySz of bool list //
+        | BoolArray of bool list //
+        | BytesSz of string //
+        | BytesSzArraySz of string list // 
+        | BytesSzArray of string list // 
+        | Bytes of string //
+        | BytesArraySz of EVMDatatype list //
+        | BytesArray of EVMDatatype list //
         | Function of string
         | FunctionArray of string list
         | FunctionArraySz of string list
-        | String of string
-        | StringArraySz of EVMDatatype list
-        | StringArray of EVMDatatype list
+        | String of string //
+        | StringArraySz of EVMDatatype list //
+        | StringArray of EVMDatatype list //
         | Blob of string
 
 
@@ -496,7 +473,7 @@ module Types =
         { name: string
           hash: EVMSelector
           inputs: EVMFunctionInputs
-          outputs: EVMFunctionOutputs
+          outputs: EVMDatatype list
           //constant: string
           //payable: string
           config: StateMutability }
@@ -551,7 +528,7 @@ module Types =
         | Name of string
         | SearchFunctionHash of EVMSelector
         | SearchFunctionInputs of EVMFunctionInputs
-        | SearchFunctionOutputs of EVMFunctionOutputs
+        //| SearchFunctionOutputs of EVMFunctionOutputs
         | SearchFunctionMutability of StateMutability
 
 
@@ -602,3 +579,6 @@ module Types =
     ///
     /// Container for the result of attempting to load a contract from its ABI.
     type LoadContractResult = Result<DeployedContract, Web3Error>    
+
+    
+    
