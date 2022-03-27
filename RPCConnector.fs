@@ -168,7 +168,7 @@ module RPCConnector =
 
     ///
     /// Function allowing easier pipelining of RPC connection and the two-way communication channel.
-    let channelMessage (mbox: HttpRPCMailbox) (rpcMessage: HttpRPCMessage) =
+    let transactionMessage (mbox: HttpRPCMailbox) (rpcMessage: HttpRPCMessage) =
         mbox.PostAndReply(fun c -> TransactionMessageAndReply(rpcMessage, c))
 
 
@@ -179,18 +179,21 @@ module RPCConnector =
     let createWeb3Connection url rpcVersion =
         (url, rpcVersion)
         ||> startRpcConnector
-        |> channelMessage
+        |> transactionMessage
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Ethereum call functions using the RPC connection
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+    
+    ///
+    /// Factored out for reuse. Passes through a specified blockheight, or supplies the LATEST default.
     let blockHeight (constants: ContractConstants) =
         match constants.blockHeight with
         | Some s -> s
         | None -> LATEST
+    
     
     ///
     /// Creates an Ethereum RPC request whose purpose is typically to query the RPC node for chain-based or network-
