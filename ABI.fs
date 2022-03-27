@@ -96,6 +96,11 @@ module ABIFunctions =
         | _ -> [""]
 
     
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // ABI Handling
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     ///
     /// Returns the proper count of items in a tuple, taking into account the contents of sized arrays, which consume
     /// several 'slots' directly without offset or counter. Strings and Bytes need special compensation in the
@@ -122,11 +127,12 @@ module ABIFunctions =
                     countLoop tail (acc + blob.Length)
                 | Bytes b ->
                     let blob = wrapBytesAcrossWords b []
-                    countLoop tail (acc + blob.Length) // blob.Length / 2 because it fixed something elsewhere
+                    countLoop tail (acc + blob.Length)
                 | _ ->
                     countLoop tail (acc + 1)
             | [] -> acc
         countLoop evmDatatypeList 0
+    
     
     ///
     /// Returns a formatted bytecode string for the 'data' argument in a EthParam1559Call, or other related transaction
@@ -182,7 +188,11 @@ module ABIFunctions =
         // The code then proceeds to grab the current cursor's value and place it
         // into a EVM word, and then it goes about building the 'blob' that contains
         // the real values. This is appended as more work on the current `tail`. 
-        // The cursor value is then updated to reflect the size of the blob.
+        // The cursor value is then updated to reflect the size of the blob. Only
+        // types that insert content at an offset location need to manipulate the
+        // cursor value, usually by an accounting of their size, plus 1 for their
+        // own internal count representation.
+        //
         // Blob values are finally appended to the accumulator at the end of the 
         // current tuple. This is important; the computed offsets to a given dynamic
         // type are relative to the beginning of the current tuple!
@@ -190,11 +200,18 @@ module ABIFunctions =
         // Overall, this is your standard FSharp recursive function, bent into an 
         // awkward shape due to the requirements of the output. 
         //
+        // An initial version of this code incorrectly initialized the cursor to
+        // the length of the input list, which corresponded to the count of top-
+        // level items. This was incorrect, as it failed to account for sized
+        // array types (which consume as many words as they have members) as well
+        // as `Bytes` and `String`, which are variable based on how many words
+        // they consume when wrapping is factored in. The top level (implied)
+        // tuple, as well as all nested `Tuple` types use this calculation.
 
     
         let cursor = countOfArguments evmDatatypeList
                 
-        let rec unpackInputAndProcess list (acc: string) (cursor: int) : string =
+        let rec unpackInputAndProcess list acc cursor : string =
             match list with
             | head :: tail ->
                 match head with
@@ -377,13 +394,13 @@ module ABIFunctions =
 
     ///
     /// Returns the internal typed representation of an EVM function return value. This is typically the result of an
-    /// `EthParam1559Call` or other RPC response. When calling a contract's function from inside web3.fs or elsewhere, the
-    /// RPC response contains a value that is formatted according to the signature of the return type(s). This function
-    /// consumes the return types (captured during the import of a contract using `loadDeployedContract` as well as the
-    /// EVM's formatted return string.
+    /// `EthParam1559Call` or other RPC response. When calling a contract's function from inside web3.fs or elsewhere,
+    /// the RPC response contains a value that is formatted according to the signature of the return type(s). This
+    /// function consumes the return types (captured during the import of a contract using `loadDeployedContract` as
+    /// well as the EVM's formatted return string.
     ///
-    /// **Warning** The numeric types are represented in web3.fs as the widest version of their type, and the returned types
-    /// will thus all be `__256`. However, the values contained therein will retain their original size.
+    /// **Warning** The numeric types are represented in web3.fs as the widest version of their type, and the returned
+    /// types will thus all be `__256`. However, the values contained therein will retain their original size.
     ///
     /// **Warning** Multidimensional arrays and the `Function` types aren't supported.
     ///  
@@ -400,7 +417,7 @@ module ABIFunctions =
             // Bytes (and by extension String) types are even more involved, since they can wrap 'words' and thus
             // extracting their contents is more complex. The Bytes array types also function with a faked offset value,
             // so placed so that the Bytes handler works properly.
-            let rec unpackOutputAndProcess (evmList: EVMDatatype list) (evmOutput: string) (acc: EVMDatatype list) cursor = 
+            let rec unpackOutputAndProcess evmList evmOutput acc cursor = 
                 match evmList with
                 | head :: tail ->
                     match head with
