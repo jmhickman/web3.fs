@@ -3,9 +3,10 @@ namespace web3.fs
 open web3.fs.Types
 
 module RPCConnector =
+    open FsHttp
+    open FsHttp.DslCE
     open FSharp.Data
-    open FSharp.Data.HttpRequestHeaders
-
+     
     open Helpers
     open RPCMethodFunctions
     open RPCParamFunctions
@@ -16,7 +17,7 @@ module RPCConnector =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC helpers
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    
 
     ///
     /// Returns a Txn object for use in the validation function `ValidateRPCParams`
@@ -66,6 +67,9 @@ module RPCConnector =
     ///
     /// Some RPC calls require a parameter indicating at what block height the call should be performed against. This
     /// finds calls that require it in order to insert a parameter passed in from the user, and ignores it otherwise.
+    /// Note that many calls that come in the form of lists (rather than formatted JSON) include the block height
+    /// parameter already, and so come through this function as 'false' because the parameter doesn't need to be
+    /// handled here. 
     ///
     let needsBlockArgs (m: RPCMethod) =
         match m with
@@ -87,49 +91,72 @@ module RPCConnector =
             $"""{{"jsonrpc":"{rpcVersion}","method":"{bindRPCMethod rpcMsg.method}","params":[{bindRPCParam rpcMsg.paramList}], "id":1}}"""
 
 
+    ///
+    /// Returns a result based on the success or failure of the Http request.
+    let requestHttpAsync url rjson = async {
+        try
+            let! response = httpAsync {
+                POST url
+                Origin "Web3.fs"
+                ContentType "application/json"
+                body
+                json rjson
+            }
+            let! o = response.content.ReadAsStringAsync() |> Async.AwaitTask
+            return o |> Ok
+        with e -> return $"{e.Message}" |> HttpClientError |> Error
+    }
+
+    
+    ///
+    /// Returns the Result of searching for error responses that didn't fall under the first 'nullable' filter from the
+    /// `NullableRPCResponse`.
+    ///  
+    let getValueOption (rpcResponse: RPCResponse.Root) =
+        match rpcResponse.JsonValue.TryGetProperty("error") with
+        | Some e ->
+            $"RPC error message: {e}"
+            |> ConnectionError
+            |> Error
+        | None ->
+            rpcResponse |> Ok
+    
+    
+    ///
+    /// Handles certain types of responses from RPCs that come back with a `null` in the Result field, which causes
+    /// issues if not handled first. This means the same response is essentially double-filtered, which is inefficient
+    /// but not the slowest link in the chain.
+    ///  
+    let filterNullOrErrorResponse (s: string) =
+        match NullableRPCResponse.Parse(s).Result with
+        | Some _ -> RPCResponse.Parse(s) |> getValueOption
+        | None -> s |> RPCResponseErrorOrNull |> Error
+    
+    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC connection functions
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-    let rpcConnector url (rpcVersion: string) (mbox: HttpRPCMailbox) =
-
+    
+    
+    ///
+    /// A MailboxProcessor that manages making and returning RPC calls via a Reply channel.
+    let rpcConnector (url: string) (rpcVersion: string) (mbox: HttpRPCMailbox) =
+        
         let rec receiveLoop () =
             async {
                 let! msg = mbox.Receive()
-                
                 let (TransactionMessageAndReply (rpcMessage, reply)) = msg
-
+                
                 rpcMessage.method
                 |> needsBlockArgs
                 |> formatRPCString rpcMessage rpcVersion rpcMessage.blockHeight
-                |> fun rpcString ->
-                    //printfn $"{rpcString}"
-                    Http.RequestString(
-                        url,
-                        headers = [ ContentType HttpContentTypes.Json; Origin "Web3.fs" ],
-                        body = TextRequest rpcString
-                    )
-                |> fun resp ->
-                    
-                    let maybe = NullableRPCResponse.Parse resp
-                    match maybe.Result with
-                    | Some _ ->
-                        let j = RPCResponse.Parse resp
-                        match j.JsonValue.TryGetProperty("error") with
-                        | Some e ->
-                            $"RPC error message: {e}"
-                            |> ConnectionError
-                            |> Error
-                            |> reply.Reply
-                        | None ->
-                            j |> Ok |> reply.Reply
-                    | None -> RPCResponse.Parse rpcNullBind |> Ok |> reply.Reply
-                        
-
+                |> requestHttpAsync url
+                |> Async.RunSynchronously                
+                |> Result.bind filterNullOrErrorResponse
+                |> reply.Reply
+                
                 do! receiveLoop ()
             }
-
         receiveLoop ()
 
 
@@ -160,6 +187,11 @@ module RPCConnector =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+    let blockHeight (constants: ContractConstants) =
+        match constants.blockHeight with
+        | Some s -> s
+        | None -> LATEST
+    
     ///
     /// Creates an Ethereum RPC request whose purpose is typically to query the RPC node for chain-based or network-
     /// based data. Examples are retrieving the contents of a block, checking a transaction receipt, or getting an
@@ -201,10 +233,7 @@ module RPCConnector =
         (value: string)
         =
 
-        let blockHeight' =
-            match constants.blockHeight with
-            | Some s -> s
-            | None -> LATEST
+        let blockHeight' = blockHeight constants
 
         createUnvalidatedTxn constants contract evmFunction arguments value
         |> validateRPCParams
@@ -233,10 +262,7 @@ module RPCConnector =
         (arguments: EVMDatatype list option)
         =
 
-        let blockHeight' =
-            match constants.blockHeight with
-            | Some s -> s
-            | None -> LATEST
+        let blockHeight' = blockHeight constants
 
         createUnvalidatedCall constants contract evmFunction arguments
         |> validateRPCParams

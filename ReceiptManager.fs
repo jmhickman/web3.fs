@@ -43,11 +43,7 @@ module ReceiptManager =
                       blockHeight = LATEST }
 
                 let! result = callLoop rpc call
-
-                match result with
-                | Ok o -> o |> Ok |> reply.Reply
-                | Error e -> e |> Error |> reply.Reply
-
+                result |> reply.Reply
             }
 
         msgLoop ()

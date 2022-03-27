@@ -384,6 +384,8 @@ module Types =
         | ContractParseFailure of string
         | ConnectionError of string
         | DataValidatorError of string
+        | HttpClientError of string
+        | RPCResponseErrorOrNull of string
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
