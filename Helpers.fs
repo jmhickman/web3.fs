@@ -201,7 +201,10 @@ module Helpers =
 
     ///
     /// Prepends a hexadecimal specifier to a string.
-    let prepend0x s = "0x" + s
+    let prepend0x (s: string) =
+        if not(s.StartsWith("0x")) then
+            "0x" + s
+        else s
 
 
     ///

@@ -61,6 +61,7 @@ module Types =
     let ZERO = "0x0"
     let fakedOffset = "0000000000000000000000000000000000000000000000000000000000000020"
     
+    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // EVM data types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,6 +107,20 @@ module Types =
         | StringArray of EVMDatatype list //
         | Blob of string
 
+    
+    type EVMTypeSignaling =
+        | EVMUint8
+        | EVMUint16
+        | EVMUint32
+        | EVMUint64
+        | EVMUint128
+        | EVMInt8
+        | EVMInt16
+        | EVMInt32
+        | EVMInt64
+        | EVMInt128
+        
+    
 
     // just aliases, may adapt validators later to emit stronger types
     type TxnType = string

@@ -12,6 +12,9 @@ module ABIFunctions =
     // ABI Helpers
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    
+    ///
+    /// Returns a 
     ///
     /// Convenience function for mapping boolean values to 32 byte integer equivalents.
     let convertBoolToInt b = 
@@ -641,4 +644,78 @@ module ABIFunctions =
                 | [] -> acc
             
             unpackOutputAndProcess evmList evmOutput [] 0
-            
+
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // ABI Type Checking
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    ///
+    /// Returns a boolean indicating whether the hexadecimal string representation of numeric EVM output is able to be
+    /// represented by the indicated type. Hexadecimal strings should begin with '0x'. Use `prepend0x` if unsure. 
+    let boundsCheck (sem: EVMTypeSignaling) s =
+        match sem with
+        | EVMUint8 -> s |> hexToBigInt |> fun i -> not(i > 255I) && not(i < 0I) 
+        | EVMUint16 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 16)) && not(i < 0I) 
+        | EVMUint32 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 32)) && not(i < 0I) 
+        | EVMUint64 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 64)) && not(i < 0I) 
+        | EVMUint128 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 128)) && not(i < 0I) 
+        | EVMInt8 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 7) - 1I) && not(i < - (bigint.Pow(2, 7)))
+        | EVMInt16 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 15) - 1I) && not(i < - (bigint.Pow(2, 15))) 
+        | EVMInt32 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 15) - 1I) && not(i < - (bigint.Pow(2, 15))) 
+        | EVMInt64 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 31) - 1I) && not(i < - (bigint.Pow(2, 31))) 
+        | EVMInt128 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 63) - 1I) && not(i < - (bigint.Pow(2, 63))) 
+         
+        
+    ///
+    /// Returns the input EVMDatatype list if the inputs conform to some basic checks, otherwise an error string that
+    /// will bubble up later in the pipeline.
+    ///
+    let checkEVMData evmDataList =
+        
+        let rec checkEVMDataConforming evmDataList =
+            match evmDataList with
+            | head :: tail ->
+                match head with 
+                | Uint256 u ->
+                    if (bigint.Parse(u) |> fun i -> not(i > bigint.Pow(2, 256)) && not(i < 0I)) then checkEVMDataConforming tail
+                    else "Specified unsigned integer exceeded the maximum value or was less than 0"
+                        |> DataValidatorError
+                        |> Error
+                | Int256 i ->
+                    if (bigint.Parse(i) |> fun i -> not(i > bigint.Pow(2, 127) - 1I) && not(i < - (bigint.Pow(2, 127)))) then checkEVMDataConforming tail
+                    else "Specified signed integer exceeded the maximum values"
+                         |> DataValidatorError
+                         |> Error
+                | Address a ->
+                    a
+                    |> strip0x
+                    |> fun s ->
+                        if s.Length % 40 = 0 then checkEVMDataConforming tail
+                        else "Specified Address length incorrect"
+                             |> DataValidatorError
+                             |> Error
+                | Bytes b ->
+                    b
+                    |> strip0x
+                    |> fun s ->
+                        if s.Length % 2 = 0 then checkEVMDataConforming tail
+                        else "Bytes length must be even, i.e. the specified bytes must be in pairs."
+                             |> DataValidatorError
+                             |> Error
+                | BytesSz b ->
+                    b
+                    |> strip0x
+                    |> fun s ->
+                        if s.Length <= 64 && s.Length % 2 = 0 then checkEVMDataConforming tail
+                        else "Sized bytes must be less than or equal to 32 bytes (64 characters) and in pairs."
+                             |> DataValidatorError
+                             |> Error
+                | _ -> checkEVMDataConforming tail
+            | [] -> [] |> Ok
+        
+        match checkEVMDataConforming evmDataList with
+        | Ok _ -> evmDataList |> Ok
+        | Error e -> e |> Error
+                    

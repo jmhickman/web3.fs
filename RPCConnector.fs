@@ -38,7 +38,11 @@ module RPCConnector =
             match arguments with
             | Some a -> a
             | None -> data
-
+        
+        // feed realArgs into data validity checker, which returns Result<realArgs, string>
+        // Web3Error would be of type EVMDatatype error, and include the failing input, which will fail again
+        // downstream in validateRPCParams and bubble up the error
+        
         { utxnType = txn
           unonce = ""
           utoAddr = contract.address
