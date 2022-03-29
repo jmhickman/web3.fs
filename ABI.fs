@@ -715,7 +715,6 @@ module ABIFunctions =
                 | _ -> checkEVMDataConforming tail
             | [] -> [] |> Ok
         
-        match checkEVMDataConforming evmDataList with
-        | Ok _ -> evmDataList |> Ok
-        | Error e -> e |> Error
+        checkEVMDataConforming evmDataList
+        
                     

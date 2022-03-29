@@ -34,14 +34,16 @@ module RPCConnector =
         let evmF =
             bindFunctionIndicator contract evmFunction
 
-        let realArgs =
+        let udata =
             match arguments with
-            | Some a -> a
-            | None -> data
-        
-        // feed realArgs into data validity checker, which returns Result<realArgs, string>
-        // Web3Error would be of type EVMDatatype error, and include the failing input, which will fail again
-        // downstream in validateRPCParams and bubble up the error
+            | Some a ->
+                match checkEVMData a with
+                | Ok _ -> $"{evmF.hash |> bindEVMSelector}{createInputByteString a}"
+                | Error e -> $"{e.ToString}"
+            | None ->
+                match checkEVMData data with
+                | Ok _ -> $"{evmF.hash |> bindEVMSelector}{createInputByteString data}"
+                | Error e -> $"{e.ToString}"
         
         { utxnType = txn
           unonce = ""
@@ -49,7 +51,7 @@ module RPCConnector =
           ufrom = constants.address
           ugas = ""
           uvalue = value |> bigintToHex |> padTo32BytesLeft
-          udata = $"{evmF.hash |> bindEVMSelector}{createInputByteString realArgs}"
+          udata = udata
           umaxFeePerGas = maxfee
           umaxPriorityFeePerGas = priority
           uaccessList = []
@@ -113,28 +115,17 @@ module RPCConnector =
 
     
     ///
-    /// Returns the Result of searching for error responses that didn't fall under the first 'nullable' filter from the
-    /// `NullableRPCResponse`.
-    ///  
-    let getValueOption (rpcResponse: RPCResponse.Root) =
-        match rpcResponse.JsonValue.TryGetProperty("error") with
-        | Some e ->
-            $"RPC error message: {e}"
-            |> ConnectionError
-            |> Error
-        | None ->
-            rpcResponse |> Ok
-    
-    
-    ///
     /// Handles certain types of responses from RPCs that come back with a `null` in the Result field, which causes
     /// issues if not handled first. This means the same response is essentially double-filtered, which is inefficient
     /// but not the slowest link in the chain.
     ///  
     let filterNullOrErrorResponse (s: string) =
-        match NullableRPCResponse.Parse(s).Result with
-        | Some _ -> RPCResponse.Parse(s) |> getValueOption
-        | None -> s |> RPCResponseErrorOrNull |> Error
+        
+        match RPCResponse.Parse(s) with
+        | x when x.Result.IsSome  -> x |> Ok
+        | x when x.Error.IsSome -> $"RPC error message: {x.Error.Value}" |> RPCResponseError |> Error
+        | _ ->  RPCNullResponse |> Error
+         
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

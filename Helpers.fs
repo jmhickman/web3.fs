@@ -114,24 +114,24 @@ module Helpers =
     ///
     /// Verifies the correctness of the Transaction type of a call.
     let validateTxnType t =
-        validateInputs "^0x([0-9,a-f,A-F]){1,2}$" t
+        validateInputs "^0x([0-9a-fA-F]){1,2}$" t
 
     
     ///
     /// Verifies the correctness of QUANTITY data in a call.
     let validateQuantity s =
-        validateInputs "^0x([1-9a-f]+[0-9a-f]*|0)$" s
+        validateInputs "^0x([1-9a-fA-F]+[0-9a-fA-F]*|0)$" s
 
     
     ///
     /// Verifies the correctness of DATA data in a call.
-    let validateData s = validateInputs "^0x([0-9a-f]{2})*$" s
+    let validateData s = validateInputs "^0x([0-9a-fA-F]{2})*$" s
 
     
     ///
     /// Verifies the correctness of ADDRESS data in a call.
     let validateAddress s =
-        validateInputs "^0x[0-9,a-f,A-F]{40}$" s
+        validateInputs "^0x[0-9a-fA-F]{40}$" s
 
 
     let matchEVMInput (reg: string) t =

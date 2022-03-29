@@ -250,13 +250,13 @@ module ContractFunctions =
                     [EVMDatatype.TupleArraySz
                          (List.init count (fun _ ->
                             EVMDatatype.Tuple (returnEVMTypes (x.GetProperty("components")) acc)))] @ acc
-                | x when matchEVMInput "^bytes\[\]$" (getInnerTypeText x) ->
-                    [EVMDatatype.BytesArray (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
+                //| x when matchEVMInput "^bytes\[\]$" (getInnerTypeText x) ->
+                //    [EVMDatatype.BytesArray (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
                 | x when matchEVMInput "^bytes\[([0-9]{1,2})\]$" (getInnerTypeText x)  ->
                     let count = matchEVMInputSz "bytes\[([0-9]{1,2})\]$" (getInnerTypeText x)
                     [EVMDatatype.BytesArraySz (List.init count (fun _ -> EVMDatatype.Bytes "" ))] @ acc
-                | x when matchEVMInput "^string\[\]$" (getInnerTypeText x) ->
-                    [EVMDatatype.StringArray (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
+                //| x when matchEVMInput "^string\[\]$" (getInnerTypeText x) ->
+                //    [EVMDatatype.StringArray (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
                 | x when matchEVMInput "^string\[([0-9]{1,2})\]$" (getInnerTypeText x)  ->
                     let count = matchEVMInputSz "string\[([0-9]{1,2})\]$" (getInnerTypeText x)
                     [EVMDatatype.StringArraySz (List.init count (fun _ -> EVMDatatype.String "" ))] @ acc
