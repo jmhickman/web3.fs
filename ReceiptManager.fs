@@ -62,5 +62,5 @@ module ReceiptManager =
     ///
     /// Returns a partially applied function ready to take an RPC connection and a previous RPC result in order to
     /// monitor an Ethereum transaction's status.
-    let createReceiptMonitor rpc : Monitor =
+    let createReceiptMonitor rpc =
         rpc |> startReceiptManager |> receiptMessage 

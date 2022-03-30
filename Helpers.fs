@@ -44,7 +44,7 @@ module Helpers =
 
         (txn, maxFeePerGas, maxPriorityFeePerGas, data)
 
-    
+      
     ///
     /// Used by the `makeEth_` functions to handle users specifying functions by name (string) or by directly supplying
     /// the function.
@@ -96,6 +96,8 @@ module Helpers =
             []
 
     
+    
+        
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC Data validation
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -286,7 +288,7 @@ module Helpers =
     
     ///
     /// The Json RPC type provider returns results that have their own strings wrapped in double quotes. This
-    /// causes issue elsewhere, so this function is used here and there to remove extraneous strings when the values
+    /// causes issue elsewhere, so this function is used here and there to remove extraneous quotes when the values
     /// must be used in the code. `TrimStart` and `TrimEnd` are specifically used because of potential knock-on effects
     /// of overzealous quote stripping.
     /// 

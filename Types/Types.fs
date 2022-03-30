@@ -20,11 +20,15 @@ module Types =
     // Experiment with making this one sample as inclusive as possible and see if it handles the minimal case(s) properly. Better to have just one.
     [<Literal>]
     let nullable =
-        """[{"id":1,"jsonrpc":"2.0","result":{"blockHash":"0xc3646d4d8e3c650b15ef7f8a4d6d16fa4c7e68eb08195361182d7aa2eb3a0d65","blockNumber":"0x9dc3fe","contractAddress":"0x3872353821064f55df53ad1e2d7255e969f6eac0","cumulativeGasUsed":"0x1166efb","effectiveGasPrice":"0x650fe5cd5","from":"0x2268b96e204379ee8366505c344ebe5cc34d3a46","gasUsed":"0x2e707","logs":[],"logsBloom":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","status":"0x1","to":null,"transactionHash":"0x0bd6acf13c1adf63c1f2b17ac1f9c4b98d94f2701728ffd5efe50aa77a6aa5aa","transactionIndex":"0x56","type":"0x2"}}, {"id":1,"jsonrpc":"2.0","result":null}, {"id":1,"jsonrpc":"2.0","error":{"message":"","code":-1}}]"""
+        """[{"id":1,"jsonrpc":"2.0","result":{"blockHash":"0xc3646d4d8e3c650b15ef7f8a4d6d16fa4c7e68eb08195361182d7aa2eb3a0d65","blockNumber":"0x9dc3fe","contractAddress":null,"cumulativeGasUsed":"0x1166efb","effectiveGasPrice":"0x650fe5cd5","from":"0x2268b96e204379ee8366505c344ebe5cc34d3a46","gasUsed":"0x2e707","logs":[],"logsBloom":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","status":"0x1","to":null,"transactionHash":"0x0bd6acf13c1adf63c1f2b17ac1f9c4b98d94f2701728ffd5efe50aa77a6aa5aa","transactionIndex":"0x56","type":"0x2"}}, {"id":1,"jsonrpc":"2.0","result":null}, {"id":1,"jsonrpc":"2.0","error":{"message":"","code":-1}}]"""
 
     type RPCResponse = JsonProvider<nullable, SampleIsList=true>
     
-   
+    [<Literal>]
+    let minedTransaction =
+        """{"accessList":[],"blockHash":"0xc5430aaf3f85cb6b7d0400345d82bdd5ff3c16d230670827adefe024f2b84a19","blockNumber":"0x9ee268","chainId":"0x4","from":"0x2268b96e204379ee8366505c344ebe5cc34d3a46","gas":"0x5566","gasPrice":"0x700f2328","hash":"0xf7d92d8090c1a6f6f811c07ef2b98b044304545c65af57fb6424f33d59ecd1ce","input":"0x91fc651700000000000000000000000000000000000000000000000000000000000000ff","maxFeePerGas":"0x7f541fb5","maxPriorityFeePerGas":"0x41a53453","nonce":"0x32","r":"0x4f9f9a8f18b3756e647816d16e240588d2cc7f212d4fbdcc7871c37327dd300d","s":"0x91fd6da320a1a006aad57bce8e6f062a6caf68066966488039d791d7f8b1ae3","to":"0x894113aa49fe903be4c7b8fdddacf503fa88c1f7","transactionIndex":"0x11","type":"0x2","v":"0x0","value":"0x0"}"""
+    
+    type RPCMinedTransaction = JsonProvider<minedTransaction>
     
     [<Literal>]
     let sampleABI =
@@ -56,6 +60,15 @@ module Types =
     let PENDING = "pending"
     let ZERO = "0x0"
     let fakedOffset = "0000000000000000000000000000000000000000000000000000000000000020"
+    
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Chains
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    let ETHEREUM_MAINNET = "0x01"
+    let RINKEBY = "0x04"
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,7 +138,7 @@ module Types =
     type EthAddress = string
     type EthTransactionHash = string
     type AccessList = (EthAddress * Data list) list
-
+    
     
     ///
     /// A 'raw' representation of an EIP-1559 compliant txn object. This is fed through a validation function
@@ -399,8 +412,71 @@ module Types =
         | RPCResponseError of string
         | RPCNullResponse
         
+  
+    type RPCTransactionResponse = {
+        blockHash: string
+        blockNumber: string
+        contractAddress: EthAddress option
+        cumulativeGasUsed: string
+        effectiveGasPrice: string
+        from: EthAddress
+        gasUsed: string
+        logs: string list
+        logsBloom: string
+        status: string
+        toAddr: EthAddress
+        transactionHash: EthTransactionHash
+        transactionIndex: string
+        tType: string
+        isNull: bool
+    }
     
+    let dummyTransaction = {
+        blockHash = ""
+        blockNumber = ""
+        contractAddress = None
+        cumulativeGasUsed = ""
+        effectiveGasPrice = ""
+        from = ""
+        gasUsed = ""
+        logs = []
+        logsBloom = ""
+        status = ""
+        toAddr = ""
+        transactionHash = ""
+        transactionIndex = ""
+        tType = ""
+        isNull = true
+    }
     
+    type MinedTransaction = {
+          accessList: string list
+          blockHash: string
+          blockNumber: string
+          chainId: string
+          from: EthAddress
+          gas: string
+          gasPrice: string
+          hash: EthTransactionHash
+          input: string
+          maxFeePerGas: string
+          maxPriorityFeePerGas: string
+          nonce: string
+          r: string
+          s: string
+          toAddr: EthAddress
+          transactionIndex: string
+          tType: string
+          v: string
+          value: string
+    }
+        
+    type CallResponses =
+        | GetTransactionByHashResult of MinedTransaction
+        | TransactionReceiptResult of RPCTransactionResponse
+        | Null of string
+    
+        
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // MailboxProcessor types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

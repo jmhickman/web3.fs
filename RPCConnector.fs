@@ -5,11 +5,12 @@ open web3.fs.Types
 module RPCConnector =
     open FsHttp
     open FsHttp.DslCE
-    open FSharp.Data
+    
      
     open Helpers
     open RPCMethodFunctions
     open RPCParamFunctions
+    open RPCBindFunctions
     open ContractFunctions
     open ABIFunctions
 
@@ -145,6 +146,7 @@ module RPCConnector =
                 rpcMessage.method
                 |> needsBlockArgs
                 |> formatRPCString rpcMessage rpcVersion rpcMessage.blockHeight
+                //|> fun p -> printfn $"{p}"; p
                 |> requestHttpAsync url
                 |> Async.RunSynchronously                
                 |> Result.bind filterNullOrErrorResponse
@@ -263,6 +265,7 @@ module RPCConnector =
         let blockHeight' = blockHeight constants
 
         createUnvalidatedCall constants contract evmFunction arguments
+        //|> fun p -> printfn $"{p}"; p
         |> validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -292,7 +295,7 @@ module RPCConnector =
             match contract.constructorArguments with
             | Some a -> a
             | None -> []
-
+        
         { utxnType = txn
           unonce = ""
           utoAddr = ""
@@ -300,13 +303,12 @@ module RPCConnector =
           ugas = ""
           uvalue = "0" |> bigintToHex |> padTo32BytesLeft
           udata =
-              $"{_rawBytecode}{contract.constructor |> bindEVMSelector}{createInputByteString cArgs}"
+              $"{_rawBytecode}{contract.constructor |> bindEVMSelector |> strip0x}{createInputByteString cArgs}"
               |> prepend0x
           umaxFeePerGas = maxfee
           umaxPriorityFeePerGas = priority
           uaccessList = []
           uchainId = contract.chainId }
-
         |> validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -314,3 +316,22 @@ module RPCConnector =
                     { method = EthMethod.SendTransaction |> wrapEthMethod
                       paramList = _params |> EthParam
                       blockHeight = LATEST })
+
+    
+    
+    ///
+    /// Returns a MinedTransaction record based on a given transaction hash that has been included in a blockchain.
+    /// Intended to be piped directly from a `bindTransactionResult`, but can be called alone.
+    /// 
+    let followupCallTransaction
+        (web3c: HttpRPCMessage -> Result<RPCResponse.Root,Web3Error>)
+        (r: Result<CallResponses,Web3Error>) =
+            
+        r |> Result.bind (fun r' ->
+            match r' with
+            | TransactionReceiptResult t ->
+                makeEthRPCCall web3c EthMethod.GetTransactionByHash ([$"{t.transactionHash}"]|> EthParamGetTransactionByHash)
+                |> bindGetTransactionByHashResult
+            | x -> x |> Ok )
+                
+  

@@ -37,8 +37,8 @@ module ContractFunctions =
     /// Returns upwrapped EVMSelector value for use in transaction object construction.
     let bindEVMSelector a =
         match a with
-        | EVMFunctionHash s -> s
-        | EVMEventSelector s -> s
+        | EVMFunctionHash s -> s 
+        | EVMEventSelector s -> s 
     
     
     ///
@@ -462,7 +462,7 @@ module ContractFunctions =
     
     ///
     /// Returns an UndeployedContract for use in `deployEthContract`. 
-    let returnUndeployedContract digest bytecode constructorArguments chainId abi =
+    let prepareUndeployedContract digest bytecode constructorArguments chainId abi =
         let (ABI _abi) = abi
         
         match JsonValue.TryParse(_abi) with

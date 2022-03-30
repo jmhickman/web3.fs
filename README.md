@@ -7,152 +7,148 @@ Dissatisfaction with existing solutions for interacting with Ethereum and other 
 
 ### Progress
 
-Basic functionality cobbled in, including RPC communications (but unformatted results) and a basic representation of Solidity contracts.  
-Deployed contracts can now be represented and interacted with to a certain degree. Function selector and input encoding working.  
-`makeEthCall` and `makeEthTxn` now functional. Getting closer to all 'basic' functionality working.
+Getting close to a useful release that doesn't explode regularly. Most of the basic functionality and niceties are in. Still have a lot of work to do around types, function names, pipeline flows, etc.
 
-Not ready for use. It will probably explode, or be silly. 
+Not ready for real use, but will do in a pinch. 
 
 Docs coming.
 
 ### Deps and Reqs
 
-Removed Nethereum deps (for now).  
 FSharp.Data  
 FSharp.Json  
-SHA3Core  
+SHA3Core
+FsHttp
 Writing in .Net 6  
 
 ### Example Use
 
-```
-open System
-
+```fsharp
 open web3.fs.Types
 open web3.fs.Helpers
+
 open web3.fs.ContractFunctions
 open web3.fs.RPCConnector
+open web3.fs.RPCBindFunctions
+open web3.fs.ReceiptManager
 
-open SHA3Core.Enums
-open SHA3Core.Keccak
+// Prepare a hash digest, some constants, a web3 RPC connection, and a monitor for watching transaction receipts.
+// Private keys are handled in the wallet. Use Frame.sh! https://frame.sh 
+// Private keys sitting around are bad, mkay? Environment vars aren't a suitable replacement. :)
 
-// Make a hashing object
 let keccakDigest = newKeccakDigest
+let constants = createDefaultConstants "0x2268b96e204379ee8366505c344ebe5cc34d3a46" // the wallet that will source transactions
+let web3c = createWeb3Connection "http://127.0.0.1:1248" "2.0" // Frame's listener and the RPC version
+let monitor: Monitor = createReceiptMonitor web3c
 
-// ABI for contract at address 0x94C4E1832fdF7156AC98d7642236aDb1FBcaF276 (rinkeby)
+// The ABI of the contract to deploy. Here as a single line of text, but could be in a file as well.
+let testContractABI =
+  """[{"inputs":[{"internalType":"address","name":"aa","type":"address"}]<SNIP>""" |> ABI
+// Get bytecode from a file.
+let testContractBytecode =
+  returnBytecodeFromFile """C:\Users\jon\source\repos\web3.fs\Samples\Contract.json"""
 
-let deployedABI =
-    """[{"inputs":[],"name":"retrieve","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"num","type":"uint256"}],"name":"store","outputs":[],"stateMutability":"nonpayable","type":"function"}]"""
-    |> ABI
-  
-// import the deployed contract    
-let deployed =
-    // loadDeployedContract: digest: Keccak -> address: EthAddress -> chainId: string -> abi: ABI -> LoadContractResult
-    loadDeployedContract 
-        keccakDigest
-        ("0x94C4E1832fdF7156AC98d7642236aDb1FBcaF276" |> EthAddress)
-        "0x04" // chainId
-        deployedABI
-   |> bindDeployedContract
-   |> List.head
-   
-let web3 =
-    createWeb3Connection "http://127.0.0.1:1248" "2.0"
+// Deploy to Rinkeby. First the contract is parsed and loaded, then deployed. The transaction is
+// monitored, and when it fails or succeeds it is logged to the console. 
+prepareUndeployedContract keccakDigest testContractBytecode None RINKEBY testContractABI
+|> Result.bind (deployEthContract web3c constants ) 
+|> monitorTransaction monitor
+|> bindTransactionResult
+|> logCallResult
+|> ignore
+
+(*
+Beginning monitoring of transaction "0x765bff94b73cd6eb0d676662b86d80b5f8caef1abc678f8380dacb7020259939"
+Transaction receipt: { blockHash =
+   "0xb8a33e7e116346b173853411eda2521f2cb11d3bbbd3ed726be6c333950b02fb"
+  blockNumber = "0x9ee7da"
+  contractAddress = Some "0x1a4bbe1d61b88c883a110d78105d98d683871c74"
+  cumulativeGasUsed = "0xa8838a"
+  effectiveGasPrice = "0x3b9aca09"
+  from = "0x2268b96e204379ee8366505c344ebe5cc34d3a46"
+  gasUsed = "0x119239"
+  logs = []
+  logsBloom =
+   "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  status = "0x1"
+  toAddr = "null"
+  transactionHash =
+   "0x765bff94b73cd6eb0d676662b86d80b5f8caef1abc678f8380dacb7020259939"
+  transactionIndex = "0x35"
+  tType = "0x2"
+  isNull = false }
+*)
+
+// After deployment, let's interact. We switch to the deployed contract
+let testContractAddress = "0x1a4bbe1d61b88c883a110d78105d98d683871c74" |> EthAddress
+let deployed = loadDeployedContract keccakDigest testContractAddress RINKEBY testContractABI |> bindDeployedContract |> List.head
+
+// Let's partially apply the contract to make it easier to interact with
+let callContract = makeEthCall web3c constants deployed
+let contractTransaction = makeEthTxn web3c constants deployed
     
-let retrieveArgs = Some[] 
+// Let's save a couple of functions as well, to reference them
+let doNothing0 = findFunction (Name "doNothing0") deployed |> List.head
+let byFunctionHash = ("0x035dee5e" |> EVMFunctionHash |> SearchFunctionHash)
+let seeNothing0 = findFunction byFunctionHash deployed |> List.head
 
-let storeArgs = [Uint256 "100008914000990000330000012"] |> Some
+//[IndicatedFunction { name = "doNothing0"
+//                    hash = EVMFunctionHash "0x2a9f633a"
+//                    inputs = EVMFunctionInputs "(address)"
+//                    outputs = []
+//                    config = Nonpayable }]
+//[IndicatedFunction { name = "seeNothing0"
+//                    hash = EVMFunctionHash "0x035dee5e"
+//                    inputs = EVMFunctionInputs "()"
+//                    outputs = [Address ""]
+//                    config = Nonpayable }]
 
-// Set some constants used during call and transaction creation
-let constants =
-    { address =
-          "0x2268B96E204379Ee8366505C344EBE5Cc34d3a46"
-          |> EthAddress
-      transactionType = Some "0x02"
-      maxFeePerGas = None
-      maxPriorityFeePerGas = None
-      data = None
-      blockHeight = Some LATEST }
-      
-printfn "Sending initial state check..."
-printfn $"Contract {deployed.address} function 'retrieve'"
-//makeEthCall: rpcConnection: (HttpRPCMessage -> Result<FSharp.Data.JsonProvider<...>.Root,string>) -> constants: ContractConstants -> contract: DeployedContract -> evmFunction: FunctionIndicator -> arguments: EVMDatatype list option -> Result<FSharp.Data.JsonProvider<...>.Root,string>
-let res = makeEthCall web3 constants deployed ("retrieve" |> ByString) retrieveArgs
+// Let's use one of our partials to call the contract and read a value. `None` is used to indicate an empty argument
+// tuple. `seeNothing0` is our function from before.
+callContract seeNothing0 None 
+|> logRPCResult
+|> ignore
 
-match res with
-| Ok r -> printfn $"Result: {r.Result}"
-| Error e -> printfn $"Call failed: {e}"
+// Call successful, got: "0x0000000000000000000000000000000000000000000000000000000000000000"
 
-printfn "Changing chain state..."
-printfn $"Contract {deployed.address} function 'store' with argument {storeArgs}"
+// Now let's set a value. Arguments are a `Some`, and are a list. '0' is the value argument, but doNothing is
+// non-payable. We'll also monitor this transaction once we get the hash back
+contractTransaction doNothing0 ([Address "0x2268b96e204379ee8366505c344ebe5cc34d3a46"] |> Some) "0"
+|> monitorTransaction monitor
+|> bindTransactionResult
+|> logCallResult 
+|> ignore
 
-//makeEthTxn: rpcConnection: (HttpRPCMessage -> Result<FSharp.Data.JsonProvider<...>.Root,string>) -> constants: ContractConstants -> contract: DeployedContract -> evmFunction: FunctionIndicator -> arguments: EVMDatatype list option -> value: string -> Result<FSharp.Data.JsonProvider<...>.Root,string>
-match makeEthTxn web3 constants deployed ("store" |> ByString) storeArgs "0" with
-|Ok r -> printfn $" Got Txn hash: {r.Result}"
-|Error e -> printfn $"Call failed: {e}"
+// Then follow up with re-reading the value. Here, you can see that you may use a Some empty list if you wish.
+callContract seeNothing0 (Some []) 
+|> logRPCResult
+|> ignore
 
-Console.ReadLine() |> ignore
+(*
+Call successful, got: "0x0000000000000000000000000000000000000000000000000000000000000000"
 
-printfn "checking state again..."
-printfn $"Contract {deployed.address} function 'retrieve'"
-let res' = makeEthCall web3 constants deployed ("retrieve" |> ByString ) retrieveArgs 
-match res' with                                                        
-| Ok r -> printfn $"Result: {r.Result}"                               
-| Error e -> printfn $"Call failed: {e}"
-```
-#### Results of the above code
+Beginning monitoring of transaction "0xb2b50ef8208928dafedc83afef0c9fe2a6a4cf5805db64f073671ab4cb7fee45"
+Transaction receipt: { blockHash =
+   "0x9701b56960d5b002fba16e7b30e8fe8f37fbbbd5daa76c4ee36e70f5d8dae1e6"
+  blockNumber = "0x9ee7e2"
+  contractAddress = Some "null"
+  cumulativeGasUsed = "0xabcd34"
+  effectiveGasPrice = "0x3b9aca0a"
+  from = "0x2268b96e204379ee8366505c344ebe5cc34d3a46"
+  gasUsed = "0xac59"
+  logs = []
+  logsBloom =
+   "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  status = "0x1"
+  toAddr = ""0x1a4bbe1d61b88c883a110d78105d98d683871c74""
+  transactionHash =
+   "0xb2b50ef8208928dafedc83afef0c9fe2a6a4cf5805db64f073671ab4cb7fee45"
+  transactionIndex = "0x33"
+  tType = "0x2"
+  isNull = false }
 
-```
-dotnet run .\Program.fs
-Sending initial state check...
-Contract 0x94C4E1832fdF7156AC98d7642236aDb1FBcaF276 function 'retrieve'
-Result: 0x00000000000000000000000000000000000000000052b9b5fba1eb33bc9ee68c
-Changing chain state...
-Contract 0x94C4E1832fdF7156AC98d7642236aDb1FBcaF276 function 'store' with argument Some([Uint256 "100008914000990000330000012"
-])
- Got Txn hash: 0x43ae0c0b61bd07720156353bf5f7ed7ca97fdedb5c319d60fffaaa2e8adff542
-
-checking state again...
-Contract 0x94C4E1832fdF7156AC98d7642236aDb1FBcaF276 function 'retrieve'
-Result: 0x00000000000000000000000000000000000000000052b9b617654cd3e607468c
-
-```
-
-Obviously most of the time, once a contract is imported, you would want to partially apply nearly everything up to the function
-name and arguments, and set defaults relevant to your code. So  
-`makeEthCall web3 constants deployed ("retrieve" |> ByString) retrieveArgs`   
-might become  
-`someContract retrieve empty`  
-or  
-`someContract store $"{addressLookup addr}" countOfItemsMinted"`
-where `addressLookup` is its own partially applied call.
-
-Async monitoring of pending transactions is now in:  
-```
- dotnet run .\Program.fs
-Making eth transaction to contract 0x94C4E1832fdF7156AC98d7642236aDb1FBcaF276 using the function 'store'...
-Got txn hash "0x592c9825be1460944a4c6636a0099d1c6cb240cddfe7aa814be5cc721c8eb366", waiting for inclusion into chain...
-Got result, checking...
-Success:
-{
-  "blockHash": "0xe50d0b94db5b32afefc232197ecdf5210eb0bf33cb29dfc62684b6a8b01043ef",
-  "blockNumber": "0x9e303a",
-  "contractAddress": null,
-  "cumulativeGasUsed": "0x3bbcd2",
-  "effectiveGasPrice": "0x3b9aca0a",
-  "from": "0x2268b96e204379ee8366505c344ebe5cc34d3a46",
-  "gasUsed": "0x5d34",
-  "logs": [],
-  "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000",
-  "status": "0x1",
-  "to": "0x94c4e1832fdf7156ac98d7642236adb1fbcaf276",
-  "transactionHash": "0x592c9825be1460944a4c6636a0099d1c6cb240cddfe7aa814be5cc721c8eb366",
-  "transactionIndex": "0x27",
-  "type": "0x2"
-}
+Call successful, got: "0x0000000000000000000000002268b96e204379ee8366505c344ebe5cc34d3a46"
+*)
 ```
 
 ### Code of Conduct
