@@ -1,5 +1,6 @@
 namespace web3.fs
 
+open System
 open web3.fs.Types
 
 module RPCConnector =
@@ -108,6 +109,7 @@ module RPCConnector =
                 ContentType "application/json"
                 body
                 json rjson
+                config_timeoutInSeconds 18.5
             }
             let! o = response.content.ReadAsStringAsync() |> Async.AwaitTask
             return o |> Ok

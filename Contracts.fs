@@ -215,11 +215,15 @@ module ContractFunctions =
           let count = matchEVMInputSz "^bool\[([0-9]{1,2})\]$" x
           BoolArraySz (List.init count (fun _ -> true))
       | x when matchEVMInput "^bytes$" x -> Bytes ""
+      | x when matchEVMInput "^bytes\[([0-9]{1,2})\]$" x -> 
+          let count = matchEVMInputSz "bytes[0-9]{1,3}\[([0-9]{1,2})\]$" x
+          BytesArraySz (List.init count (fun _ -> Bytes ""))
+      | x when matchEVMInput "^bytes\[\]$" x -> BytesArray []
       | x when matchEVMInput "^bytes[0-9]{1,3}$" x -> BytesSz ""
-      | x when matchEVMInput "^bytes[0-9]{1,3}\[([0-9]{1,2})\]$" x -> BytesArraySz []
       | x when matchEVMInput "^bytes[0-9]{1,3}\[([0-9]{1,2})\]$" x  ->
           let count = matchEVMInputSz "bytes[0-9]{1,3}\[([0-9]{1,2})\]$" x
           BytesSzArraySz (List.init count (fun _ -> ""))
+      | x when matchEVMInput "bytes[0-9]{1,3}\[\]$" x -> BytesSzArray []
       | x when matchEVMInput "^string$" x -> EVMDatatype.String ""
       | x when matchEVMInput "^function$" x -> EVMDatatype.Function ""
       | x when matchEVMInput "^function\[([0-9]{1,2})\]$" x -> FunctionArraySz []
