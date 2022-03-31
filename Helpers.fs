@@ -2,6 +2,7 @@ namespace web3.fs
 
 open web3.fs.Types
 
+[<AutoOpen>]
 module Helpers =
     open System
     open System.IO
@@ -21,7 +22,7 @@ module Helpers =
     
     ///
     /// Returns unwrapped value and handles the defaults for any `None` cases.
-    let constantsBind (c: ContractConstants) =
+    let internal constantsBind (c: ContractConstants) =
         let txn =
             match c.transactionType with
             | Some t -> t
@@ -49,7 +50,7 @@ module Helpers =
     /// Used by the `makeEth_` functions to handle users specifying functions by name (string) or by directly supplying
     /// the function.
     ///  
-    let bindFunctionIndicator  contract (s: FunctionIndicator) =
+    let internal bindFunctionIndicator contract s =
         match s with
         | IndicatedFunction f -> f
         | ByString s ->
@@ -62,42 +63,38 @@ module Helpers =
     /// FunctionIndicators can be used directly in `makeEth_` calls instead of using `ByString "someFunction"`. This is 
     /// also a way to find the right function if a contract uses overloads, by filtering for the outputs or inputs.
     /// 
-    let findFunction (search: FunctionSearchTerm) contract : FunctionIndicator list =
-            match search with
-            | Name s ->
-                contract.functions
-                |> List.filter(fun p -> p.name = s)
-                |> List.map (fun f -> f |> IndicatedFunction)
-            | SearchFunctionHash evmSelector ->
-                contract.functions
-                |> List.filter(fun p -> p.hash = evmSelector)
-                |> List.map (fun f -> f |> IndicatedFunction)
-            | SearchFunctionInputs evmFunctionInputs ->
-                contract.functions
-                |> List.filter(fun p -> p.inputs = evmFunctionInputs)
-                |> List.map (fun f -> f |> IndicatedFunction)
-            //| SearchFunctionOutputs evmFunctionOutputs ->
-            //    contract.functions
-            //    |> List.filter(fun p -> p.outputs = evmFunctionOutputs)
-            //    |> List.map (fun f -> f |> IndicatedFunction)
-            | SearchFunctionMutability stateMutability ->
-                contract.functions
-                |> List.filter(fun p -> p.config = stateMutability)
-                |> List.map (fun f -> f |> IndicatedFunction)
+    let public findFunction search contract =
+        match search with
+        | Name s ->
+            contract.functions
+            |> List.filter(fun p -> p.name = s)
+            |> List.map (fun f -> f |> IndicatedFunction)
+        | SearchFunctionHash evmSelector ->
+            contract.functions
+            |> List.filter(fun p -> p.hash = evmSelector)
+            |> List.map (fun f -> f |> IndicatedFunction)
+        | SearchFunctionInputs evmFunctionInputs ->
+            contract.functions
+            |> List.filter(fun p -> p.canonicalInputs = evmFunctionInputs)
+            |> List.map (fun f -> f |> IndicatedFunction)
+        | SearchFunctionOutputs evmFunctionOutputs ->
+            contract.functions
+            |> List.filter(fun p -> p.canonicalOutputs = evmFunctionOutputs)
+            |> List.map (fun f -> f |> IndicatedFunction)
+        | SearchFunctionMutability stateMutability ->
+            contract.functions
+            |> List.filter(fun p -> p.config = stateMutability)
+            |> List.map (fun f -> f |> IndicatedFunction)
         
                 
     ///
     /// Returns a list containing contracts whose import succeeded.  
-    let bindDeployedContract r =
-        match r with
+    let public bindDeployedContract result =
+        match result with
         | Ok o -> [ o ]
-        | Error _ ->
-            printfn "Contract failed to import"
-            []
+        | Error _ -> []
 
     
-    
-        
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC Data validation
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,7 +102,7 @@ module Helpers =
     
     ///
     /// Returns a string option after evaluating an input with a regex provided to the function.
-    let validateInputs (reg: string) t =
+    let internal validateInputs (reg: string) t =
         let reg = Regex(reg)
 
         match reg.Match(t).Success with
@@ -115,33 +112,37 @@ module Helpers =
     
     ///
     /// Verifies the correctness of the Transaction type of a call.
-    let validateTxnType t =
+    let internal validateTxnType t =
         validateInputs "^0x([0-9a-fA-F]){1,2}$" t
 
     
     ///
     /// Verifies the correctness of QUANTITY data in a call.
-    let validateQuantity s =
+    let internal validateQuantity s =
         validateInputs "^0x([1-9a-fA-F]+[0-9a-fA-F]*|0)$" s
 
     
     ///
     /// Verifies the correctness of DATA data in a call.
-    let validateData s = validateInputs "^0x([0-9a-fA-F]{2})*$" s
+    let internal validateData s = validateInputs "^0x([0-9a-fA-F]{2})*$" s
 
     
     ///
     /// Verifies the correctness of ADDRESS data in a call.
-    let validateAddress s =
+    let internal validateAddress s =
         validateInputs "^0x[0-9a-fA-F]{40}$" s
 
-
-    let matchEVMInput (reg: string) t =
+    
+    ///
+    /// Generic matcher for EVM types expressed in canonical form to internal types.
+    let internal matchEVMInput (reg: string) t =
         let reg = Regex(reg)
         reg.Match(t).Success
         
     
-    let matchEVMInputSz (reg: string) t =
+    ///
+    /// Special case for sized arrays of `matchEVMInput`
+    let internal matchEVMInputSz (reg: string) t =
         let reg = Regex(reg)
         let num = reg.Match(t).Groups.Item(1)
         int(num.Value)
@@ -153,7 +154,7 @@ module Helpers =
     /// for each type. Note that the resulting EthParam1559Call is not guaranteed to
     /// succeed or be syntactically valid EVM bytecode.
     ///
-    let validateRPCParams (unvalidatedRpcParam: UnvalidatedEthParam1559Call) =
+    let internal validateRPCParams (unvalidatedRpcParam: UnvalidatedEthParam1559Call) =
         match validateData unvalidatedRpcParam.udata with
         | Some d ->
             { txnType = validateTxnType unvalidatedRpcParam.utxnType
@@ -186,12 +187,12 @@ module Helpers =
 
 
     /// Serializes a 1559 call to Json for sending in an RPC message.
-    let createJsonObj (ethParams: EthParam1559Call) = Json.serializeEx jsonConfig ethParams
+    let internal createJsonObj (ethParams: EthParam1559Call) = Json.serializeEx jsonConfig ethParams
 
 
     ///
     /// Creates a parameter list for RPC calls that take such a flat list format.
-    let concatParamString (list: string list) =
+    let internal concatParamString (list: string list) =
         list
         |> List.fold (fun acc s -> $"""{acc}"{s}", """) ""
         |> fun s -> s.TrimEnd(',', ' ')
@@ -203,15 +204,15 @@ module Helpers =
 
     ///
     /// Prepends a hexadecimal specifier to a string.
-    let prepend0x (s: string) =
+    let public prepend0x (s: string) =
         if not(s.StartsWith("0x")) then
-            "0x" + s
+            $"0x{s}"
         else s
 
 
     ///
     /// Removes a hexadecimal specifier from a string.
-    let strip0x (s: string) =
+    let public strip0x (s: string) =
         if s.StartsWith("0x") then
             s.Remove(0, 2)
         else
@@ -219,35 +220,16 @@ module Helpers =
 
     ///
     /// Returns a hexadecimal string with no padding. Useful for QUANTITY values in the ABI.
-    let bigintToHex num =
+    let public bigintToHex num =
         num |> fun n -> bigint.Parse(n).ToString("X")
-
-
-    ///
-    /// Returns a hexadecimal string prepended with a 0 if necessary to adhere to
-    /// ABI two's compliment storage for DATA types.
-    ///
-    let bigintToHexPadded num =
-        let res =
-            num |> fun n -> bigint.Parse(n).ToString("X")
-
-        if (res.Length % 2 = 0) then
-            res
-        else
-            "0" + res
 
 
     ///
     /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
     /// so mind what strings are passed in.
     /// 
-    let hexToBigInt hexString =
+    let public hexToBigInt hexString =
         bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
-
-
-    ///
-    /// A composition for convenience, does what it says
-    let strip0xAndConvertToBigInt = strip0x >> hexToBigInt
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -256,7 +238,7 @@ module Helpers =
 
     ///
     /// Returns a string representation of the conversion of wei to Eth.
-    let convertWeiToEth wei =
+    let public convertWeiToEth wei =
         let eth, frac = bigint.DivRem(wei, weiDiv)
         let rem = frac.ToString().PadLeft(18, '0')
         $"{eth.ToString()}.{rem.Remove(17)}"
@@ -264,7 +246,7 @@ module Helpers =
     
     ///
     /// Returns a bigint for working in wei.
-    let convertEthToWei (eth: string) =
+    let public convertEthToWei (eth: string) =
         let _eth =
             match not (eth.Contains('.')) with
             | true -> eth + "."
@@ -281,9 +263,10 @@ module Helpers =
     // Miscellaneous
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    
     ///
     /// Returns a Keccak hasher properly configured for 256bit hashes.
-    let newKeccakDigest = Keccak(KeccakBitType.K256)
+    let public newKeccakDigest = Keccak(KeccakBitType.K256)
 
     
     ///
@@ -292,43 +275,33 @@ module Helpers =
     /// must be used in the code. `TrimStart` and `TrimEnd` are specifically used because of potential knock-on effects
     /// of overzealous quote stripping.
     /// 
-    let trimParameter (p: string) =
+    let internal trimParameter (p: string) =
         p
         |> fun s -> s.TrimStart('"')
         |> fun s -> s.TrimEnd('"')    
     
     
     ///
+    /// Common function of changing a RPC Result into a string and trimming " characters
+    let internal stringAndTrim (r: RPCResponse.Result) =
+        r.ToString() |> trimParameter
+    
+    
+    ///
     /// Returns a string formatted into a hexadecimal representation of its UTF-8 bytes.
-    let formatToBytes (s: string) =
+    let internal formatToBytes (s: string) =
         Encoding.UTF8.GetBytes(s)
         |> Array.map (fun (x: byte) -> String.Format("{0:X2}", x))
         |> String.concat ""
 
 
-    ///
-    /// Convenience function that returns a ContractConstants that contains the address used for the session, along
-    /// with other values ready for manipulation via the `with` statement for modifying records. If the RPC is a wallet,
-    /// these defaults should work perfectly well. If the RPC is an actual Ethereum node, the gas values and transaction
-    /// type should be changed as required.
-    /// 
-    let createDefaultConstants address =
-        {
-        address = address
-        transactionType = None
-        maxFeePerGas = None
-        maxPriorityFeePerGas = None
-        data = None
-        blockHeight = Some LATEST
-    }
-    
     
     ///
     /// Returns the bytecode of a compiled contract from a json file, as in the output of the `solc` binary. Note, the
     /// path string should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
     /// slashes, i.e. "c:/users/user/some/more/path/contract.json"
     /// 
-    let returnBytecodeFromFile (path: string) =
+    let public returnBytecodeFromFile (path: string) =
         let file = new StreamReader(path)
         let obj = ContractBytecode.Parse(file.ReadToEnd()) |> fun r -> r.Object
         file.Dispose()

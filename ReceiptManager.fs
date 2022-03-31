@@ -2,16 +2,18 @@ namespace web3.fs
 
 open web3.fs.Types
 
+[<AutoOpen>]
 module ReceiptManager =
 
     open RPCMethodFunctions
     open RPCParamFunctions
+    open RPCBindFunctions
     open Helpers
 
 
     ///
     /// Simple polling loop for pending Transactions. No 'give up' function yet
-    let rec callLoop (rpc: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>) (call: HttpRPCMessage) =
+    let rec private callLoop (rpc: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>) (call: HttpRPCMessage) =
         async {
             match rpc call with
             | Error e ->
@@ -26,8 +28,7 @@ module ReceiptManager =
 
     ///
     /// Mailbox processor leveraging the RPCConnector to monitor the status of a transaction.
-    let receiptManager (rpc: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>) (mbox: ReceiptManagerMailbox) =
-
+    let private receiptManager (rpc: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>) (mbox: ReceiptManagerMailbox) =
         let msgLoop () =
             async {
                 let! msg = mbox.Receive()
@@ -36,31 +37,35 @@ module ReceiptManager =
                 let call =
                     { method = EthMethod.GetTransactionReceipt |> wrapEthMethod
                       paramList =
-                          [ txnHash.Result.Value.ToString() |> trimParameter ]
+                          [ txnHash |> trimParameter ]
                           |> EthParam.EthParamGetTransactionReceipt
                           |> wrapEthParams
                       blockHeight = LATEST }
 
-                let! result = callLoop rpc call
-                result |> reply.Reply
+                callLoop rpc call
+                |> Async.RunSynchronously
+                |> logRPCResult
+                |> bindTransactionResult
+                |> reply.Reply
             }
-
+        
         msgLoop ()
 
+    
     ///
     /// Returns the MailboxProcessor that oversees monitoring of Ethereum pending transactions.
-    let startReceiptManager rpc =
+    let private startReceiptManager rpc =
         MailboxProcessor.Start(receiptManager rpc)
 
 
     ///
     /// Function allowing easier pipelining of RPC connection and the two-way communication channel.
-    let receiptMessage (mbox: ReceiptManagerMailbox) (receipt: RPCResponse.Root) =
+    let private receiptMessage (mbox: ReceiptManagerMailbox) (receipt: EthTransactionHash) =
         mbox.PostAndReply(fun c -> ReceiptMessageAndReply(receipt, c))
 
 
     ///
     /// Returns a partially applied function ready to take an RPC connection and a previous RPC result in order to
     /// monitor an Ethereum transaction's status.
-    let createReceiptMonitor rpc =
+    let public createReceiptMonitor rpc =
         rpc |> startReceiptManager |> receiptMessage 

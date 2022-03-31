@@ -1,23 +1,27 @@
 namespace web3.fs
 
+open FSharp.Data
 open web3.fs.Types
 
+[<AutoOpen>]
 module ContractFunctions =
     open System
-    open FSharp.Data
     open SHA3Core.Keccak
-
+    
+    open ABIFunctions
     open Helpers
+    
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Unwrappers/binders
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
+    
     ///
     /// Returns a function selector given a configured Keccak instance and the
     /// canonical representation of a function.
     /// 
-    let returnFunctionSelector (digest: Keccak) (rep: CanonicalRepresentation) =
+    let private returnFunctionSelector (digest: Keccak) (rep: CanonicalRepresentation) =
         match rep with
         | CanonicalFunctionRepresentation r ->
             digest.Hash(r).Remove(8)
@@ -35,7 +39,7 @@ module ContractFunctions =
     
     ///
     /// Returns upwrapped EVMSelector value for use in transaction object construction.
-    let bindEVMSelector a =
+    let internal bindEVMSelector a =
         match a with
         | EVMFunctionHash s -> s 
         | EVMEventSelector s -> s 
@@ -43,7 +47,7 @@ module ContractFunctions =
     
     ///
     /// Returns unwrapped canonical representation of a function, event or error.
-    let bindCanonicalRepresentation a =
+    let internal bindCanonicalRepresentation a =
         match a with
         | CanonicalFunctionRepresentation s -> s
         | CanonicalEventRepresentation s -> s
@@ -52,12 +56,30 @@ module ContractFunctions =
         
     ///
     /// Returns upwrapped EVMFunctionInput string.
-    let bindEVMFunctionInputs = function EVMFunctionInputs s -> s
+    let internal bindEVMFunctionInputs = function EVMFunctionInputs s -> s
     
     
     ///
     /// Returns upwrapped EVMFunctionOutput string.
-    let bindEVMFunctionOutputs = function EVMFunctionOutputs s -> s
+    let internal bindEVMFunctionOutputs = function EVMFunctionOutputs s -> s
+    
+    
+    ///
+    /// Convenience function for taking search parameters and typing them for use in `findFunction`
+    let public wrapFunctionHash hashString =
+        hashString |> EVMFunctionHash |> SearchFunctionHash
+        
+    
+    ///
+    /// Convenience function for taking search parameters and typing them for use in `findFunction`
+    let public wrapFunctionInputs inputString =
+        inputString |> EVMFunctionInputs |> SearchFunctionInputs
+    
+    
+    ///
+    /// Convenience function for taking search parameters and typing them for use in `findFunction`
+    let public wrapFunctionMutability state =
+        state |> SearchFunctionMutability
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,25 +89,29 @@ module ContractFunctions =
     
     ///
     /// Returns the text of the "type" property.
-    let getInnerTypeText (jVal: JsonValue) = jVal.GetProperty("type").InnerText()
+    let private getInnerTypeText (jVal: JsonValue) = jVal.GetProperty("type").InnerText()
 
     
     ///
     /// Predicate for filters
-    let testPropertyInnerText (s: string) (jVal: JsonValue) =
+    let private testPropertyInnerText (s: string) (jVal: JsonValue) =
         jVal.GetProperty("type").InnerText() = s
 
     
     ///
-    /// Checks if the JsonValue 'type' value is tuple. Tupled values are treated differently in the logic.
-    let checkForTuple (jVal: JsonValue) = (getInnerTypeText jVal).StartsWith("tuple") 
+    /// Checks if the JsonValue 'type' value is a tuple. Tupled values are treated differently in the logic.
+    let private checkForTuple (jVal: JsonValue) = (getInnerTypeText jVal).StartsWith("tuple") 
 
     
-    let checkForTupleArray (jVal: JsonValue) =
+    ///
+    /// Checks if the JsonValue 'type' value is a tuple array. Tupled values are treated differently in the logic.
+    let private checkForTupleArray (jVal: JsonValue) =
         matchEVMInput "tuple\[\]" (getInnerTypeText jVal)
         
     
-    let checkForSzTupleArray (jVal: JsonValue) =
+    ///
+    /// Checks if the JsonValue 'type' value is a sized tuple array. Tupled values are treated differently in the logic.
+    let private checkForSzTupleArray (jVal: JsonValue) =
         matchEVMInputSz "tuple\[([0-9]{1,2})\]" (getInnerTypeText jVal)
     
     
@@ -93,7 +119,7 @@ module ContractFunctions =
     /// Tupled values in the ABI can be 'tuple' 'tuple[]' or 'tuple[k]'. Grab the glyphs if present for appending to the end
     /// of the joined strings later.
     ///
-    let extractEnder (jVal: JsonValue) =
+    let private extractEnder (jVal: JsonValue) =
         jVal.GetProperty("type").InnerText().Substring(5)
 
 
@@ -101,7 +127,7 @@ module ContractFunctions =
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for functions and returns
     /// an Option for the name, inputs, outputs and the state mutability parameter.
     ///
-    let tryGetFunctionProperties (jVals: JsonValue array) =
+    let private tryGetFunctionProperties (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "function")
         |> Array.map (fun i ->
@@ -115,7 +141,7 @@ module ContractFunctions =
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for events and returns
     /// an option for the name, inputs, and the anonymous parameter.
     ///
-    let tryGetEventProperties (jVals: JsonValue array) =
+    let private tryGetEventProperties (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "event")
         |> Array.map (fun i -> (i.TryGetProperty("name"), i.TryGetProperty("inputs"), i.TryGetProperty("anonymous")))
@@ -125,7 +151,7 @@ module ContractFunctions =
     /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for errors and returns
     /// an Option for the name and inputs.
     ///
-    let tryGetErrorProperties (jVals: JsonValue array) =
+    let private tryGetErrorProperties (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "error") // Just functions now
         |> Array.map (fun i -> (i.TryGetProperty("name"), i.TryGetProperty("inputs")))
@@ -136,7 +162,7 @@ module ContractFunctions =
     /// returns its inputs. Constructors never have a name or outputs. Only useful for deploying a contract
     /// programmatically.
     ///
-    let tryGetConstructorProperties (jVals: JsonValue array) =
+    let private tryGetConstructorProperties (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "constructor")
         |> Array.map (fun i -> (i.TryGetProperty("inputs")))
@@ -147,7 +173,7 @@ module ContractFunctions =
     /// 'receive' function. Receive functions have no inputs, must be 'payable', and may not have outputs.
     /// Thus, this function only returns the presence of a receive function only.
     ///
-    let tryGetReceive (jVals: JsonValue array) =
+    let private tryGetReceive (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "receive")
         |> Array.tryHead
@@ -159,7 +185,7 @@ module ContractFunctions =
     /// that the EVM will fill with the calldata of the txn that hit the fallback. It may only return a
     /// bytes as output. It may be payable.
     ///
-    let tryGetFallback (jVals: JsonValue array) =
+    let private tryGetFallback (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "fallback")
         |> Array.tryHead
@@ -174,7 +200,7 @@ module ContractFunctions =
     /// Recursively send tupled components through the function in order to extract and format nested values properly.
     /// Non-tupled values are concatenated directly. ()'s inserted as needed.
     ///
-    let rec collapseTuples (_input: JsonValue) =
+    let  rec private collapseTuples (_input: JsonValue) =
         match _input with
         | JsonValue.Array elements ->
             elements
@@ -187,12 +213,13 @@ module ContractFunctions =
             |> fun s -> $"({s})"
         | _ -> ""
 
+    
     ///
     /// Returns an EVMDatatype based on a static lookup of the EVM datatype culled from the ABI. Some definite liberties
-    /// are taken with regards to the exact precision of number types and bytes, arrays, etc. They are typically
-    /// 'upcast' to the largest representation. Multi-dimensional arrays are not supported.
+    /// are taken with regards to the precision of number types. They are 'upcast' to the largest representation.
+    /// Multi-dimensional arrays are not supported.
     /// 
-    let typeLookup evmTypeString =
+    let private typeLookup evmTypeString =
       match evmTypeString with
       | x when matchEVMInput "^address$" x -> Address ""
       | x when matchEVMInput "^address\[\]$" x -> AddressArray []
@@ -238,7 +265,7 @@ module ContractFunctions =
     /// variable precision are upcast to the largest value type (i.e., uint8 -> uint256) and multi-dimensional
     /// arrays are not supported.
     ///  
-    let rec returnEVMTypes (_input: JsonValue) (acc: EVMDatatype list) =
+    let rec private returnEVMTypes (_input: JsonValue) (acc: EVMDatatype list) =
         match _input with
         | JsonValue.Array elements ->
             elements
@@ -254,27 +281,23 @@ module ContractFunctions =
                     [EVMDatatype.TupleArraySz
                          (List.init count (fun _ ->
                             EVMDatatype.Tuple (returnEVMTypes (x.GetProperty("components")) acc)))] @ acc
-                //| x when matchEVMInput "^bytes\[\]$" (getInnerTypeText x) ->
-                //    [EVMDatatype.BytesArray (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
                 | x when matchEVMInput "^bytes\[([0-9]{1,2})\]$" (getInnerTypeText x)  ->
                     let count = matchEVMInputSz "bytes\[([0-9]{1,2})\]$" (getInnerTypeText x)
                     [EVMDatatype.BytesArraySz (List.init count (fun _ -> EVMDatatype.Bytes "" ))] @ acc
-                //| x when matchEVMInput "^string\[\]$" (getInnerTypeText x) ->
-                //    [EVMDatatype.StringArray (returnEVMTypes (x.GetProperty("components")) acc)] @ acc
                 | x when matchEVMInput "^string\[([0-9]{1,2})\]$" (getInnerTypeText x)  ->
                     let count = matchEVMInputSz "string\[([0-9]{1,2})\]$" (getInnerTypeText x)
                     [EVMDatatype.StringArraySz (List.init count (fun _ -> EVMDatatype.String "" ))] @ acc
                 | x -> 
                     getInnerTypeText x |> typeLookup |> fun r ->  [r] @ acc 
-                    )
-            
+                )
         | _ -> []
+    
         
     ///
     /// Returns the state mutability parameter of the EVM function, given a JsonValue option.
     /// Defaults to 'nonpayable' as is the spec.
     ///
-    let returnStateMutability (b: JsonValue option) =
+    let private returnStateMutability (b: JsonValue option) =
         match b with
         | Some _b ->
             match _b.InnerText() with
@@ -289,30 +312,41 @@ module ContractFunctions =
     /// Returns the function name of an EVM function, given a JsonValue option. Defaults to an
     /// empty string, which may be non-compliant.
     ///
-    let returnFunctionName (b: JsonValue option) =
+    let private returnFunctionName (b: JsonValue option) =
         match b with
         | Some f -> f.InnerText()
         | None -> ""
 
 
     ///
-    /// Returns the inputs of an EVM function (collapsing tuples along the way) given a JsonValue
-    /// option. Defaults to the string "()".
-    ///
-    let returnInputs (b: JsonValue option) =
+    /// Returns a canonical representation of function inputs. Defaults to an empty tuple "()"
+    let private returnCanonicalInputs (b: JsonValue option) =
         match b with
         | Some jVal -> $"""{collapseTuples jVal}"""
-        | None -> $"()"
+        | None -> "()"
 
-    let returnOutputs (b: JsonValue option) =
+    
+    ///
+    /// Returns a canonical representation of function outputs. Defaults to an empty tuple "()"
+    let private returnCanonicalOutputs (b: JsonValue option) =
+        match b with
+        | Some jVal -> $"""{collapseTuples jVal}"""
+        | None -> "()"
+    
+    
+    ///
+    /// Returns the outputs of an EVM function in term of web3.fs' internal representation of these types. This is not
+    /// the same as the canonical representation (i.e., `(address)`)
+    /// 
+    let private returnInternalOutputs (b: JsonValue option) =
        match b with
        | Some jVal -> returnEVMTypes jVal []
        | None -> []
        
        
     ///
-    /// Returns the anonymous boolean of an EVM event, given a JsonValue option. Defaults to false.
-    let returnAnonymous (b: JsonValue option) =
+    /// Returns the anonymous boolean of an EVM event. Defaults to false.
+    let private returnAnonymous (b: JsonValue option) =
         match b with
         | Some jVal ->
             jVal.AsBoolean()
@@ -320,13 +354,13 @@ module ContractFunctions =
 
 
     ///
-    /// When supplied with an IntermediateFunctionRepresentation, returns the corresponding EVMFunction record.
-    let returnEVMFunction (digest: Keccak) (interFunc: IntermediateFunctionRepresentation) =
+    /// Returns an EVMFunction corresponding to the intermediate representation supplied.
+    let private returnEVMFunction (digest: Keccak) (interFunc: IntermediateFunctionRepresentation) =
 
         let _funcName, _inputs, _outputs, _stateMut = interFunc
 
         let name = returnFunctionName _funcName
-        let inputs = returnInputs _inputs
+        let inputs = returnCanonicalInputs _inputs
         
         let hash =
             ($"{name}{inputs}"
@@ -335,20 +369,21 @@ module ContractFunctions =
 
         { name = name
           hash = hash
-          inputs = inputs |> EVMFunctionInputs
-          outputs = returnOutputs _outputs 
+          canonicalInputs = inputs |> EVMFunctionInputs
+          internalOutputs = returnInternalOutputs _outputs
+          canonicalOutputs = returnCanonicalOutputs _outputs |> EVMFunctionOutputs
           config = returnStateMutability _stateMut }
 
 
     ///
-    /// When supplied with an IntermediateEventRepresentation, returns the corresponding EVMEvent record.
-    let returnEVMEvent (digest: Keccak) (interEvent: IntermediateEventRepresentation) =
+    /// Returns an EVMEvent corresponding to the intermediate representation supplied.
+    let private returnEVMEvent (digest: Keccak) (interEvent: IntermediateEventRepresentation) =
 
         let _eventName, _inputs, _anon = interEvent
 
         let name = returnFunctionName _eventName
         let anon = returnAnonymous _anon
-        let inputs = returnInputs _inputs
+        let inputs = returnCanonicalInputs _inputs
 
         let hash =
             ($"{name}{inputs}" |> CanonicalEventRepresentation)
@@ -361,13 +396,13 @@ module ContractFunctions =
 
 
     ///
-    /// When supplied with an IntermediateErrorRepresentation, returns the corresponding EVMError record.
-    let returnEVMError (digest: Keccak) (interError: IntermediateErrorRepresentation) =
+    /// Returns an EVMError corresponding to the intermediate representation supplied.
+    let private returnEVMError (digest: Keccak) (interError: IntermediateErrorRepresentation) =
 
         let _errName, _inputs = interError
 
         let name = returnFunctionName _errName
-        let inputs = returnInputs _inputs
+        let inputs = returnCanonicalInputs _inputs
 
         let hash =
             ($"{name}{inputs}" |> CanonicalErrorRepresentation)
@@ -382,7 +417,7 @@ module ContractFunctions =
     /// When supplied with a Solidity contract ABI in Json format, returns a list of all functions as
     /// EVMFunctions. A Keccak hash digest is required to generate function selectors.
     ///
-    let parseABIForFunctions (digest: Keccak) (json: JsonValue array) =
+    let private parseABIForFunctions (digest: Keccak) (json: JsonValue array) =
         json
         |> tryGetFunctionProperties
         |> Array.map (returnEVMFunction digest)
@@ -393,7 +428,7 @@ module ContractFunctions =
     /// When supplied with a Solidity contract ABI in Json format, returns a list of EVMEvents.
     /// A Keccak hash digest is required to generate event selectors.
     ///
-    let parseABIForEvents (digest: Keccak) (json: JsonValue array) =
+    let private parseABIForEvents (digest: Keccak) (json: JsonValue array) =
         json
         |> tryGetEventProperties
         |> Array.map (returnEVMEvent digest)
@@ -402,9 +437,9 @@ module ContractFunctions =
 
     ///
     /// When supplied with a Solidity contract ABI in Json format, returns a tuple of the constructor,
-    /// the presence of a fallback function, and receive function if found.
+    /// an optional fallback function, and optional receive function.
     ///
-    let parseABIForConstructorFallbackReceive (digest: Keccak) (json: JsonValue array) =
+    let private parseABIForConstructorFallbackReceive (digest: Keccak) (json: JsonValue array) =
 
         let constructor =
             match tryGetConstructorProperties json with
@@ -413,15 +448,16 @@ module ContractFunctions =
                 (x, digest.Hash(x))
             | _ -> ("constructor()", "0x90fa17bb")
 
-        let fallback = tryGetFallback json |> returnInputs
-        let receive = tryGetReceive json |> returnInputs
+        let fallback = tryGetFallback json |> returnCanonicalInputs
+        let receive = tryGetReceive json |> returnCanonicalInputs
         (constructor, fallback, receive)
 
+    
     ///
     /// When supplied with a Solidity contract ABI in Json format, returns a list of EVMErrors.
     /// A Keccak hash digest is required to generate function selectors.
     ///
-    let parseABIForErrors (digest: Keccak) (json: JsonValue array) =
+    let private parseABIForErrors (digest: Keccak) (json: JsonValue array) =
         json
         |> tryGetErrorProperties
         |> Array.map (returnEVMError digest)
@@ -439,51 +475,48 @@ module ContractFunctions =
     /// such as '0x01' (mainnet) or '0x04' (rinkeby). Can be partially applied if many contracts will be loaded from a
     /// map() of addresses, network and ABIs.
     ///
-    let loadDeployedContract digest address chainId abi : LoadContractResult =
+    let public loadDeployedContract digest address chainId abi =
         let (ABI _abi) = abi
+                
+        match address |> wrapEthAddress with
+        | Ok address -> 
+            match JsonValue.TryParse(_abi) with
+            | Some json ->
+            
+                let _j = json.AsArray()
+                let _fList = parseABIForFunctions digest _j
+                let _eventList = parseABIForEvents digest _j
+                let _errList = parseABIForErrors digest _j
+                let _, fallback, receive = parseABIForConstructorFallbackReceive digest _j
 
-        match JsonValue.TryParse(_abi) with
-        | Some json ->
-            let _j = json.AsArray()
-            let _fList = parseABIForFunctions digest _j
-            let _eventList = parseABIForEvents digest _j
-            let _errList = parseABIForErrors digest _j
-            let _, fallback, receive = parseABIForConstructorFallbackReceive digest _j
-
-            { address = address
-              abi = abi
-              functions = _fList
-              events = _eventList
-              errors = _errList
-              fallback = fallback
-              receive = receive
-              chainId = chainId }
-            |> Ok
-        | None ->
-            ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse"
-            |> Error
+                { address = address 
+                  abi = abi
+                  functions = _fList
+                  events = _eventList
+                  errors = _errList
+                  fallback = fallback
+                  receive = receive
+                  chainId = chainId }
+                |> Ok
+            | None ->
+                ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse"
+                |> Error
+        | Error e -> e |> Error
 
     
     ///
     /// Returns an UndeployedContract for use in `deployEthContract`. 
-    let prepareUndeployedContract digest bytecode constructorArguments chainId abi =
+    let public prepareUndeployedContract digest bytecode constructorArguments chainId abi =
         let (ABI _abi) = abi
         
         match JsonValue.TryParse(_abi) with
         | Some json ->
             let _j = json.AsArray()
             let (_, hash), _, _ = parseABIForConstructorFallbackReceive digest _j
-            {
-                abi = abi
-                constructor = (hash |> EVMFunctionHash)
-                bytecode = bytecode
-                chainId = chainId
-                constructorArguments = constructorArguments
-            }
+            { abi = abi
+              constructor = (hash |> EVMFunctionHash)
+              bytecode = bytecode
+              chainId = chainId
+              constructorArguments = constructorArguments }
             |> Ok
         | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error
-        
-    
-    //let convertToDeployedContract (newContract: UndeployedContract) (address: EthAddress) : DeployedContract =
-    
-  

@@ -2,6 +2,7 @@ namespace web3.fs
 
 open web3.fs.Types
 
+[<AutoOpen>]
 module ABIFunctions =
     open System
     open System.Text
@@ -14,29 +15,28 @@ module ABIFunctions =
 
     
     ///
-    /// Returns a 
-    ///
     /// Convenience function for mapping boolean values to 32 byte integer equivalents.
-    let convertBoolToInt b = 
+    let private convertBoolToInt b = 
         match b with
         | true -> "0000000000000000000000000000000000000000000000000000000000000001"
         | false -> "0000000000000000000000000000000000000000000000000000000000000000"
     
+    
     ///
     /// Returns a string padded on the left to 32 hex bytes.
-    let padTo32BytesLeft (s: string) = s.PadLeft(64, '0')
+    let internal padTo32BytesLeft (s: string) = s.PadLeft(64, '0')
 
     
     ///
     /// Returns a string padded on the right to 32 hex bytes.
-    let padTo32BytesRight (s: string) = s.PadRight(64, '0')
+    let internal padTo32BytesRight (s: string) = s.PadRight(64, '0')
 
     
     ///
     /// Returns a string padded on the left to 32 hex bytes with 'f'
     /// characters, as a special case for negative integers.
     /// 
-    let padTo32BytesLeftF (s: string) = s.PadLeft(64, 'f')
+    let internal padTo32BytesLeftF (s: string) = s.PadLeft(64, 'f')
 
     
     ///
@@ -44,12 +44,12 @@ module ABIFunctions =
     /// Intended to be used with `padTo32BytesRight` or `padTo32BytesLeft` on 
     /// `bytes` types, numeric types and `string` types. 
     /// 
-    let formatTypes (f: string -> string) s = bigint.Parse(s).ToString("X").ToLowerInvariant() |> f
+    let private formatTypes (f: string -> string) s = bigint.Parse(s).ToString("X").ToLowerInvariant() |> f
 
 
     ///
     /// Returns the properly padded hexadecimal representation of a signed value.
-    let formatTypesInt s = 
+    let private formatTypesInt s = 
         let int' = bigint.Parse(s)
         match int' with
         | x when x.Sign = -1 -> 
@@ -64,7 +64,7 @@ module ABIFunctions =
     /// of the 'cursor,' the abstraction used to track the next available slot
     /// to insert dynamic type arguments.
     /// 
-    let returnCurrentOffset cursor =
+    let private returnCurrentOffset cursor =
         (cursor * 32).ToString()
         |> formatTypes padTo32BytesLeft
 
@@ -73,7 +73,7 @@ module ABIFunctions =
     /// Convenience function for generating the bytestring word containing the
     /// number of inputs nested into a tuple type.
     /// 
-    let returnCountOfItems (items: 'a list) =
+    let private returnCountOfItems (items: 'a list) =
         padTo32BytesLeft (items.Length.ToString())
 
 
@@ -81,7 +81,7 @@ module ABIFunctions =
     /// Convenience function to compensate for two string characters being one byte
     /// of representation in the `bytes` type.
     /// 
-    let byteDivide2 i = (i / 2).ToString()
+    let private byteDivide2 i = (i / 2).ToString()
 
 
     ///
@@ -89,7 +89,7 @@ module ABIFunctions =
     /// `bytes` types are dynamically sized, and cross over every 32 bytes to a new 
     /// 'word', with right padding for bytes less than one word (32 bytes long).
     /// 
-    let rec wrapBytesAcrossWords (s: string) (acc: string list) =
+    let rec private wrapBytesAcrossWords (s: string) (acc: string list) =
         match s with
         | x when x.Length <= 64 -> acc @ [x |> padTo32BytesRight]
         | x when x.Length > 64 -> 
@@ -109,30 +109,19 @@ module ABIFunctions =
     /// several 'slots' directly without offset or counter. Strings and Bytes need special compensation in the
     /// calculation, as their space requirements are variable.
     /// 
-    let countOfArguments (evmDatatypeList: EVMDatatype list) =
-        
+    let private countOfArguments (evmDatatypeList: EVMDatatype list) =
         let rec countLoop (evmDatatypeList: EVMDatatype list) acc =
             match evmDatatypeList with
             | head :: tail ->
                 match head with
-                | BytesSzArraySz bArr -> //
-                    countLoop tail (acc + bArr.Length)
-                | AddressArraySz arr -> //
-                    countLoop tail (acc + arr.Length)
-                | Uint256ArraySz uArr -> //
-                    countLoop tail (acc + uArr.Length)
-                | Int256ArraySz iArr -> //
-                    countLoop tail (acc + iArr.Length)
-                | BoolArraySz bArr -> //
-                    countLoop tail (acc + bArr.Length)
-                | String s ->
-                    let blob = wrapBytesAcrossWords s []
-                    countLoop tail (acc + blob.Length)
-                | Bytes b ->
-                    let blob = wrapBytesAcrossWords b []
-                    countLoop tail (acc + blob.Length)
-                | _ ->
-                    countLoop tail (acc + 1)
+                | BytesSzArraySz bArr -> countLoop tail (acc + bArr.Length)
+                | AddressArraySz arr -> countLoop tail (acc + arr.Length)
+                | Uint256ArraySz uArr -> countLoop tail (acc + uArr.Length)
+                | Int256ArraySz iArr -> countLoop tail (acc + iArr.Length)
+                | BoolArraySz bArr -> countLoop tail (acc + bArr.Length)
+                | String s -> countLoop tail (acc + (wrapBytesAcrossWords s []).Length)
+                | Bytes b -> countLoop tail (acc + (wrapBytesAcrossWords b []).Length)
+                | _ -> countLoop tail (acc + 1)
             | [] -> acc
         countLoop evmDatatypeList 0
     
@@ -154,7 +143,7 @@ module ABIFunctions =
     /// **Warning** Integer types are all treated as the widest type. As already noted, there is no bounds-checking
     /// occuring here.
     ///
-    let createInputByteString (evmDatatypeList: EVMDatatype list) =
+    let internal createInputByteString (evmDatatypeList: EVMDatatype list) =
         
         // A description of the following code is in order, I think. 
         //
@@ -210,11 +199,10 @@ module ABIFunctions =
         // as `Bytes` and `String`, which are variable based on how many words
         // they consume when wrapping is factored in. The top level (implied)
         // tuple, as well as all nested `Tuple` types use this calculation.
-
     
         let cursor = countOfArguments evmDatatypeList
                 
-        let rec unpackInputAndProcess list acc cursor : string =
+        let rec unpackInputAndProcess list acc cursor =
             match list with
             | head :: tail ->
                 match head with
@@ -347,19 +335,19 @@ module ABIFunctions =
 
     ///
     /// Returns a substring for a given beginning offset, returning the entire word.
-    let emitSubstring start (blob: string) =
+    let private emitSubstring start (blob: string) =
         blob.Substring(start, 64)
         
         
     ///
     /// Returns the substring with a hex specifier prepended. 
-    let emitSubstringPrepend0x start blob =
+    let private emitSubstringPrepend0x start blob =
         emitSubstring start blob |> fun s -> s.TrimStart('0') |> prepend0x
 
 
     ///
     /// Returns the substring specifically for sized bytes, with a hex specifier prepended. 
-    let emitSubstringPrepend0xBytes start blob =
+    let private emitSubstringPrepend0xBytes start blob =
         emitSubstring start blob |> fun s -> s.TrimEnd('0') |> prepend0x
         
         
@@ -368,7 +356,7 @@ module ABIFunctions =
     /// interpreted is not larger than a signed int. `Int32` is used because `List.init` (where this value is typically used)
     /// for whatever reason only accepts this type.
     /// 
-    let emitSubstringAsInt start blob =
+    let private emitSubstringAsInt start blob =
         emitSubstring start blob |> fun i -> Convert.ToInt32(i, 16)
 
 
@@ -376,13 +364,13 @@ module ABIFunctions =
     /// Returns an integer value contained in a given substring, with a byte-length-to-char-length compensator applied.
     /// `Int32` is used because functions consuming this value assume `int`.
     /// 
-    let emitSubstringAsOffset blob start =
+    let private emitSubstringAsOffset blob start =
         emitSubstring start blob |> fun i -> Convert.ToInt32(i, 16) |> fun i -> i * 2
 
 
     ///
     /// Returns a boolean value after interpreting a substring in a boolean context. Non-0 values are taken as `true`.
-    let emitSubstringAsBool start blob =
+    let private emitSubstringAsBool start blob =
         emitSubstring start blob
         |> function
             | "0000000000000000000000000000000000000000000000000000000000000000" -> false
@@ -391,7 +379,7 @@ module ABIFunctions =
 
     ///
     /// Returns a bigint that has been converted to a string, based upon the value contained in a substring.
-    let emitSubstringAsConvertedString start blob =
+    let private emitSubstringAsConvertedString start blob =
         emitSubstring start blob |> hexToBigInt |> fun s -> s.ToString()
 
 
@@ -407,243 +395,244 @@ module ABIFunctions =
     ///
     /// **Warning** Multidimensional arrays and the `Function` types aren't supported.
     ///  
-    let createOutputEvmTypes (evmList: EVMDatatype list) (evmOutput: string) =
+    let internal createOutputEvmTypes (evmList: EVMDatatype list) (evmOutput: string) =
             
-            // The general form of these cases is to take in the current position of the work in the `evmOutput` string
-            // derive a floating 'offset' value from it, and then to unpack/manipulate the contents of the string as
-            // needed for each data type's context.
-            //
-            // The sized array types have additional math to account for their contents, because unlike the dynamic
-            // array types, they don't leave an offset at which their contents are stored, but instead the contents are
-            // placed directly at the beginning cursor position. Thus they must advance the cursor more than one 'word'.
-            //
-            // Bytes (and by extension String) types are even more involved, since they can wrap 'words' and thus
-            // extracting their contents is more complex. The Bytes array types also function with a faked offset value,
-            // so placed so that the Bytes handler works properly.
-            let rec unpackOutputAndProcess evmList evmOutput acc cursor = 
-                match evmList with
-                | head :: tail ->
-                    match head with
-                    | Tuple t ->
-                        let offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let tupleContents = (0, offset) |> evmOutput.Remove
-                        let acc = acc @ [EVMDatatype.Tuple (unpackOutputAndProcess t tupleContents [] 0)]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | TupleArraySz tArr ->
-                        let offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let tupleContents = (0, offset) |> evmOutput.Remove
-                        let acc = acc @ [TupleArraySz (unpackOutputAndProcess tArr tupleContents [] 0)]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | TupleArray tArr ->
-                        let offset = ((cursor * 64) |> emitSubstringAsOffset evmOutput) + 64
-                        let tupleContents = (0, offset) |> evmOutput.Remove
-                        let acc = acc @ [TupleArray (unpackOutputAndProcess tArr tupleContents [] 0)]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | Address _ ->
-                        let acc = acc @ [(Address $"{emitSubstringPrepend0x (cursor * 64) evmOutput}")]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | AddressArraySz uArr ->
-                        let mutable offset = (cursor * 64)
-                        let arrayContents =
-                            List.init uArr.Length (fun count ->
-                                offset <- offset + (count * 64)
-                                $"{emitSubstringPrepend0x offset evmOutput}")
-                        let acc = acc @ [AddressArraySz arrayContents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + uArr.Length)
-                    
-                    | AddressArray _ ->
-                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput 
-                        let count = emitSubstringAsInt offset evmOutput 
-                        offset <- offset + 64
-                        let contents = List.init count (fun count ->
+        // The general form of these cases is to take in the current position of the work in the `evmOutput` string
+        // derive a floating 'offset' value from it, and then to unpack/manipulate the contents of the string as
+        // needed for each data type's context.
+        //
+        // The sized array types have additional math to account for their contents, because unlike the dynamic
+        // array types, they don't leave an offset at which their contents are stored, but instead the contents are
+        // placed directly at the beginning cursor position. Thus they must advance the cursor more than one 'word'.
+        //
+        // Bytes (and by extension String) types are even more involved, since they can wrap 'words' and thus
+        // extracting their contents is more complex. The Bytes array types also function with a faked offset value,
+        // so placed so that the Bytes handler works properly.
+        
+        let rec unpackOutputAndProcess evmList evmOutput acc cursor = 
+            match evmList with
+            | head :: tail ->
+                match head with
+                | Tuple t ->
+                    let offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let tupleContents = (0, offset) |> evmOutput.Remove
+                    let acc = acc @ [EVMDatatype.Tuple (unpackOutputAndProcess t tupleContents [] 0)]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | TupleArraySz tArr ->
+                    let offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let tupleContents = (0, offset) |> evmOutput.Remove
+                    let acc = acc @ [TupleArraySz (unpackOutputAndProcess tArr tupleContents [] 0)]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | TupleArray tArr ->
+                    let offset = ((cursor * 64) |> emitSubstringAsOffset evmOutput) + 64
+                    let tupleContents = (0, offset) |> evmOutput.Remove
+                    let acc = acc @ [TupleArray (unpackOutputAndProcess tArr tupleContents [] 0)]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | Address _ ->
+                    let acc = acc @ [(Address $"{emitSubstringPrepend0x (cursor * 64) evmOutput}")]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | AddressArraySz uArr ->
+                    let mutable offset = (cursor * 64)
+                    let arrayContents =
+                        List.init uArr.Length (fun count ->
                             offset <- offset + (count * 64)
                             $"{emitSubstringPrepend0x offset evmOutput}")
-                        let acc = acc @ [AddressArray contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | Int256 _ ->
-                        let pointer = cursor * 64
-                        let acc = acc @ [(Int256 $"{emitSubstringAsConvertedString pointer evmOutput}")]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | Int256ArraySz iArr ->
-                        let mutable offset = (cursor * 64)
-                        let contents = List.init iArr.Length (fun count ->
-                            offset <- offset + (count * 64)
-                            $"{emitSubstringAsConvertedString offset evmOutput}")
-                        let acc = acc @ [Int256ArraySz contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + iArr.Length)
-                    
-                    | Int256Array _ ->
-                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let count = emitSubstringAsInt offset evmOutput
-                        offset <- offset + 64
-                        let contents = List.init count (fun count ->
-                            offset <- offset + (count * 64)
-                            $"{emitSubstringAsConvertedString offset evmOutput}")
-                        let acc = acc @ [Int256Array contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | Uint256 _ ->
-                        let pointer = cursor * 64
-                        let acc = acc @ [(Uint256 $"{emitSubstringAsConvertedString pointer evmOutput}")]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | Uint256ArraySz uArr ->
-                        let mutable offset = (cursor * 64)
-                        let contents = List.init uArr.Length (fun count ->
-                            offset <- offset + (count * 64)
-                            $"{emitSubstringAsConvertedString offset evmOutput}")
-                        let acc = acc @ [Uint256ArraySz contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | Uint256Array _ ->
-                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let count = emitSubstringAsInt offset evmOutput
-                        offset <- offset + 64
-                        let contents = List.init count (fun count ->
-                            offset <- offset + (count * 64)
-                            $"{emitSubstringAsConvertedString offset evmOutput}")
-                        let acc = acc @ [Uint256Array contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | Bool _ ->
-                        let pointer = cursor * 64
-                        let acc = acc @ [Bool (emitSubstringAsBool pointer evmOutput)]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | BoolArraySz bArr ->
-                        let mutable offset = (cursor * 64)              
-                        let contents = List.init bArr.Length (fun count ->
-                            offset <- offset + (count * 64)
-                            emitSubstringAsBool offset evmOutput)
-                        let acc = acc @ [BoolArraySz contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + bArr.Length)  
-                    
-                    | BoolArray _ ->
-                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let count = emitSubstringAsInt offset evmOutput
-                        offset <- offset + 64
-                        let contents = List.init count (fun count ->
-                            offset <- offset + (count * 64)
-                            emitSubstringAsBool offset evmOutput)
-                        let acc = acc @ [BoolArray contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | BytesSz _ ->
-                        let pointer = cursor * 64
-                        let acc = acc @ [BytesSz $"{emitSubstringPrepend0xBytes pointer evmOutput}"]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | BytesSzArraySz bArr -> 
-                        let mutable offset = (cursor * 64)
-                        let contents = List.init bArr.Length (fun count ->
-                            offset <- offset + (count * 64)
-                            $"{emitSubstringPrepend0xBytes offset evmOutput}")
-                        let acc = acc @ [BytesSzArraySz contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + bArr.Length)
-                    
-                    | BytesSzArray _ ->
-                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let count = (emitSubstringAsInt (cursor * 64) evmOutput)
-                        offset <- offset + 64
-                        let contents = List.init count (fun count ->
-                            offset <- offset + (count * 64)
-                            $"{emitSubstringPrepend0xBytes offset evmOutput}")
-                        let acc = acc @ [BytesSzArray contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | Bytes _ ->
-                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let count = 2 * emitSubstringAsInt offset evmOutput
-                        offset <- offset + 64
-                        let contents = $"{(offset, count) |> evmOutput.Substring |> prepend0x}"
-                        let acc = acc @ [Bytes contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | BytesArraySz bArr ->
-                        let pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput 
-                        let inner =
-                            List.init bArr.Length (fun count ->
-                                let offset = (emitSubstringAsInt (pointer + (count * 64)) evmOutput) * 2
-                                let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
-                                let arrayContents = 
-                                    fakedOffset + 
-                                    emitSubstring (pointer + offset) evmOutput + 
-                                    evmOutput.Substring((pointer + offset + 64), byteLength) 
-                                unpackOutputAndProcess [Bytes ""] arrayContents [] 0)
-                            |> List.concat
-                        let acc = acc @ [BytesArraySz inner]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | BytesArray _ ->
-                        let mutable pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let count = emitSubstringAsInt pointer evmOutput
-                        pointer <- pointer + 64
-                        let inner =
-                            List.init count (fun count ->
-                                let offset = emitSubstringAsInt (pointer + (count * 64)) evmOutput * 2
-                                let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
-                                let arrayContents =
-                                    fakedOffset +
-                                    emitSubstring (pointer + offset) evmOutput +
-                                    evmOutput.Substring((pointer + offset + 64), byteLength)
-                                unpackOutputAndProcess [Bytes ""] arrayContents [] 0)
-                            |> List.concat
-                        let acc = acc @ [BytesArray inner]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | String _ ->
-                        let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let count = 2 * emitSubstringAsInt offset evmOutput
-                        offset <- offset + 64
-                        let contents =
-                            $"{evmOutput.Substring(offset, count)
-                               |> Convert.FromHexString
-                               |> Encoding.UTF8.GetString}"
-                        let acc = acc @ [EVMDatatype.String contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | StringArraySz sArr ->
-                        let pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let inner =
-                            List.init sArr.Length (fun count ->
-                                let offset = emitSubstringAsInt (pointer + (count * 64)) evmOutput * 2
-                                let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
-                                let arrayContents = 
-                                    fakedOffset +
-                                    emitSubstring (pointer + offset) evmOutput + 
-                                    evmOutput.Substring((pointer + offset + 64), byteLength) 
-                                unpackOutputAndProcess [EVMDatatype.String ""] arrayContents [] 0)
-                            |> List.concat
-                        let acc = acc @ [StringArraySz inner]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | StringArray _ ->
-                        let mutable pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput
-                        let count = emitSubstringAsInt pointer evmOutput
-                        pointer <- pointer + 64
-                        let contents =
-                            List.init count (fun count ->
-                                let offset = emitSubstringAsInt (pointer + (count * 64)) evmOutput * 2
-                                let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
-                                let arrayContents =
-                                    fakedOffset +
-                                    emitSubstring (pointer + offset) evmOutput +
-                                    evmOutput.Substring((pointer + offset + 64), byteLength)
-                                unpackOutputAndProcess [Bytes ""] arrayContents [] 0)
-                            |> List.concat
-                        let acc = acc @ [StringArray contents]
-                        unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                    
-                    | _ -> unpackOutputAndProcess tail evmOutput acc (cursor + 1)
-                | [] -> acc
-            
-            unpackOutputAndProcess evmList evmOutput [] 0
+                    let acc = acc @ [AddressArraySz arrayContents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + uArr.Length)
+                
+                | AddressArray _ ->
+                    let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput 
+                    let count = emitSubstringAsInt offset evmOutput 
+                    offset <- offset + 64
+                    let contents = List.init count (fun count ->
+                        offset <- offset + (count * 64)
+                        $"{emitSubstringPrepend0x offset evmOutput}")
+                    let acc = acc @ [AddressArray contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | Int256 _ ->
+                    let pointer = cursor * 64
+                    let acc = acc @ [(Int256 $"{emitSubstringAsConvertedString pointer evmOutput}")]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | Int256ArraySz iArr ->
+                    let mutable offset = (cursor * 64)
+                    let contents = List.init iArr.Length (fun count ->
+                        offset <- offset + (count * 64)
+                        $"{emitSubstringAsConvertedString offset evmOutput}")
+                    let acc = acc @ [Int256ArraySz contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + iArr.Length)
+                
+                | Int256Array _ ->
+                    let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let count = emitSubstringAsInt offset evmOutput
+                    offset <- offset + 64
+                    let contents = List.init count (fun count ->
+                        offset <- offset + (count * 64)
+                        $"{emitSubstringAsConvertedString offset evmOutput}")
+                    let acc = acc @ [Int256Array contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | Uint256 _ ->
+                    let pointer = cursor * 64
+                    let acc = acc @ [(Uint256 $"{emitSubstringAsConvertedString pointer evmOutput}")]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | Uint256ArraySz uArr ->
+                    let mutable offset = (cursor * 64)
+                    let contents = List.init uArr.Length (fun count ->
+                        offset <- offset + (count * 64)
+                        $"{emitSubstringAsConvertedString offset evmOutput}")
+                    let acc = acc @ [Uint256ArraySz contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | Uint256Array _ ->
+                    let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let count = emitSubstringAsInt offset evmOutput
+                    offset <- offset + 64
+                    let contents = List.init count (fun count ->
+                        offset <- offset + (count * 64)
+                        $"{emitSubstringAsConvertedString offset evmOutput}")
+                    let acc = acc @ [Uint256Array contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | Bool _ ->
+                    let pointer = cursor * 64
+                    let acc = acc @ [Bool (emitSubstringAsBool pointer evmOutput)]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | BoolArraySz bArr ->
+                    let mutable offset = (cursor * 64)              
+                    let contents = List.init bArr.Length (fun count ->
+                        offset <- offset + (count * 64)
+                        emitSubstringAsBool offset evmOutput)
+                    let acc = acc @ [BoolArraySz contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + bArr.Length)  
+                
+                | BoolArray _ ->
+                    let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let count = emitSubstringAsInt offset evmOutput
+                    offset <- offset + 64
+                    let contents = List.init count (fun count ->
+                        offset <- offset + (count * 64)
+                        emitSubstringAsBool offset evmOutput)
+                    let acc = acc @ [BoolArray contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | BytesSz _ ->
+                    let pointer = cursor * 64
+                    let acc = acc @ [BytesSz $"{emitSubstringPrepend0xBytes pointer evmOutput}"]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | BytesSzArraySz bArr -> 
+                    let mutable offset = (cursor * 64)
+                    let contents = List.init bArr.Length (fun count ->
+                        offset <- offset + (count * 64)
+                        $"{emitSubstringPrepend0xBytes offset evmOutput}")
+                    let acc = acc @ [BytesSzArraySz contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + bArr.Length)
+                
+                | BytesSzArray _ ->
+                    let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let count = (emitSubstringAsInt (cursor * 64) evmOutput)
+                    offset <- offset + 64
+                    let contents = List.init count (fun count ->
+                        offset <- offset + (count * 64)
+                        $"{emitSubstringPrepend0xBytes offset evmOutput}")
+                    let acc = acc @ [BytesSzArray contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | Bytes _ ->
+                    let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let count = 2 * emitSubstringAsInt offset evmOutput
+                    offset <- offset + 64
+                    let contents = $"{(offset, count) |> evmOutput.Substring |> prepend0x}"
+                    let acc = acc @ [Bytes contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | BytesArraySz bArr ->
+                    let pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput 
+                    let inner =
+                        List.init bArr.Length (fun count ->
+                            let offset = (emitSubstringAsInt (pointer + (count * 64)) evmOutput) * 2
+                            let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
+                            let arrayContents = 
+                                fakedOffset + 
+                                emitSubstring (pointer + offset) evmOutput + 
+                                evmOutput.Substring((pointer + offset + 64), byteLength) 
+                            unpackOutputAndProcess [Bytes ""] arrayContents [] 0)
+                        |> List.concat
+                    let acc = acc @ [BytesArraySz inner]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | BytesArray _ ->
+                    let mutable pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let count = emitSubstringAsInt pointer evmOutput
+                    pointer <- pointer + 64
+                    let inner =
+                        List.init count (fun count ->
+                            let offset = emitSubstringAsInt (pointer + (count * 64)) evmOutput * 2
+                            let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
+                            let arrayContents =
+                                fakedOffset +
+                                emitSubstring (pointer + offset) evmOutput +
+                                evmOutput.Substring((pointer + offset + 64), byteLength)
+                            unpackOutputAndProcess [Bytes ""] arrayContents [] 0)
+                        |> List.concat
+                    let acc = acc @ [BytesArray inner]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | String _ ->
+                    let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let count = 2 * emitSubstringAsInt offset evmOutput
+                    offset <- offset + 64
+                    let contents =
+                        $"{evmOutput.Substring(offset, count)
+                           |> Convert.FromHexString
+                           |> Encoding.UTF8.GetString}"
+                    let acc = acc @ [EVMDatatype.String contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | StringArraySz sArr ->
+                    let pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let inner =
+                        List.init sArr.Length (fun count ->
+                            let offset = emitSubstringAsInt (pointer + (count * 64)) evmOutput * 2
+                            let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
+                            let arrayContents = 
+                                fakedOffset +
+                                emitSubstring (pointer + offset) evmOutput + 
+                                evmOutput.Substring((pointer + offset + 64), byteLength) 
+                            unpackOutputAndProcess [EVMDatatype.String ""] arrayContents [] 0)
+                        |> List.concat
+                    let acc = acc @ [StringArraySz inner]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | StringArray _ ->
+                    let mutable pointer = (cursor * 64) |> emitSubstringAsOffset evmOutput
+                    let count = emitSubstringAsInt pointer evmOutput
+                    pointer <- pointer + 64
+                    let contents =
+                        List.init count (fun count ->
+                            let offset = emitSubstringAsInt (pointer + (count * 64)) evmOutput * 2
+                            let byteLength =  emitSubstringAsInt (pointer + offset) evmOutput * 2
+                            let arrayContents =
+                                fakedOffset +
+                                emitSubstring (pointer + offset) evmOutput +
+                                evmOutput.Substring((pointer + offset + 64), byteLength)
+                            unpackOutputAndProcess [Bytes ""] arrayContents [] 0)
+                        |> List.concat
+                    let acc = acc @ [StringArray contents]
+                    unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+                
+                | _ -> unpackOutputAndProcess tail evmOutput acc (cursor + 1)
+            | [] -> acc
+        
+        unpackOutputAndProcess evmList (evmOutput |> strip0x ) [] 0
 
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -653,8 +642,9 @@ module ABIFunctions =
 
     ///
     /// Returns a boolean indicating whether the hexadecimal string representation of numeric EVM output is able to be
-    /// represented by the indicated type. Hexadecimal strings should begin with '0x'. Use `prepend0x` if unsure. 
-    let boundsCheck (sem: EVMTypeSignaling) s =
+    /// represented by the indicated type. Hexadecimal strings should begin with '0x'. Use `prepend0x` if unsure.
+    /// 
+    let public boundsCheck (sem: EVMTypeSignaling) s =
         match sem with
         | EVMUint8 -> s |> hexToBigInt |> fun i -> not(i > 255I) && not(i < 0I) 
         | EVMUint16 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 16)) && not(i < 0I) 
@@ -672,8 +662,7 @@ module ABIFunctions =
     /// Returns the input EVMDatatype list if the inputs conform to some basic checks, otherwise an error string that
     /// will bubble up later in the pipeline.
     ///
-    let checkEVMData evmDataList =
-        
+    let internal checkEVMData evmDataList =
         let rec checkEVMDataConforming evmDataList =
             match evmDataList with
             | head :: tail ->
@@ -713,7 +702,7 @@ module ABIFunctions =
                              |> DataValidatorError
                              |> Error
                 | _ -> checkEVMDataConforming tail
-            | [] -> [] |> Ok
+            | [] -> CheckedSuccess |> Ok
         
         checkEVMDataConforming evmDataList
         
@@ -726,8 +715,7 @@ module ABIFunctions =
     ///
     /// Returns the string representation of the wrapped EVMData value, except for bool types, which are handled in
     /// `unwrapEVMBool`. EVMDatatypes that are lists return a comma-separated concatenated string.
-    let rec unwrapEVMValue (evmDataType: EVMDatatype) =
-        
+    let rec public unwrapEVMValue (evmDataType: EVMDatatype) =
         match evmDataType with
         | Address a -> a
         | AddressArraySz a -> a |> String.concat(",")
@@ -751,14 +739,46 @@ module ABIFunctions =
         | StringArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",")
         | StringArray b -> b |> List.map unwrapEVMValue |> String.concat(",")
         | _ -> ""
-        
-        
+    
+    
+    ///
+    /// Returns a function's outputs from the EVM as an EVMDatatype list
+    let internal returnOutputAsEVMDatatypes contract evmFunction output =
+        bindFunctionIndicator contract evmFunction
+        |> fun s -> createOutputEvmTypes s.internalOutputs output
+     
+     
     ///
     /// Returns the underlying boolean contained in a wrapped Bool EVMDatatype. For obvious reasons, bools from `Bool`
     /// will return a singleton List.
-    let unwrapEVMBool (evmBools: EVMDatatype) =
+    let internal unwrapEVMBool (evmBools: EVMDatatype) =
         match evmBools with
         | Bool b -> [b]
         | BoolArraySz b -> b
         | BoolArray b -> b
         | _ -> []
+        
+    ///
+    /// Returns a wrapped EthAddress that has been checked for validity 
+    let internal wrapEthAddress (address: string) =
+        match [address |> Address] |> checkEVMData with
+        | Ok _ -> address |> EthAddress |> Ok
+        | Error _ -> EthAddressError |> Error
+    
+    
+    ///
+    /// Convenience function that returns a ContractConstants that contains the address used for the session, along
+    /// with other values ready for manipulation via the `with` statement for modifying records. If the RPC is a wallet,
+    /// these defaults should work perfectly well. If the RPC is an actual Ethereum node, the gas values and transaction
+    /// type should be changed as required.
+    /// 
+    let public createDefaultConstants (address: string) =
+        {
+        walletAddress = address |> EthAddress
+        transactionType = None
+        maxFeePerGas = None
+        maxPriorityFeePerGas = None
+        data = None
+        blockHeight = Some LATEST
+        defaultValue = Some "0"
+        }

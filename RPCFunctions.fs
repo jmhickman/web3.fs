@@ -6,25 +6,32 @@ open web3.fs.Types
 // RPC method module
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
 module RPCMethodFunctions =
     
     ///
     /// Lifts parameter.
-    let wrapEthMethod m = m |> EthMethod
+    let internal wrapEthMethod m = m |> EthMethod
+   
+   
     ///
     /// Lifts parameter.
-    let wrapShhMethod m = m |> ShhMethod
+    let internal wrapShhMethod m = m |> ShhMethod
+   
+   
     ///
     /// Lifts parameter.
-    let wrapNetMethod m = m |> NetMethod
+    let internal wrapNetMethod m = m |> NetMethod
+    
+    
     ///
     /// Lifts parameter.
-    let wrapWeb3Method m = m |> Web3Method
+    let internal wrapWeb3Method m = m |> Web3Method
 
     
     ///
     /// Binds EthMethod to a string representation of the desired call.
-    let bindEthMethod (m: EthMethod) =
+    let private bindEthMethod (m: EthMethod) =
         match m with
         | EthMethod.Accounts -> "eth_accounts"
         | EthMethod.BlockNumber -> "eth_blockNumber"
@@ -71,19 +78,22 @@ module RPCMethodFunctions =
         | EthMethod.SubmitHashRate -> "eth_submitHashRate"
         | EthMethod.UninstallFilter -> "eth_uninstallFilter"
 
+    
     // placeholder
-    let bindNetMethod m = ""
+    let private bindNetMethod _ = ""
 
+    
     // placeholder
-    let bindShhMethod m = ""
+    let private bindShhMethod _ = ""
 
+    
     // placeholder
-    let bindWeb3Method m = ""
+    let private bindWeb3Method _ = ""
 
     
     ///
     /// Calls into the correct binder based on the incoming type.
-    let bindRPCMethod method =
+    let internal bindRPCMethod method =
         match method with
         | EthMethod m -> bindEthMethod m
         | NetMethod m -> bindNetMethod m
@@ -100,15 +110,20 @@ module RPCParamFunctions =
     
     open Helpers
 
+        
     ///
     /// Lifts parameter
-    let wrapEthParams p = p |> EthParam
+    let internal wrapEthParams p = p |> EthParam
+    
+    
     ///
     /// Lifts parameter
-    let wrapNetParams p = p |> NetParam
+    let internal wrapNetParams p = p |> NetParam
+    
+    
     ///
     /// Lifts parameter
-    let wrapWeb3Params p = p |> Web3Param
+    let internal wrapWeb3Params p = p |> Web3Param
 
 
     //
@@ -116,7 +131,7 @@ module RPCParamFunctions =
     // will apparently be deprecated soon, if not already. Log types
     // not yet implemented.
     //
-    let bindEthParam (p: EthParam) =
+    let private bindEthParam (p: EthParam) =
         match p with
         | EthParamAccounts _ -> ""
         | EthParamBlockNumber _ -> ""
@@ -134,7 +149,7 @@ module RPCParamFunctions =
         //| EthParamGetCompilers p ->
         | EthParamGetFilterChanges p -> concatParamString p
         | EthParamGetFilterLogs p -> concatParamString p
-        | EthParamGetLogs p -> "" // not implemented
+        | EthParamGetLogs _ -> "" // not implemented
         | EthParamGetStorageAt p -> concatParamString p
         | EthParamGetTransactionCount p -> concatParamString p
         | EthParamGetTransactionByHash p -> concatParamString p               
@@ -148,7 +163,7 @@ module RPCParamFunctions =
         | EthParamGetWork _ -> ""
         | EthParamHashrate _ -> ""
         | EthParamMining _ -> ""
-        | EthParamNewFilter p -> "" // not implemented
+        | EthParamNewFilter _ -> "" // not implemented
         | EthParamNewBlockFilter p -> concatParamString p
         | EthParamNewPendingTransactionFilter _ -> ""
         | EthParamProtocolVersion _ -> ""
@@ -163,7 +178,7 @@ module RPCParamFunctions =
     
     ///
     /// Calls into the correct binder based upon in the incoming type.
-    let bindRPCParam p =
+    let internal bindRPCParam p =
         match p with
         | EthParam e ->
             match e with
@@ -172,71 +187,65 @@ module RPCParamFunctions =
             | EthParam1559SendTransaction _e -> createJsonObj _e
             | EthParam1559SignTransaction _e -> createJsonObj _e
             | _ -> bindEthParam e
-        | NetParam e -> ""
-        | Web3Param e -> ""
+        | NetParam _ -> ""
+        | Web3Param _ -> ""
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC Bind Functions
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
+[<AutoOpen>]    
 module RPCBindFunctions =
     
+    open FSharp.Data
+    
     open Helpers
+    
+    
     ///
     /// Generic logger until I import something more featureful.
-    let logResult (s: string * string) (r: Result<RPCResponse.Root,Web3Error>) =
-        match r with
-        | Ok o ->
-            printfn $"{fst s}: {o.Result.Value}"
-            o |> Ok
-        | Error e ->
-            printfn $"{snd s}: {e}"
-            e |> Error
-    
-    
-    let logCallResult  (r: Result<CallResponses,Web3Error>) =
-        match r with
-        | Ok o ->
-            match o with
-            | TransactionReceiptResult t ->
-                printfn $"Transaction receipt: {t}"
-                o |> Ok
-            | GetTransactionByHashResult t ->
-                printfn $"Mined transaction: {t}"
-                o |> Ok
-            | Null _ ->
-                o |> Ok
-        | Error e ->
-            printfn $"Error encountered: {e}"
-            e |> Error
+    let internal logResult logString =
+        printfn $"{logString}"
         
-        
+           
     ///
     /// Emits call response to console. Will replace with proper logging in a future version.
-    let logRPCResult (r: Result<RPCResponse.Root,Web3Error>) =
-        logResult ("Call successful, got", "Call error, got") r
+    let internal logRPCResult (r: Result<RPCResponse.Root,Web3Error>) =
+        match r with
+        | Ok o ->
+            logResult $"RPC returned:\n{o.Result.Value}"
+            o |> Ok
+        | Error e ->
+            logResult $"RPC Error:\n{e}"
+            e |> Error
+    
     
     ///
-    /// Emits transaction response to console. Will replace with proper logging in a future version.
-    let logTransactionResult (r: Result<RPCResponse.Root,Web3Error>) =
-        logResult ("Transaction accepted, got transaction hash", "Transaction error, got") r
-    
-    
-    ///
-    /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`
-    let monitorTransaction (monitor: Monitor) (r: Result<RPCResponse.Root,Web3Error>) =
+    /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`. Intended to be
+    /// placed in a transaction pipeline to provide realtime logging of transaction completion.
+    /// 
+    let public monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash,Web3Error>) =
         r
         |> Result.bind (fun r ->
-            printfn $"Beginning monitoring of transaction {r.Result.Value}"
+            printfn $"Beginning monitoring of transaction {r}"
             monitor r)
         
+    
+    ///
+    /// Unpacks Result from a RPCResponse.Root for logging
+    let internal unpackRoot (r:RPCResponse.Root) =
+        match r.Result with
+        | Some r' -> r'
+        | None -> RPCResponse.Result(JsonValue.Null)
+    
+    
     ///
     /// Higher order function that applies functions to generic RPCResponses in order to extract specific types
     /// (CallResponses). Intended to be used with the set of `binder_` functions, but can be composed with a lambda if
     /// required.
     /// 
-    let bindCallResult (f: RPCResponse.Root -> CallResponses) (r:Result<RPCResponse.Root,Web3Error>) =
+    let private bindCallResult (f: RPCResponse.Root -> CallResponses) (r:Result<RPCResponse.Root,Web3Error>) =
         match r with
         | Ok r' -> r' |> f |> Ok
         | Error e -> e |> Error
@@ -244,59 +253,53 @@ module RPCBindFunctions =
     
     ///
     /// Creates a TransactionReceiptResult from an incoming RPCResponse. Intended to be paired with `bindCallResult`.
-    let binderTransactionResult (r: RPCResponse.Root) =
+    let private binderTransactionResult (r: RPCResponse.Root) =
         match r.Result with
         | Some r' -> 
-            {
-                blockHash = r'.BlockHash
-                blockNumber = r'.BlockNumber
-                contractAddress = r'.ContractAddress.JsonValue.ToString() |> trimParameter |> Some
-                cumulativeGasUsed = r'.CumulativeGasUsed
-                effectiveGasPrice = r'.EffectiveGasPrice
-                from = r'.From
-                gasUsed = r'.GasUsed
-                logs = r'.Logs |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
-                logsBloom = r'.LogsBloom
-                status = r'.Status
-                toAddr = r'.To.JsonValue.ToString() |> EthAddress
-                transactionHash = r'.TransactionHash
-                transactionIndex = r'.TransactionIndex
-                tType = r'.Type
-                isNull = false
-            } |> TransactionReceiptResult 
-        | None -> dummyTransaction |> TransactionReceiptResult
+            { blockHash = r'.BlockHash
+              blockNumber = r'.BlockNumber
+              contractAddress = r'.ContractAddress.JsonValue.ToString() |> trimParameter |> Some
+              cumulativeGasUsed = r'.CumulativeGasUsed
+              effectiveGasPrice = r'.EffectiveGasPrice
+              from = r'.From
+              gasUsed = r'.GasUsed
+              logs = r'.Logs |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
+              logsBloom = r'.LogsBloom
+              status = r'.Status
+              toAddr = r'.To.JsonValue.ToString() |> EthAddress
+              transactionHash = r'.TransactionHash
+              transactionIndex = r'.TransactionIndex
+              tType = r'.Type }
+            |> TransactionReceiptResult 
+        | None -> Null
 
     
-    let binderGetTransactionByHashResult (r: RPCResponse.Root) =
-        
-            match r.Result with
-            | Some m' ->
-                let m = RPCMinedTransaction.Parse(m'.ToString())
-                {
-                    accessList = m.AccessList |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
-                    blockHash = m.BlockHash
-                    blockNumber = m.BlockNumber
-                    chainId = m.ChainId
-                    from = m.From |> EthAddress
-                    gas = m.Gas
-                    gasPrice = m.GasPrice
-                    hash = m.Hash |> EthTransactionHash
-                    input = m.Input
-                    maxFeePerGas = m.MaxFeePerGas
-                    maxPriorityFeePerGas = m.MaxPriorityFeePerGas
-                    nonce = m.Nonce
-                    r = m.R
-                    s = m.S
-                    toAddr = m.To |> EthAddress
-                    transactionIndex = m.TransactionIndex
-                    tType = m.Type
-                    v = m.V
-                    value = m.Value
-                }
-                |> GetTransactionByHashResult
-            | None -> "" |>  Null 
+    let private binderGetTransactionByHashResult (r: RPCResponse.Root) =
+        match r.Result with
+        | Some m' ->
+            let m = RPCMinedTransaction.Parse(m'.ToString())
+            { accessList = m.AccessList |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
+              blockHash = m.BlockHash
+              blockNumber = m.BlockNumber
+              chainId = m.ChainId
+              from = m.From |> EthAddress
+              gas = m.Gas
+              gasPrice = m.GasPrice
+              hash = m.Hash |> EthTransactionHash
+              input = m.Input
+              maxFeePerGas = m.MaxFeePerGas
+              maxPriorityFeePerGas = m.MaxPriorityFeePerGas
+              nonce = m.Nonce
+              r = m.R
+              s = m.S
+              toAddr = m.To |> EthAddress
+              transactionIndex = m.TransactionIndex
+              tType = m.Type
+              v = m.V
+              value = m.Value }
+            |> Transaction
+        | None ->  Null 
     
     
-    
-    let bindTransactionResult = bindCallResult binderTransactionResult
-    let bindGetTransactionByHashResult = bindCallResult binderGetTransactionByHashResult
+    let internal bindTransactionResult = bindCallResult binderTransactionResult
+    let internal bindGetTransactionByHashResult = bindCallResult binderGetTransactionByHashResult

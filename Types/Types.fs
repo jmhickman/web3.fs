@@ -1,5 +1,6 @@
 namespace web3.fs
 
+[<AutoOpen>]
 module Types =
 
     open FSharp.Data
@@ -12,46 +13,42 @@ module Types =
 
     let weiDiv = 1000000000000000000I
 
+    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Type Provider parser setup
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    // Experiment with making this one sample as inclusive as possible and see if it handles the minimal case(s) properly. Better to have just one.
     [<Literal>]
     let nullable =
         """[{"id":1,"jsonrpc":"2.0","result":{"blockHash":"0xc3646d4d8e3c650b15ef7f8a4d6d16fa4c7e68eb08195361182d7aa2eb3a0d65","blockNumber":"0x9dc3fe","contractAddress":null,"cumulativeGasUsed":"0x1166efb","effectiveGasPrice":"0x650fe5cd5","from":"0x2268b96e204379ee8366505c344ebe5cc34d3a46","gasUsed":"0x2e707","logs":[],"logsBloom":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","status":"0x1","to":null,"transactionHash":"0x0bd6acf13c1adf63c1f2b17ac1f9c4b98d94f2701728ffd5efe50aa77a6aa5aa","transactionIndex":"0x56","type":"0x2"}}, {"id":1,"jsonrpc":"2.0","result":null}, {"id":1,"jsonrpc":"2.0","error":{"message":"","code":-1}}]"""
 
     type RPCResponse = JsonProvider<nullable, SampleIsList=true>
     
+    
     [<Literal>]
     let minedTransaction =
         """{"accessList":[],"blockHash":"0xc5430aaf3f85cb6b7d0400345d82bdd5ff3c16d230670827adefe024f2b84a19","blockNumber":"0x9ee268","chainId":"0x4","from":"0x2268b96e204379ee8366505c344ebe5cc34d3a46","gas":"0x5566","gasPrice":"0x700f2328","hash":"0xf7d92d8090c1a6f6f811c07ef2b98b044304545c65af57fb6424f33d59ecd1ce","input":"0x91fc651700000000000000000000000000000000000000000000000000000000000000ff","maxFeePerGas":"0x7f541fb5","maxPriorityFeePerGas":"0x41a53453","nonce":"0x32","r":"0x4f9f9a8f18b3756e647816d16e240588d2cc7f212d4fbdcc7871c37327dd300d","s":"0x91fd6da320a1a006aad57bce8e6f062a6caf68066966488039d791d7f8b1ae3","to":"0x894113aa49fe903be4c7b8fdddacf503fa88c1f7","transactionIndex":"0x11","type":"0x2","v":"0x0","value":"0x0"}"""
     
-    type RPCMinedTransaction = JsonProvider<minedTransaction>
+    type internal RPCMinedTransaction = JsonProvider<minedTransaction>
+    
     
     [<Literal>]
     let sampleABI =
         """[{"type":"error","inputs": [{"name":"available","type":"uint256"},{"name":"required","type":"uint256"}],"name":"InsufficientBalance"}, {"type":"event","inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],"name":"Event"}, {"type":"event","inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],"name":"Event2"}, {"type":"function","inputs": [{"name":"a","type":"uint256"}],"name":"foo","outputs": []}]"""
 
-    type ParsedABI = JsonProvider<sampleABI, SampleIsList=true>
+    type internal ParsedABI = JsonProvider<sampleABI, SampleIsList=true>
 
     
     [<Literal>]
     let sampleBytecode =
         """{"functionDebugData":{},"generatedSources":[],"linkReferences":{},"object":"608060405234801561001057600080fd5b5061027a806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c806357172feb14610030575b600080fd5b61004a600480360381019061004591906100db565b610060565b6040516100579190610133565b60405180910390f35b600060019050919050565b600061007e61007984610173565b61014e565b90508281526020810184848401111561009a57610099610224565b5b6100a58482856101b0565b509392505050565b600082601f8301126100c2576100c161021f565b5b81356100d284826020860161006b565b91505092915050565b6000602082840312156100f1576100f061022e565b5b600082013567ffffffffffffffff81111561010f5761010e610229565b5b61011b848285016100ad565b91505092915050565b61012d816101a4565b82525050565b60006020820190506101486000830184610124565b92915050565b6000610158610169565b905061016482826101bf565b919050565b6000604051905090565b600067ffffffffffffffff82111561018e5761018d6101f0565b5b61019782610233565b9050602081019050919050565b60008115159050919050565b82818337600083830152505050565b6101c882610233565b810181811067ffffffffffffffff821117156101e7576101e66101f0565b5b80604052505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b600080fd5b600080fd5b600080fd5b600080fd5b6000601f19601f830116905091905056fea264697066735822122019ba83a5b2836d1ab300440fc2bcaaa96772566d18c40aaa128366bf6a3ed13a64736f6c63430008070033","opcodes":"PUSH10x80PUSH10x40MSTORECALLVALUEDUP1ISZEROPUSH20x10JUMPIPUSH10x0DUP1REVERTJUMPDESTPOPPUSH20x27ADUP1PUSH20x20PUSH10x0CODECOPYPUSH10x0RETURNINVALIDPUSH10x80PUSH10x40MSTORECALLVALUEDUP1ISZEROPUSH20x10JUMPIPUSH10x0DUP1REVERTJUMPDESTPOPPUSH10x4CALLDATASIZELTPUSH20x2BJUMPIPUSH10x0CALLDATALOADPUSH10xE0SHRDUP1PUSH40x57172FEBEQPUSH20x30JUMPIJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH20x4APUSH10x4DUP1CALLDATASIZESUBDUP2ADDSWAP1PUSH20x45SWAP2SWAP1PUSH20xDBJUMPJUMPDESTPUSH20x60JUMPJUMPDESTPUSH10x40MLOADPUSH20x57SWAP2SWAP1PUSH20x133JUMPJUMPDESTPUSH10x40MLOADDUP1SWAP2SUBSWAP1RETURNJUMPDESTPUSH10x0PUSH10x1SWAP1POPSWAP2SWAP1POPJUMPJUMPDESTPUSH10x0PUSH20x7EPUSH20x79DUP5PUSH20x173JUMPJUMPDESTPUSH20x14EJUMPJUMPDESTSWAP1POPDUP3DUP2MSTOREPUSH10x20DUP2ADDDUP5DUP5DUP5ADDGTISZEROPUSH20x9AJUMPIPUSH20x99PUSH20x224JUMPJUMPDESTJUMPDESTPUSH20xA5DUP5DUP3DUP6PUSH20x1B0JUMPJUMPDESTPOPSWAP4SWAP3POPPOPPOPJUMPJUMPDESTPUSH10x0DUP3PUSH10x1FDUP4ADDSLTPUSH20xC2JUMPIPUSH20xC1PUSH20x21FJUMPJUMPDESTJUMPDESTDUP2CALLDATALOADPUSH20xD2DUP5DUP3PUSH10x20DUP7ADDPUSH20x6BJUMPJUMPDESTSWAP2POPPOPSWAP3SWAP2POPPOPJUMPJUMPDESTPUSH10x0PUSH10x20DUP3DUP5SUBSLTISZEROPUSH20xF1JUMPIPUSH20xF0PUSH20x22EJUMPJUMPDESTJUMPDESTPUSH10x0DUP3ADDCALLDATALOADPUSH80xFFFFFFFFFFFFFFFFDUP2GTISZEROPUSH20x10FJUMPIPUSH20x10EPUSH20x229JUMPJUMPDESTJUMPDESTPUSH20x11BDUP5DUP3DUP6ADDPUSH20xADJUMPJUMPDESTSWAP2POPPOPSWAP3SWAP2POPPOPJUMPJUMPDESTPUSH20x12DDUP2PUSH20x1A4JUMPJUMPDESTDUP3MSTOREPOPPOPJUMPJUMPDESTPUSH10x0PUSH10x20DUP3ADDSWAP1POPPUSH20x148PUSH10x0DUP4ADDDUP5PUSH20x124JUMPJUMPDESTSWAP3SWAP2POPPOPJUMPJUMPDESTPUSH10x0PUSH20x158PUSH20x169JUMPJUMPDESTSWAP1POPPUSH20x164DUP3DUP3PUSH20x1BFJUMPJUMPDESTSWAP2SWAP1POPJUMPJUMPDESTPUSH10x0PUSH10x40MLOADSWAP1POPSWAP1JUMPJUMPDESTPUSH10x0PUSH80xFFFFFFFFFFFFFFFFDUP3GTISZEROPUSH20x18EJUMPIPUSH20x18DPUSH20x1F0JUMPJUMPDESTJUMPDESTPUSH20x197DUP3PUSH20x233JUMPJUMPDESTSWAP1POPPUSH10x20DUP2ADDSWAP1POPSWAP2SWAP1POPJUMPJUMPDESTPUSH10x0DUP2ISZEROISZEROSWAP1POPSWAP2SWAP1POPJUMPJUMPDESTDUP3DUP2DUP4CALLDATACOPYPUSH10x0DUP4DUP4ADDMSTOREPOPPOPPOPJUMPJUMPDESTPUSH20x1C8DUP3PUSH20x233JUMPJUMPDESTDUP2ADDDUP2DUP2LTPUSH80xFFFFFFFFFFFFFFFFDUP3GTORISZEROPUSH20x1E7JUMPIPUSH20x1E6PUSH20x1F0JUMPJUMPDESTJUMPDESTDUP1PUSH10x40MSTOREPOPPOPPOPJUMPJUMPDESTPUSH320x4E487B7100000000000000000000000000000000000000000000000000000000PUSH10x0MSTOREPUSH10x41PUSH10x4MSTOREPUSH10x24PUSH10x0REVERTJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH10x0DUP1REVERTJUMPDESTPUSH10x0PUSH10x1FNOTPUSH10x1FDUP4ADDANDSWAP1POPSWAP2SWAP1POPJUMPINVALIDLOG2PUSH50x69706673580x22SLTKECCAK256NOT0xBADUP40xA50xB2DUP4PUSH140x1AB300440FC2BCAAA96772566D180xC4EXP0xAASLTDUP4PUSH70xBF6A3ED13A6473PUSH160x6C634300080700330000000000000000","sourceMap":"142:117:0:-:0;;;;;;;;;;;;;;;;;;;"}"""
    
-    type ContractBytecode = JsonProvider<sampleBytecode>
+    type internal ContractBytecode = JsonProvider<sampleBytecode>
     
-    let rpcNullBind = """{"id":1,"jsonrpc":"2.0","result":"null"}""" 
-    
-    
-    // found how to fix this, will address later
-    //type RPCBlockResponse = JsonProvider<"./Samples/blocksample.json">
-    
-    
+        
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Transaction Envelope types
+    // Constants
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -87,36 +84,38 @@ module Types =
     /// but these types don't support 'composition' into such arrays.
     ///
     type EVMDatatype =
-        | Tuple of EVMDatatype list //
-        | TupleArray of EVMDatatype list //
-        | TupleArraySz of EVMDatatype list // 
-        | Address of string //
-        | AddressArraySz of string list //
-        | AddressArray of string list //
-        | Uint256 of string //
-        | Uint256ArraySz of string list //
-        | Uint256Array of string list //
-        | Int256 of string //
-        | Int256ArraySz of string list // 
-        | Int256Array of string list //
-        | Bool of bool //
-        | BoolArraySz of bool list //
-        | BoolArray of bool list //
-        | BytesSz of string //
-        | BytesSzArraySz of string list // 
-        | BytesSzArray of string list // 
-        | Bytes of string //
-        | BytesArraySz of EVMDatatype list //
-        | BytesArray of EVMDatatype list //
+        | Tuple of EVMDatatype list
+        | TupleArray of EVMDatatype list
+        | TupleArraySz of EVMDatatype list 
+        | Address of string
+        | AddressArraySz of string list
+        | AddressArray of string list
+        | Uint256 of string
+        | Uint256ArraySz of string list
+        | Uint256Array of string list
+        | Int256 of string
+        | Int256ArraySz of string list 
+        | Int256Array of string list
+        | Bool of bool
+        | BoolArraySz of bool list
+        | BoolArray of bool list
+        | BytesSz of string
+        | BytesSzArraySz of string list 
+        | BytesSzArray of string list 
+        | Bytes of string
+        | BytesArraySz of EVMDatatype list
+        | BytesArray of EVMDatatype list
         | Function of string
         | FunctionArray of string list
         | FunctionArraySz of string list
-        | String of string //
-        | StringArraySz of EVMDatatype list //
-        | StringArray of EVMDatatype list //
+        | String of string
+        | StringArraySz of EVMDatatype list
+        | StringArray of EVMDatatype list
         | Blob of string
 
     
+    ///
+    /// Indicators used in `checkBounds` to signal the intended size of the numeric type.
     type EVMTypeSignaling =
         | EVMUint8
         | EVMUint16
@@ -130,7 +129,11 @@ module Types =
         | EVMInt128
         
     
-
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // RPC Data Types
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     // just aliases, may adapt validators later to emit stronger types
     type TxnType = string
     type Quantity = string
@@ -156,8 +159,9 @@ module Types =
           uaccessList: AccessList
           uchainId: string }
     
+    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // RPC Parameter Types
+    // Eth Parameter Types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -286,15 +290,20 @@ module Types =
         | EthParamSubmitHashRate of EthParamSubmitHashRate
         | EthParamUninstallFilter of EthParamUninstallFilter
 
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Net and Web3 Method Types 
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     type NetListening = string list
     type NetPeerCount = string list
     type NetVersion = string list
-
     type NetParam =
         | NetListening of NetListening
         | NetPeerCount of NetPeerCount
         | NetVersion of NetVersion
-
+    
     type Web3ClientVersion = string list
     type Web3Sha3 = string list
 
@@ -302,6 +311,12 @@ module Types =
         | Web3ClientVersion of Web3ClientVersion
         | Web3Sha3 of Web3Sha3
 
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Overall DU
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     type RPCParams =
         | EthParam of EthParam
         | NetParam of NetParam
@@ -309,7 +324,7 @@ module Types =
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // RPC Method Types
+    // Eth Method Types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -360,6 +375,12 @@ module Types =
         | SubmitHashRate
         | UninstallFilter
 
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Net, Web3, Whisper Method Types
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     [<RequireQualifiedAccess>]
     type NetMethod =
         | Version
@@ -384,6 +405,12 @@ module Types =
         | UninstallFilter
         | Version
 
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Overall DU
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     type RPCMethod =
         | EthMethod of EthMethod
         | NetMethod of NetMethod
@@ -392,7 +419,7 @@ module Types =
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // RPC Message type
+    // RPC Message Types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -403,7 +430,7 @@ module Types =
 
     
     ///
-    /// Overall type for errors in various places in the pipeline. Probably not final at all.
+    /// Overall type for errors in various places in the pipeline. Not final at all.
     type Web3Error =
         | ContractParseFailure of string
         | ConnectionError of string
@@ -411,88 +438,103 @@ module Types =
         | HttpClientError of string
         | RPCResponseError of string
         | RPCNullResponse
+        | ValueToNonPayableFunctionError
+        | EthAddressError
         
-  
-    type RPCTransactionResponse = {
-        blockHash: string
-        blockNumber: string
-        contractAddress: EthAddress option
-        cumulativeGasUsed: string
-        effectiveGasPrice: string
-        from: EthAddress
-        gasUsed: string
-        logs: string list
-        logsBloom: string
-        status: string
-        toAddr: EthAddress
-        transactionHash: EthTransactionHash
-        transactionIndex: string
-        tType: string
-        isNull: bool
-    }
+
+    type CallResult =
+        { raw: string
+          typed: EVMDatatype list }
     
-    let dummyTransaction = {
-        blockHash = ""
-        blockNumber = ""
-        contractAddress = None
-        cumulativeGasUsed = ""
-        effectiveGasPrice = ""
-        from = ""
-        gasUsed = ""
-        logs = []
-        logsBloom = ""
-        status = ""
-        toAddr = ""
-        transactionHash = ""
-        transactionIndex = ""
-        tType = ""
-        isNull = true
-    }
     
-    type MinedTransaction = {
-          accessList: string list
-          blockHash: string
+    ///
+    /// Record representing a transaction receipt object from the RPC node.
+    type RPCTransactionResponse =
+        { blockHash: string
           blockNumber: string
-          chainId: string
+          contractAddress: EthAddress option
+          cumulativeGasUsed: string
+          effectiveGasPrice: string
           from: EthAddress
-          gas: string
-          gasPrice: string
-          hash: EthTransactionHash
-          input: string
-          maxFeePerGas: string
-          maxPriorityFeePerGas: string
-          nonce: string
-          r: string
-          s: string
+          gasUsed: string
+          logs: string list
+          logsBloom: string
+          status: string
           toAddr: EthAddress
+          transactionHash: EthTransactionHash
           transactionIndex: string
-          tType: string
-          v: string
-          value: string
-    }
+          tType: string }
+    
+    
+    ///
+    ///  Record representing a completed transaction on the Ethereum network.
+    type MinedTransaction =
+          { accessList: string list
+            blockHash: string
+            blockNumber: string
+            chainId: string
+            from: EthAddress
+            gas: string
+            gasPrice: string
+            hash: EthTransactionHash
+            input: string
+            maxFeePerGas: string
+            maxPriorityFeePerGas: string
+            nonce: string
+            r: string
+            s: string
+            toAddr: EthAddress
+            transactionIndex: string
+            tType: string
+            v: string
+            value: string }
         
+    
+    ///
+    /// Union of potential responses from the EVM through an RPC node. Null here is a 'valid' result, usually indicating
+    /// that a transaction doesn't exist at a particular hash, or that a transaction hasn't been included in the chain
+    /// yet. 
     type CallResponses =
-        | GetTransactionByHashResult of MinedTransaction
+        | TransactionHash of EthTransactionHash
         | TransactionReceiptResult of RPCTransactionResponse
-        | Null of string
+        | Transaction of MinedTransaction
+        | CallResult of CallResult
+        | Null 
     
         
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // MailboxProcessor types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    
+    ///
+    /// Convenience type
+    type Web3Connection = HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>
 
+    
+    ///
+    /// MailboxProcessor for sending and receiving the results of an RPC transmission
     type MailboxTransaction =
         TransactionMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, Web3Error>>
     
+    
+    ///
+    /// Convenience type
     type HttpRPCMailbox = MailboxProcessor<MailboxTransaction>
 
-    type MailboxReceiptManager =
-        ReceiptMessageAndReply of RPCResponse.Root * AsyncReplyChannel<Result<RPCResponse.Root, Web3Error>>
     
+    ///
+    /// MailboxProcessor for monitoring pending transactions
+    type MailboxReceiptManager =
+        ReceiptMessageAndReply of EthTransactionHash * AsyncReplyChannel<Result<CallResponses, Web3Error>>
+    
+    ///
+    /// Convenience type
     type ReceiptManagerMailbox = MailboxProcessor<MailboxReceiptManager>
 
-    type Monitor = RPCResponse.Root -> Result<RPCResponse.Root,Web3Error>
+    ///
+    /// Convenience type
+    type Monitor = EthTransactionHash -> Result<CallResponses,Web3Error>
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -502,18 +544,18 @@ module Types =
     
     ///
     /// Set of tupled values created during Json parsing and filtering
-    type IntermediateFunctionRepresentation =
+    type internal IntermediateFunctionRepresentation =
         option<JsonValue> * option<JsonValue> * option<JsonValue> * option<JsonValue>
 
 
     ///
     /// Set of tupled values created during Json parsing and filtering
-    type IntermediateEventRepresentation = option<JsonValue> * option<JsonValue> * option<JsonValue>
+    type internal IntermediateEventRepresentation = option<JsonValue> * option<JsonValue> * option<JsonValue>
 
 
     ///
     /// Set of tupled values created during Json parsing and filtering
-    type IntermediateErrorRepresentation = option<JsonValue> * option<JsonValue>
+    type internal IntermediateErrorRepresentation = option<JsonValue> * option<JsonValue>
 
 
     ///
@@ -522,6 +564,7 @@ module Types =
     /// only relevant for that purpose.
     ///
     type CanonicalRepresentation =
+        internal
         | CanonicalFunctionRepresentation of string
         | CanonicalEventRepresentation of string
         | CanonicalErrorRepresentation of string
@@ -567,10 +610,9 @@ module Types =
     type EVMFunction =
         { name: string
           hash: EVMSelector
-          inputs: EVMFunctionInputs
-          outputs: EVMDatatype list
-          //constant: string
-          //payable: string
+          canonicalInputs: EVMFunctionInputs
+          internalOutputs: EVMDatatype list
+          canonicalOutputs: EVMFunctionOutputs
           config: StateMutability }
 
 
@@ -623,7 +665,7 @@ module Types =
         | Name of string
         | SearchFunctionHash of EVMSelector
         | SearchFunctionInputs of EVMFunctionInputs
-        //| SearchFunctionOutputs of EVMFunctionOutputs
+        | SearchFunctionOutputs of EVMFunctionOutputs
         | SearchFunctionMutability of StateMutability
 
 
@@ -637,12 +679,13 @@ module Types =
     /// calls or txns.
     ///
     type ContractConstants =
-        { address: EthAddress
+        { walletAddress: EthAddress
           transactionType: string option
           maxFeePerGas: string option
           maxPriorityFeePerGas: string option
           data: EVMDatatype list option
-          blockHeight: string option }
+          blockHeight: string option
+          defaultValue: string option }
     
     
     ///
@@ -665,15 +708,10 @@ module Types =
           functions: EVMFunction list
           events: EVMEvent list
           errors: EVMError list
-          //deployedConstructorArguments: string // todo, probably involves some RPC calls to retrieve
+          //deployedConstructorArguments: string // todo maybe? probably involves some reasonable work to retrieve generically
           fallback: string
           receive: string
           chainId: string }
     
-        
-    ///
-    /// Container for the result of attempting to load a contract from its ABI.
-    type LoadContractResult = Result<DeployedContract, Web3Error>    
-
-    
-    
+    type CheckEVMData =
+        | CheckedSuccess
