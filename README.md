@@ -16,7 +16,7 @@ Docs coming for 0.2.0.
 FSharp.Data  
 FSharp.Json  
 SHA3Core  
-FsHttp
+FsHttp  
 Writing in .Net 6  
 
 ### Example Use
