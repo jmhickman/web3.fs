@@ -7,11 +7,9 @@ Dissatisfaction with existing solutions for interacting with Ethereum and other 
 
 ### Progress
 
-Getting close to a useful release that doesn't explode regularly. Most of the basic functionality and niceties are in. Still have a lot of work to do around types, function names, pipeline flows, etc.
+Release 0.1.0 is available. Please see the release notes in the releases section about important caveats. TL;DR you still probably shouldn't use it yet.
 
-Not ready for real use, but will do in a pinch. 
-
-Docs coming.
+Docs coming for 0.2.0.
 
 ### Deps and Reqs
 
@@ -24,13 +22,7 @@ Writing in .Net 6
 ### Example Use
 
 ```fsharp
-open web3.fs.Types
-open web3.fs.Helpers
-
-open web3.fs.ContractFunctions
-open web3.fs.RPCConnector
-open web3.fs.RPCBindFunctions
-open web3.fs.ReceiptManager
+open web3.fs
 
 // Prepare a hash digest, some constants, a web3 RPC connection, and a monitor for watching transaction receipts.
 // Private keys are handled in the wallet. Use Frame.sh! https://frame.sh 
@@ -49,12 +41,10 @@ let testContractBytecode =
   returnBytecodeFromFile """C:\Users\jon\source\repos\web3.fs\Samples\Contract.json"""
 
 // Deploy to Rinkeby. First the contract is parsed and loaded, then deployed. The transaction is
-// monitored, and when it fails or succeeds it is logged to the console. 
+// monitored, and when it fails or succeeds it is logged to the console automatically. 
 prepareUndeployedContract keccakDigest testContractBytecode None RINKEBY testContractABI
 |> Result.bind (deployEthContract web3c constants ) 
 |> monitorTransaction monitor
-|> bindTransactionResult
-|> logCallResult
 |> ignore
 
 (*
@@ -69,7 +59,7 @@ Transaction receipt: { blockHash =
   gasUsed = "0x119239"
   logs = []
   logsBloom =
-   "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   "0x00000000000000000000000000000000000000000000000000000000000000000000000000000<SNIP>"
   status = "0x1"
   toAddr = "null"
   transactionHash =
@@ -92,36 +82,34 @@ let doNothing0 = findFunction (Name "doNothing0") deployed |> List.head
 let byFunctionHash = ("0x035dee5e" |> EVMFunctionHash |> SearchFunctionHash)
 let seeNothing0 = findFunction byFunctionHash deployed |> List.head
 
-//[IndicatedFunction { name = "doNothing0"
-//                    hash = EVMFunctionHash "0x2a9f633a"
-//                    inputs = EVMFunctionInputs "(address)"
-//                    outputs = []
-//                    config = Nonpayable }]
-//[IndicatedFunction { name = "seeNothing0"
-//                    hash = EVMFunctionHash "0x035dee5e"
-//                    inputs = EVMFunctionInputs "()"
-//                    outputs = [Address ""]
-//                    config = Nonpayable }]
+(*
+[IndicatedFunction { name = "doNothing0"
+                    hash = EVMFunctionHash "0x2a9f633a"
+                    inputs = EVMFunctionInputs "(address)"
+                    outputs = []
+                    config = Nonpayable }]
+[IndicatedFunction { name = "seeNothing0"
+                    hash = EVMFunctionHash "0x035dee5e"
+                    inputs = EVMFunctionInputs "()"
+                    outputs = [Address ""]
+                    config = Nonpayable }]
+*)
 
-// Let's use one of our partials to call the contract and read a value. `None` is used to indicate an empty argument
+// Let's use one of our partials to call the contract and read a value. An empty list is used to indicate an empty argument
 // tuple. `seeNothing0` is our function from before.
-callContract seeNothing0 None 
-|> logRPCResult
+callContract seeNothing0 []
 |> ignore
 
 // Call successful, got: "0x0000000000000000000000000000000000000000000000000000000000000000"
 
 // Now let's set a value. Arguments are a `Some`, and are a list. '0' is the value argument, but doNothing is
 // non-payable. We'll also monitor this transaction once we get the hash back
-contractTransaction doNothing0 ([Address "0x2268b96e204379ee8366505c344ebe5cc34d3a46"] |> Some) "0"
+contractTransaction doNothing0 [Address "0x2268b96e204379ee8366505c344ebe5cc34d3a46"] "0"
 |> monitorTransaction monitor
-|> bindTransactionResult
-|> logCallResult 
 |> ignore
 
 // Then follow up with re-reading the value. Here, you can see that you may use a Some empty list if you wish.
-callContract seeNothing0 (Some []) 
-|> logRPCResult
+callContract seeNothing0 []
 |> ignore
 
 (*
@@ -138,7 +126,7 @@ Transaction receipt: { blockHash =
   gasUsed = "0xac59"
   logs = []
   logsBloom =
-   "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000<SNIP>"
   status = "0x1"
   toAddr = ""0x1a4bbe1d61b88c883a110d78105d98d683871c74""
   transactionHash =
