@@ -86,20 +86,17 @@ module RPCConnector =
     /// parameter already, and so come through this function as 'false' because the parameter doesn't need to be
     /// handled here. 
     ///
-    let private needsBlockArgs (m: RPCMethod) =
+    let private needsBlockArgs (m: EthMethod) =
         match m with
-        | EthMethod _m ->
-            match _m with
-            | _m when _m = EthMethod.Call || _m = EthMethod.EstimateGas -> true
-            | _ -> false
+        | _m when _m = EthMethod.Call || _m = EthMethod.EstimateGas -> true
         | _ -> false
-
+        
 
     ///
     /// Returns properly formatted JSON-RPC values to send to the RPC.
     let private formatRPCString (rpcMsg: HttpRPCMessage) ver blockHeight blockArgs =
-        let method = bindRPCMethod rpcMsg.method
-        let par = bindRPCParam rpcMsg.paramList
+        let method = bindEthMethod rpcMsg.method
+        let par = bindEthParam rpcMsg.paramList
         
         match blockArgs with
         | true -> $"""{{"jsonrpc":"{ver}","method":"{method}","params":[{par}, "{blockHeight}"], "id":1}}"""
@@ -209,8 +206,8 @@ module RPCConnector =
     /// `makeEthTxn` in those cases.
     ///
     let public makeEthRPCCall (rpcConnection: Web3Connection) method paramList =
-        { method = method |> wrapEthMethod
-          paramList = paramList |> wrapEthParams
+        { method = method
+          paramList = paramList
           blockHeight = LATEST }
         |> rpcConnection
         // TODO 0.2.0: log, transform into one of many potential output types based on the EthMethod used
@@ -238,8 +235,8 @@ module RPCConnector =
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
-                { method = EthMethod.SendTransaction |> wrapEthMethod
-                  paramList = _params |> EthParam
+                { method = EthMethod.SendTransaction 
+                  paramList = _params 
                   blockHeight = blockHeight' }
                 |> rpcConnection)
         |> Result.bind (fun r -> unpackRoot r |> stringAndTrim |> EthTransactionHash |> Ok)            
@@ -266,8 +263,8 @@ module RPCConnector =
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
-                { method = EthMethod.Call |> wrapEthMethod
-                  paramList = _params |> EthParam
+                { method = EthMethod.Call 
+                  paramList = _params 
                   blockHeight = blockHeight' }
                 |> rpcConnection)
         |> logRPCResult
@@ -310,8 +307,8 @@ module RPCConnector =
         |> validateRPCParams
         |> Result.bind
             (fun _params ->
-                { method = EthMethod.SendTransaction |> wrapEthMethod
-                  paramList = _params |> EthParam
+                { method = EthMethod.SendTransaction 
+                  paramList = _params 
                   blockHeight = LATEST }
                 |> rpcConnection)
         |> logRPCResult

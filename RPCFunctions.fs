@@ -9,27 +9,13 @@ open web3.fs.Types
 
 module RPCMethodFunctions =
     
-    ///
-    /// Lifts parameter.
-    let internal wrapEthMethod m = m |> EthMethod
-   
-   
-    ///
-    /// Lifts parameter.
-    let internal wrapNetMethod m = m |> NetMethod
-    
-    
-    ///
-    /// Lifts parameter.
-    let internal wrapWeb3Method m = m |> Web3Method
-
-    
+  
     ///
     /// Binds EthMethod to a string representation of the desired call. Only making effort to support methods outlined
     /// at
     /// https://playground.open-rpc.org/?schemaUrl=https://raw.githubusercontent.com/ethereum/eth1.0-apis/assembled-spec/
     /// 
-    let private bindEthMethod (m: EthMethod) =
+    let internal bindEthMethod (m: EthMethod) =
         match m with
         | EthMethod.Accounts -> "eth_accounts" //
         | EthMethod.BlockNumber -> "eth_blockNumber" //
@@ -73,25 +59,7 @@ module RPCMethodFunctions =
         | EthMethod.UninstallFilter -> "eth_uninstallFilter" //
 
     
-    // placeholder
-    let private bindNetMethod _ = ""
-
-    
-    // placeholder
-    let private bindShhMethod _ = ""
-
-    
-    // placeholder
-    let private bindWeb3Method _ = ""
-
-    
-    ///
-    /// Calls into the correct binder based on the incoming type.
-    let internal bindRPCMethod method =
-        match method with
-        | EthMethod m -> bindEthMethod m
-        | NetMethod m -> bindNetMethod m
-        | Web3Method m -> bindWeb3Method m
+   
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,28 +71,13 @@ module RPCParamFunctions =
     
     open Helpers
 
-        
-    ///
-    /// Lifts parameter
-    let internal wrapEthParams p = p |> EthParam
     
-    
-    ///
-    /// Lifts parameter
-    let internal wrapNetParams p = p |> NetParam
-    
-    
-    ///
-    /// Lifts parameter
-    let internal wrapWeb3Params p = p |> Web3Param
-
-
     //
     // Convert call params into json string representation. Some params
     // will apparently be deprecated soon, if not already. Log types
     // not yet implemented.
     //
-    let private bindEthParam (p: EthParam) =
+    let internal bindEthParam (p: EthParam) =
         match p with
         | EthParamAccounts _ -> ""
         | EthParamBlockNumber _ -> ""
@@ -168,16 +121,6 @@ module RPCParamFunctions =
         | EthParam1559SignTransaction _e -> createJsonObj _e
         
 
-    
-    ///
-    /// Calls into the correct binder based upon in the incoming type.
-    let internal bindRPCParam p =
-        match p with
-        | EthParam e -> bindEthParam e
-        | NetParam _ -> ""
-        | Web3Param _ -> ""
-    
-    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC Bind Functions
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -5,8 +5,6 @@ open web3.fs.Types
 [<AutoOpen>]
 module ReceiptManager =
 
-    open RPCMethodFunctions
-    open RPCParamFunctions
     open RPCBindFunctions
     open Helpers
 
@@ -35,11 +33,10 @@ module ReceiptManager =
                 let (ReceiptMessageAndReply (txnHash, reply)) = msg
                 
                 let call =
-                    { method = EthMethod.GetTransactionReceipt |> wrapEthMethod
+                    { method = EthMethod.GetTransactionReceipt 
                       paramList =
                           [ txnHash |> trimParameter ]
                           |> EthParam.EthParamGetTransactionReceipt
-                          |> wrapEthParams
                       blockHeight = LATEST }
 
                 callLoop rpc call
