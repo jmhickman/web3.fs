@@ -1,5 +1,7 @@
 namespace web3.fs
 
+
+
 [<AutoOpen>]
 module Types =
 
@@ -164,11 +166,6 @@ module Types =
     // Eth Parameter Types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    type EthParamAccounts = string list
-    type EthParamBlockNumber = string list
-
-
     // There is a tremendous amount of leeway in acceptable RPC messages in terms of what is
     // included. This makes the type pretty gross-looking. `data` is the only properly 'required'
     // value, and in practice toAddr and from will be present as well (but not always!)
@@ -187,11 +184,50 @@ module Types =
           accessList: AccessList option // Typically empty
           chainId: Quantity option } // Seems to be genuinely optional at this time, but should be included.
 
+    
+    type EthParam1559OverrideCall =
+        { [<JsonField("type")>]
+          txnType: TxnType option // Seems optional, needs research.
+          nonce: Quantity option // Missing nonce is fine, if talking to a wallet
+          [<JsonField("to")>]
+          toAddr: EthAddress option // Missing to is fine, if deploying a contract
+          from: EthAddress option // Missing 'from' is not great, may cause errors if wallet or node can't determine sender
+          gas: Quantity option // Missing gas limit is fine, if talking to wallet
+          value: Quantity option // Missing value is fine, if making a Call. May still be fine if txn isn't payable
+          data: Data // Calls, txn and deploys should always have a valid data value
+          maxPriorityFeePerGas: Quantity option // Missing gas is fine, if talking to wallet
+          maxFeePerGas: Quantity option // Missing gas is fine, if talking to wallet
+          accessList: AccessList option // Typically empty
+          chainId: Quantity option
+          bytecode: string
+          fakeBalance: Quantity option
+          fakeNonce: Quantity option
+          fakeState: string option
+          fakeStateDiff: string option }
+        
+    type EthParam2930CreateAccessList = EthParam1559Call
+    
+    type EthParamGetLogs =
+        { fromBlock: string option
+          toBlock: string option
+          address: string option
+          topics: string array option
+          blockhash: string option }
+    
+    
+    type EthParamNewFilter =
+        { fromBlock: string option
+          toBlock: string option
+          address: string option
+          topics: string array option }
+    
+        
+    type EthParamAccounts = string list
+    type EthParamBlockNumber = string list
+    type EthParamChainId = string list
     type EthParamCoinbase = string list
-    type EthParamCompileLLL = string list
-    type EthParamCompileSerpent = string list
-    type EthParamCompileSolidity = string list
     type EthParam1559EstimateGas = EthParam1559Call
+    type EthParamFeeHistory = string list
     type EthParamGasPrice = string list
     type EthParamGetBalance = string list
     type EthParamGetBlockByHash = string list
@@ -199,39 +235,19 @@ module Types =
     type EthParamGetBlockTransactionCountByHash = string list
     type EthParamGetBlockTransactionCountByNumber = string list
     type EthParamGetCode = string list
-    type EthParamGetCompilers = string list
     type EthParamGetFilterChanges = string list
     type EthParamGetFilterLogs = string list
-
-    // provisional
-    type EthParamGetLogs =
-        { fromBlock: string option
-          toBlock: string option
-          address: string option
-          topics: string array option
-          blockhash: string option }
-
     type EthParamGetStorageAt = string list
     type EthParamGetTransactionCount = string list
     type EthParamGetTransactionByHash = string list
     type EthParamGetTransactionByBlockHashAndIndex = string list
     type EthParamGetTransactionByBlockNumberAndIndex = string list
     type EthParamGetTransactionReceipt = string list
-    type EthParamGetUncleByBlockHashAndIndex = string list
-    type EthParamGetUncleByBlockNumberAndIndex = string list
     type EthParamGetUncleCountByBlockHash = string list
     type EthParamGetUncleCountByBlockNumber = string list
     type EthParamGetWork = string list
     type EthParamHashrate = string list
     type EthParamMining = string list
-
-    // provisional
-    type EthParamNewFilter =
-        { fromBlock: string option
-          toBlock: string option
-          address: string option
-          topics: string array option }
-
     type EthParamNewBlockFilter = string list
     type EthParamNewPendingTransactionFilter = string list
     type EthParamProtocolVersion = string list
@@ -249,10 +265,9 @@ module Types =
         | EthParamBlockNumber of EthParamBlockNumber
         | EthParam1559Call of EthParam1559Call
         | EthParamCoinbase of EthParamCoinbase
-        | EthParamCompileLLL of EthParamCompileLLL
-        | EthParamCompileSerpent of EthParamCompileSerpent
-        | EthParamCompileSolidity of EthParamCompileSolidity
+        | EthParamChainId of EthParamChainId
         | EthParam1559EstimateGas of EthParam1559EstimateGas
+        | EthParamFeeHistory of EthParamFeeHistory
         | EthParamGasPrice of EthParamGasPrice
         | EthParamGetBalance of EthParamGetBalance
         | EthParamGetBlockByHash of EthParamGetBlockByHash
@@ -260,7 +275,6 @@ module Types =
         | EthParamGetBlockTransactionCountByHash of EthParamGetBlockTransactionCountByHash
         | EthParamGetBlockTransactionCountByNumber of EthParamGetBlockTransactionCountByNumber
         | EthParamGetCode of EthParamGetCode
-        | EthParamGetCompilers of EthParamGetCompilers
         | EthParamGetFilterChanges of EthParamGetFilterChanges
         | EthParamGetFilterLogs of EthParamGetFilterLogs
         | EthParamGetLogs of EthParamGetLogs
@@ -270,8 +284,6 @@ module Types =
         | EthParamGetTransactionByBlockHashAndIndex of EthParamGetTransactionByBlockHashAndIndex
         | EthParamGetTransactionByBlockNumberAndIndex of EthParamGetTransactionByBlockNumberAndIndex
         | EthParamGetTransactionReceipt of EthParamGetTransactionReceipt
-        | EthParamGetUncleByBlockHashAndIndex of EthParamGetUncleByBlockHashAndIndex
-        | EthParamGetUncleByBlockNumberAndIndex of EthParamGetUncleByBlockNumberAndIndex
         | EthParamGetUncleCountByBlockHash of EthParamGetUncleCountByBlockHash
         | EthParamGetUncleCountByBlockNumber of EthParamGetUncleCountByBlockNumber
         | EthParamGetWork of EthParamGetWork
@@ -334,10 +346,9 @@ module Types =
         | BlockNumber
         | Call
         | Coinbase
-        | CompileLLL
-        | CompileSerpent
-        | CompileSolidity
+        | ChainId
         | EstimateGas
+        | FeeHistory
         | GasPrice
         | GetBalance
         | GetBlockByHash
@@ -345,7 +356,6 @@ module Types =
         | GetBlockTransactionCountByHash
         | GetBlockTransactionCountByNumber
         | GetCode
-        | GetCompilers
         | GetFilterChanges
         | GetFilterLogs
         | GetLogs
@@ -355,8 +365,6 @@ module Types =
         | GetTransactionByBlockHashAndIndex
         | GetTransactionByBlockNumberAndIndex
         | GetTransactionReceipt
-        | GetUncleByBlockHashAndIndex
-        | GetUncleByBlockNumberAndIndex
         | GetUncleCountByBlockHash
         | GetUncleCountByBlockNumber
         | GetWork
@@ -392,19 +400,6 @@ module Types =
         | ClientVersion
         | Sha3
 
-    [<RequireQualifiedAccess>]
-    type ShhMethod =
-        | AddToGroup
-        | GetFilterChanges
-        | GetMessages
-        | HasIdentity
-        | NewIdentity
-        | NewFilter
-        | NewGroup
-        | Post
-        | UninstallFilter
-        | Version
-
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Overall DU
@@ -414,7 +409,6 @@ module Types =
     type RPCMethod =
         | EthMethod of EthMethod
         | NetMethod of NetMethod
-        | ShhMethod of ShhMethod
         | Web3Method of Web3Method
 
 
