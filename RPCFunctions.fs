@@ -23,7 +23,7 @@ module RPCMethodFunctions =
         | EthMethod.Coinbase -> "eth_coinbase" //
         | EthMethod.ChainId -> "eth_chainId" //
         | EthMethod.EstimateGas -> "eth_estimateGas" //
-        | EthMethod.FeeHistory -> "eth_feeHistory" //
+        //| EthMethod.FeeHistory -> "eth_feeHistory" //
         | EthMethod.GasPrice -> "eth_gasPrice" //
         | EthMethod.GetBalance -> "eth_getBalance" //
         | EthMethod.GetBlockByHash -> "eth_getBlockByHash" //
@@ -51,7 +51,6 @@ module RPCMethodFunctions =
         | EthMethod.SendRawTransaction -> "eth_sendRawTransaction" //
         | EthMethod.Sign -> "eth_sign" //
         | EthMethod.SignTransaction -> "eth_signTransaction" //
-        | EthMethod.SubmitHashRate -> "eth_submitHashRate" //
         | EthMethod.UninstallFilter -> "eth_uninstallFilter" //
 
     

@@ -169,11 +169,9 @@ module Types =
     // included. This makes the type pretty gross-looking. `data` is the only properly 'required'
     // value, and in practice toAddr and from will be present as well (but not always!)
     type EthParam1559Call =
-        { [<JsonField("type")>]
-          txnType: TxnType option // Seems optional, needs research.
+        { [<JsonField("type")>] txnType: TxnType option // Seems optional, needs research.
           nonce: Quantity option // Missing nonce is fine, if talking to a wallet
-          [<JsonField("to")>]
-          toAddr: EthAddress option // Missing to is fine, if deploying a contract
+          [<JsonField("to")>] toAddr: EthAddress option // Missing to is fine, if deploying a contract
           from: EthAddress option // Missing 'from' is not great, may cause errors if wallet or node can't determine sender
           gas: Quantity option // Missing gas limit is fine, if talking to wallet
           value: Quantity option // Missing value is fine, if making a Call. May still be fine if txn isn't payable
@@ -185,11 +183,9 @@ module Types =
 
     
     type EthParam1559OverrideCall =
-        { [<JsonField("type")>]
-          txnType: TxnType option // Seems optional, needs research.
+        { [<JsonField("type")>] txnType: TxnType option // Seems optional, needs research.
           nonce: Quantity option // Missing nonce is fine, if talking to a wallet
-          [<JsonField("to")>]
-          toAddr: EthAddress option // Missing to is fine, if deploying a contract
+          [<JsonField("to")>] toAddr: EthAddress option // Missing to is fine, if deploying a contract
           from: EthAddress option // Missing 'from' is not great, may cause errors if wallet or node can't determine sender
           gas: Quantity option // Missing gas limit is fine, if talking to wallet
           value: Quantity option // Missing value is fine, if making a Call. May still be fine if txn isn't payable
@@ -276,7 +272,6 @@ module Types =
         | SendRawTransaction
         | Sign
         | SignTransaction
-        | SubmitHashRate
         | UninstallFilter
 
     
