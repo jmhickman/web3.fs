@@ -36,7 +36,7 @@ module ReceiptManager =
                     { method = EthMethod.GetTransactionReceipt 
                       paramList =
                           [ txnHash |> trimParameter ]
-                          |> EthParam.EthParamGetTransactionReceipt
+                          |> EthGenericRPC
                       blockHeight = LATEST }
 
                 callLoop rpc call

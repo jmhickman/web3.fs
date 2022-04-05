@@ -191,10 +191,41 @@ module Helpers =
 
 
     ///
+    /// Wraps the C-ism try method in FSharp clothing
+    let private tryGetBool (s: string) =
+        let res, bool = Boolean.TryParse(s)
+        match res with
+        | true -> Some bool
+        | false -> None
+    
+    
+    ///
+    ///
+    let private tryGetFloat (s: string) =
+        let res, flt = Single.TryParse(s)
+        match res with
+        | true -> Some flt
+        | false -> None
+     
+    
+    ///
+    /// 
+    let private testValueForBoolFloat (s: string) =
+        let tryB = tryGetBool s
+        if tryB.IsNone then
+            let tryF = tryGetFloat s
+            if tryF.IsNone then
+                $"\"{s}\""
+            else $"{s}"
+        else $"{s}"
+    
+    ///
     /// Creates a parameter list for RPC calls that take such a flat list format.
     let internal concatParamString (list: string list) =
         list
-        |> List.fold (fun acc s -> $"""{acc}"{s}", """) ""
+        |> List.fold (fun acc s ->
+            let s' = testValueForBoolFloat s
+            $"""{acc}{s'}, """) ""
         |> fun s -> s.TrimEnd(',', ' ')
 
 

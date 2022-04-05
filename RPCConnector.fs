@@ -150,6 +150,7 @@ module RPCConnector =
                 rpcMessage.method
                 |> needsBlockArgs
                 |> formatRPCString rpcMessage rpcVersion rpcMessage.blockHeight
+                |> fun p -> logResult p; p 
                 |> requestHttpAsync url
                 |> Async.RunSynchronously                
                 |> Result.bind filterNullOrErrorResponse
@@ -205,10 +206,9 @@ module RPCConnector =
     /// Note that some EthMethods have no arguments, while others have object arguments. Use `makeEthCall` or
     /// `makeEthTxn` in those cases.
     ///
-    let public makeEthRPCCall (rpcConnection: Web3Connection) method paramList =
-        //paramList 
+    let public makeEthRPCCall (rpcConnection: Web3Connection) method (paramList: string list) =
         { method = method
-          paramList = paramList
+          paramList = paramList |> EthGenericRPC
           blockHeight = LATEST }
         |> rpcConnection
         // TODO 0.2.0: log, transform into one of many potential output types based on the EthMethod used

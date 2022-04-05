@@ -42,9 +42,6 @@ module RPCMethodFunctions =
         | EthMethod.GetTransactionReceipt -> "eth_getTransactionReceipt" //
         | EthMethod.GetUncleCountByBlockHash -> "eth_getUncleCountByBlockHash" //
         | EthMethod.GetUncleCountByBlockNumber -> "eth_getUncleCountByBlockNumber" //
-        | EthMethod.GetWork -> "eth_getWork" //
-        | EthMethod.Hashrate -> "eth_hashrate" //
-        | EthMethod.Mining -> "eth_mining" //
         | EthMethod.NewFilter -> "eth_newFilter" //
         | EthMethod.NewBlockFilter -> "eth_newBlockFilter" //
         | EthMethod.NewPendingTransactionFilter -> "eth_newPendingTransactionFilter" //
@@ -54,7 +51,6 @@ module RPCMethodFunctions =
         | EthMethod.SendRawTransaction -> "eth_sendRawTransaction" //
         | EthMethod.Sign -> "eth_sign" //
         | EthMethod.SignTransaction -> "eth_signTransaction" //
-        | EthMethod.SubmitWork -> "eth_submitWork" //
         | EthMethod.SubmitHashRate -> "eth_submitHashRate" //
         | EthMethod.UninstallFilter -> "eth_uninstallFilter" //
 
@@ -70,48 +66,12 @@ module RPCParamFunctions =
 
     
     //
-    // Convert call params into json string representation. Some params
-    // will apparently be deprecated soon, if not already. Log types
-    // not yet implemented.
+    // Convert call params into json string representation. RPC commands that consume filters will not work, as there
+    // is no websocket facility set up as of 0.2.0.
     //
     let internal bindEthParam (p: EthParam) =
         match p with
-        | EthParamAccounts _ -> ""
-        | EthParamBlockNumber _ -> ""
-        | EthParamChainId _ -> ""
-        | EthParamCoinbase _ -> ""
-        | EthParamFeeHistory p -> concatParamString p
-        | EthParamGasPrice _ -> ""
-        | EthParamGetBalance p -> concatParamString p
-        | EthParamGetBlockByHash p -> concatParamString p
-        | EthParamGetBlockByNumber p -> concatParamString p
-        | EthParamGetBlockTransactionCountByHash p -> concatParamString p
-        | EthParamGetBlockTransactionCountByNumber p -> concatParamString p
-        | EthParamGetCode p -> concatParamString p
-        | EthParamGetFilterChanges p -> concatParamString p
-        | EthParamGetFilterLogs p -> concatParamString p
-        | EthParamGetLogs _ -> "" 
-        | EthParamGetStorageAt p -> concatParamString p
-        | EthParamGetTransactionCount p -> concatParamString p
-        | EthParamGetTransactionByHash p -> concatParamString p               
-        | EthParamGetTransactionByBlockHashAndIndex p -> concatParamString p
-        | EthParamGetTransactionByBlockNumberAndIndex p -> concatParamString p
-        | EthParamGetTransactionReceipt p -> concatParamString p
-        | EthParamGetUncleCountByBlockHash p -> concatParamString p
-        | EthParamGetUncleCountByBlockNumber p -> concatParamString p
-        | EthParamGetWork _ -> ""
-        | EthParamHashrate _ -> ""
-        | EthParamMining _ -> ""
-        | EthParamNewFilter _ -> "" 
-        | EthParamNewBlockFilter p -> concatParamString p
-        | EthParamNewPendingTransactionFilter _ -> ""
-        | EthParamProtocolVersion _ -> ""
-        | EthParamSyncing _ -> ""
-        | EthParamSendRawTransaction p -> concatParamString p
-        | EthParamSign p -> concatParamString p
-        | EthParamSubmitWork p -> concatParamString p
-        | EthParamSubmitHashRate p -> concatParamString p
-        | EthParamUninstallFilter p -> concatParamString p
+        | EthGenericRPC p -> concatParamString p
         | EthParam1559Call _e -> createJsonObj _e
         | EthParam1559EstimateGas _e -> createJsonObj _e
         | EthParam1559SendTransaction _e -> createJsonObj _e

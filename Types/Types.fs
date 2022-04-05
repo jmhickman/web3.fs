@@ -1,7 +1,6 @@
 namespace web3.fs
 
 
-
 [<AutoOpen>]
 module Types =
 
@@ -221,86 +220,20 @@ module Types =
           address: string option
           topics: string array option }
     
-        
-    type EthParamAccounts = string list
-    type EthParamBlockNumber = string list
-    type EthParamChainId = string list
-    type EthParamCoinbase = string list
+    type EthGenericRPC = string list
+    
     type EthParam1559EstimateGas = EthParam1559Call
-    type EthParamFeeHistory = string list
-    type EthParamGasPrice = string list
-    type EthParamGetBalance = string list
-    type EthParamGetBlockByHash = string list
-    type EthParamGetBlockByNumber = string list
-    type EthParamGetBlockTransactionCountByHash = string list
-    type EthParamGetBlockTransactionCountByNumber = string list
-    type EthParamGetCode = string list
-    type EthParamGetFilterChanges = string list
-    type EthParamGetFilterLogs = string list
-    type EthParamGetStorageAt = string list
-    type EthParamGetTransactionCount = string list
-    type EthParamGetTransactionByHash = string list
-    type EthParamGetTransactionByBlockHashAndIndex = string list
-    type EthParamGetTransactionByBlockNumberAndIndex = string list
-    type EthParamGetTransactionReceipt = string list
-    type EthParamGetUncleCountByBlockHash = string list
-    type EthParamGetUncleCountByBlockNumber = string list
-    type EthParamGetWork = string list
-    type EthParamHashrate = string list
-    type EthParamMining = string list
-    type EthParamNewBlockFilter = string list
-    type EthParamNewPendingTransactionFilter = string list
-    type EthParamProtocolVersion = string list
-    type EthParamSyncing = string list
     type EthParam1559SendTransaction = EthParam1559Call
-    type EthParamSendRawTransaction = string list
-    type EthParamSign = string list
     type EthParam1559SignTransaction = EthParam1559Call
-    type EthParamSubmitWork = string list
-    type EthParamSubmitHashRate = string list
-    type EthParamUninstallFilter = string list
+    
 
     type EthParam =
-        | EthParamAccounts of EthParamAccounts
-        | EthParamBlockNumber of EthParamBlockNumber
+        | EthGenericRPC of EthGenericRPC
         | EthParam1559Call of EthParam1559Call
-        | EthParamCoinbase of EthParamCoinbase
-        | EthParamChainId of EthParamChainId
         | EthParam1559EstimateGas of EthParam1559EstimateGas
-        | EthParamFeeHistory of EthParamFeeHistory
-        | EthParamGasPrice of EthParamGasPrice
-        | EthParamGetBalance of EthParamGetBalance
-        | EthParamGetBlockByHash of EthParamGetBlockByHash
-        | EthParamGetBlockByNumber of EthParamGetBlockByNumber
-        | EthParamGetBlockTransactionCountByHash of EthParamGetBlockTransactionCountByHash
-        | EthParamGetBlockTransactionCountByNumber of EthParamGetBlockTransactionCountByNumber
-        | EthParamGetCode of EthParamGetCode
-        | EthParamGetFilterChanges of EthParamGetFilterChanges
-        | EthParamGetFilterLogs of EthParamGetFilterLogs
-        | EthParamGetLogs of EthParamGetLogs
-        | EthParamGetStorageAt of EthParamGetStorageAt
-        | EthParamGetTransactionCount of EthParamGetTransactionCount
-        | EthParamGetTransactionByHash of EthParamGetTransactionByHash
-        | EthParamGetTransactionByBlockHashAndIndex of EthParamGetTransactionByBlockHashAndIndex
-        | EthParamGetTransactionByBlockNumberAndIndex of EthParamGetTransactionByBlockNumberAndIndex
-        | EthParamGetTransactionReceipt of EthParamGetTransactionReceipt
-        | EthParamGetUncleCountByBlockHash of EthParamGetUncleCountByBlockHash
-        | EthParamGetUncleCountByBlockNumber of EthParamGetUncleCountByBlockNumber
-        | EthParamGetWork of EthParamGetWork
-        | EthParamHashrate of EthParamHashrate
-        | EthParamMining of EthParamMining
-        | EthParamNewFilter of EthParamNewFilter
-        | EthParamNewBlockFilter of EthParamNewBlockFilter
-        | EthParamNewPendingTransactionFilter of EthParamNewPendingTransactionFilter
-        | EthParamProtocolVersion of EthParamProtocolVersion
-        | EthParamSyncing of EthParamSyncing
-        | EthParam1559SendTransaction of EthParam1559SendTransaction
-        | EthParamSendRawTransaction of EthParamSendRawTransaction
-        | EthParamSign of EthParamSign
         | EthParam1559SignTransaction of EthParam1559SignTransaction
-        | EthParamSubmitWork of EthParamSubmitWork
-        | EthParamSubmitHashRate of EthParamSubmitHashRate
-        | EthParamUninstallFilter of EthParamUninstallFilter
+        | EthParam1559SendTransaction of EthParam1559Call
+        
 
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -316,7 +249,6 @@ module Types =
         | Coinbase
         | ChainId
         | EstimateGas
-        | FeeHistory
         | GasPrice
         | GetBalance
         | GetBlockByHash
@@ -335,9 +267,6 @@ module Types =
         | GetTransactionReceipt
         | GetUncleCountByBlockHash
         | GetUncleCountByBlockNumber
-        | GetWork
-        | Hashrate
-        | Mining
         | NewFilter
         | NewBlockFilter
         | NewPendingTransactionFilter
@@ -347,7 +276,6 @@ module Types =
         | SendRawTransaction
         | Sign
         | SignTransaction
-        | SubmitWork
         | SubmitHashRate
         | UninstallFilter
 
