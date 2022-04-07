@@ -177,7 +177,7 @@ module RPCConnector =
     /// Returns a partially applied function ready to take an HttpRPCMessage and send it to the RPC endpoint and
     /// return a Result.
     ///
-    let public createWeb3Connection url rpcVersion =
+    let public createWeb3Connection url rpcVersion : Web3Connection=
         (url, rpcVersion)
         ||> startRpcConnector
         |> transactionMessage

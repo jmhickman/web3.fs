@@ -63,7 +63,7 @@ module Helpers =
     /// FunctionIndicators can be used directly in `makeEth_` calls instead of using `ByString "someFunction"`. This is 
     /// also a way to find the right function if a contract uses overloads, by filtering for the outputs or inputs.
     /// 
-    let public findFunction search contract =
+    let public findFunction contract search =
         match search with
         | Name s ->
             contract.functions

@@ -200,7 +200,7 @@ module ContractFunctions =
     /// Recursively send tupled components through the function in order to extract and format nested values properly.
     /// Non-tupled values are concatenated directly. ()'s inserted as needed.
     ///
-    let  rec private collapseTuples (_input: JsonValue) =
+    let rec private collapseTuples (_input: JsonValue) =
         match _input with
         | JsonValue.Array elements ->
             elements

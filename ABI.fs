@@ -715,6 +715,7 @@ module ABIFunctions =
     ///
     /// Returns the string representation of the wrapped EVMData value, except for bool types, which are handled in
     /// `unwrapEVMBool`. EVMDatatypes that are lists return a comma-separated concatenated string.
+    /// 
     let rec public unwrapEVMValue (evmDataType: EVMDatatype) =
         match evmDataType with
         | Address a -> a
@@ -743,7 +744,7 @@ module ABIFunctions =
     
     ///
     /// Returns a function's outputs from the EVM as an EVMDatatype list
-    let internal returnOutputAsEVMDatatypes contract evmFunction output =
+    let public returnOutputAsEVMDatatypes contract evmFunction output =
         bindFunctionIndicator contract evmFunction
         |> fun s -> createOutputEvmTypes s.internalOutputs output
      
@@ -751,6 +752,7 @@ module ABIFunctions =
     ///
     /// Returns the underlying boolean contained in a wrapped Bool EVMDatatype. For obvious reasons, bools from `Bool`
     /// will return a singleton List.
+    /// 
     let internal unwrapEVMBool (evmBools: EVMDatatype) =
         match evmBools with
         | Bool b -> [b]
