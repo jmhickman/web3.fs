@@ -308,6 +308,11 @@ module Types =
     type CallResult =
         { raw: string
           typed: EVMDatatype list }
+
+            
+    type DisplayCallResult =
+        | Raw
+        | Typed
     
     
     ///

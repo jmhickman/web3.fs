@@ -278,7 +278,9 @@ module Helpers =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ///
-    /// Returns a string representation of the conversion of wei to Eth.
+    /// Returns a string quantity of Eth, given a BigInteger representation of wei. To convert wei from an RPC response,
+    /// first run that string through hexToBigIntP.
+    /// 
     let public convertWeiToEth wei =
         let eth, frac = bigint.DivRem(wei, weiDiv)
         let rem = frac.ToString().PadLeft(18, '0')
@@ -286,7 +288,8 @@ module Helpers =
 
     
     ///
-    /// Returns a bigint for working in wei.
+    /// Returns a string for working in wei. A string is chosen because the actual input used in the 'value' argument
+    /// is a string, not a naked BigInt.
     let public convertEthToWei (eth: string) =
         let _eth =
             match not (eth.Contains('.')) with
@@ -297,7 +300,7 @@ module Helpers =
         let x, xs = (xa.[0], xa.[1])
         let e = x.TrimStart('0')
         let wei = xs.PadRight(18, '0').Remove(18)
-        bigint.Parse(e + wei)
+        bigint.Parse(e + wei).ToString()
 
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

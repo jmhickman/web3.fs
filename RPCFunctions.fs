@@ -1,5 +1,6 @@
 namespace web3.fs
 
+open web3.fs
 open web3.fs.Types
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,13 +110,18 @@ module RPCBindFunctions =
     
     ///
     /// 
-    let public logCallResult (r: Result<CallResponses, Web3Error>) =
+    let public logCallResult (indicator: DisplayCallResult) (r: Result<CallResponses, Web3Error>) =
         match r with
         | Ok o ->
             match o with
             | CallResult _r ->
-                printfn $"{_r.typed}"
-                o |> Ok
+                match indicator with
+                | Typed ->
+                    printfn $"{_r.typed}"
+                    o |> Ok
+                | Raw ->
+                    printfn $"{_r.raw}"
+                    o |> Ok
             | _ -> o |> Ok
         | Error e ->
             printfn $"Got Web3Error: {e}"

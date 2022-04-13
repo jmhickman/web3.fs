@@ -17,7 +17,7 @@ module ReceiptManager =
             | Error e ->
                 match e with
                 | RPCNullResponse ->
-                    do! Async.Sleep 15000
+                    do! Async.Sleep 7500
                     return! callLoop rpc call
                 | e -> return e |> Error
             | Ok o -> return o |> Ok 
