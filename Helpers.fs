@@ -171,7 +171,7 @@ module Helpers =
             |> EthParam1559Call
             |> Ok
         | None ->
-            "Call/TXN object 'data' value is missing or not valid" |> DataValidatorError
+            $"Call/TXN object 'data' value is missing or not valid: {unvalidatedRpcParam.udata}" |> DataValidatorError
             |> Error
 
 
@@ -257,11 +257,21 @@ module Helpers =
 
     ///
     /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
+    /// so mind what strings are passed in. This attempts to negate issues with certain
+    /// hex strings, and is a bodge.
+    /// 
+    let public hexToBigIntP (hexString: string) =
+        if not(hexString.StartsWith('0')) then
+            bigint.Parse($"0{hexString}", NumberStyles.AllowHexSpecifier)
+        else
+            bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
+    
+    ///
+    /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
     /// so mind what strings are passed in.
     /// 
-    let public hexToBigInt hexString =
+    let public hexToBigInt (hexString: string) =
         bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
-
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Wei/ETH conversion
@@ -314,7 +324,7 @@ module Helpers =
     
     ///
     /// Common function of changing a RPC Result into a string and trimming " characters
-    let internal stringAndTrim (r: RPCResponse.Result) =
+    let public stringAndTrim (r: RPCResponse.Result) =
         r.ToString() |> trimParameter
     
     

@@ -108,6 +108,21 @@ module RPCBindFunctions =
     
     
     ///
+    /// 
+    let public logCallResult (r: Result<CallResponses, Web3Error>) =
+        match r with
+        | Ok o ->
+            match o with
+            | CallResult _r ->
+                printfn $"{_r.typed}"
+                o |> Ok
+            | _ -> o |> Ok
+        | Error e ->
+            printfn $"Got Web3Error: {e}"
+            e |> Error
+    
+    
+    ///
     /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`. Intended to be
     /// placed in a transaction pipeline to provide realtime logging of transaction completion.
     /// 

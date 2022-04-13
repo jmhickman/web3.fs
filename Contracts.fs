@@ -1,11 +1,11 @@
 namespace web3.fs
 
-open FSharp.Data
 open web3.fs.Types
 
 [<AutoOpen>]
 module ContractFunctions =
     open System
+    open FSharp.Data
     open SHA3Core.Keccak
     
     open ABIFunctions
@@ -134,7 +134,7 @@ module ContractFunctions =
             (i.TryGetProperty("name"),
              i.TryGetProperty("inputs"),
              i.TryGetProperty("outputs"),
-             i.TryGetProperty("statemutability")))
+             i.TryGetProperty("stateMutability")))
 
 
     ///
@@ -305,7 +305,8 @@ module ContractFunctions =
             | "view" -> View
             | "payable" -> Payable
             | _ -> Nonpayable
-        | None -> Nonpayable
+        | None ->
+            Nonpayable
 
 
     ///
@@ -487,15 +488,15 @@ module ContractFunctions =
                 let _fList = parseABIForFunctions digest _j
                 let _eventList = parseABIForEvents digest _j
                 let _errList = parseABIForErrors digest _j
-                let _, fallback, receive = parseABIForConstructorFallbackReceive digest _j
-
+                let _, fallback, _ = parseABIForConstructorFallbackReceive digest _j
+                let receive = {name = "receive"; hash = ("0xa3e76c0f" |> EVMFunctionHash); canonicalInputs = ("()" |> EVMFunctionInputs); internalOutputs = []; canonicalOutputs = ("()" |> EVMFunctionOutputs); config = Payable}                
+                
                 { address = address 
                   abi = abi
-                  functions = _fList
+                  functions = _fList @ [receive]
                   events = _eventList
                   errors = _errList
                   fallback = fallback
-                  receive = receive
                   chainId = chainId }
                 |> Ok
             | None ->

@@ -25,7 +25,11 @@ module RPCConnector =
     /// Returns a Txn object for use in the validation function `ValidateRPCParams`
     let private createUnvalidatedTxn constants contract evmFunction arguments value =
         let txn, maxfee, priority, data = constantsBind constants
-        let iValue = value |> bigintToHex |> padTo32BytesLeft
+        let iValue =
+            value
+            |> bigintToHex
+            |> fun s -> s.TrimStart('0')// bigintToHex will stick extra 0s on that we don't need.
+            |> prepend0x
         
         let evmF =
             bindFunctionIndicator contract evmFunction
@@ -150,7 +154,6 @@ module RPCConnector =
                 rpcMessage.method
                 |> needsBlockArgs
                 |> formatRPCString rpcMessage rpcVersion rpcMessage.blockHeight
-                |> fun p -> logResult p; p 
                 |> requestHttpAsync url
                 |> Async.RunSynchronously                
                 |> Result.bind filterNullOrErrorResponse
@@ -197,6 +200,85 @@ module RPCConnector =
     
     
     ///
+    /// Returns the current block, meaning the last block at was included in the chain.
+    let private returnCurrentBlock (result: RPCResponse.Result) =
+        result |> stringAndTrim
+    
+    ///
+    /// Returns a record of a mined transaction for use in decomposeResult 
+    let private returnMinedTransactionRecord (result: RPCResponse.Result) =
+        let mined = RPCMinedTransaction.Parse(result.JsonValue.ToString()) 
+        let access = mined.AccessList |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
+        
+        { MinedTransaction.accessList = [access]
+          MinedTransaction.blockHash = mined.BlockHash
+          MinedTransaction.blockNumber = mined.BlockNumber
+          MinedTransaction.chainId = mined.ChainId
+          MinedTransaction.from = mined.From |> EthAddress
+          MinedTransaction.gas = mined.Gas
+          MinedTransaction.gasPrice = mined.GasPrice
+          MinedTransaction.hash = mined.Hash |> EthTransactionHash
+          MinedTransaction.input = mined.Input
+          MinedTransaction.maxFeePerGas = mined.MaxFeePerGas
+          MinedTransaction.maxPriorityFeePerGas = mined.MaxPriorityFeePerGas
+          MinedTransaction.nonce = mined.Nonce
+          MinedTransaction.r = mined.R
+          MinedTransaction.s = mined.S
+          MinedTransaction.v = mined.V
+          MinedTransaction.toAddr = mined.To |> EthAddress
+          MinedTransaction.transactionIndex = mined.TransactionIndex
+          MinedTransaction.tType = mined.Type
+          MinedTransaction.value = mined.Value }
+        
+    
+    ///
+    /// Returns a record of an Ethereum block for use in `decomposeResult` 
+    ///
+    let returnEthBlock (result: RPCResponse.Result) =
+        let ethBlock = RPCBlock.Parse(result.JsonValue.ToString())
+        let uncles = ethBlock.Uncles |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
+        { author = ethBlock.Author
+          baseFeePerGas = ethBlock.BaseFeePerGas
+          difficulty = ethBlock.Difficulty
+          extraData = ethBlock.ExtraData
+          gasLimit = ethBlock.GasLimit
+          gasUsed = ethBlock.GasUsed
+          hash = ethBlock.Hash
+          logsBloom = ethBlock.LogsBloom
+          miner = ethBlock.Miner
+          number = ethBlock.Number
+          parentHash = ethBlock.ParentHash
+          receiptsRoot = ethBlock.ReceiptsRoot
+          sealFields = ethBlock.SealFields |> Array.toList
+          sha3Uncles = ethBlock.Sha3Uncles
+          size = ethBlock.Size
+          stateRoot = ethBlock.StateRoot
+          timestamp = ethBlock.Timestamp
+          totalDifficulty = ethBlock.TotalDifficulty
+          transactions = ethBlock.Transactions |> Array.toList
+          transactionsRoot = ethBlock.TransactionsRoot
+          uncles = [uncles] }
+    
+    /// Returns a decomposed RPC response record matching the output of the given EthMethod
+    let private decomposeResult (method: EthMethod) (r: Result<RPCResponse.Root, Web3Error>) : CallResponses =
+        r
+        |> Result.bind (
+            fun root ->
+                let result = unpackRoot root
+                match method with
+                | EthMethod.GetTransactionByHash -> returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetTransactionByBlockHashAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetTransactionByBlockNumberAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.BlockNumber -> returnCurrentBlock result |> CurrentBlock |> Ok
+                | EthMethod.GetBlockByNumber -> returnEthBlock result |> Block |> Ok
+                | _ -> Null |> Ok
+            )
+        |> fun m ->
+            match m with
+            | Ok o -> o
+            | Error _ -> Null
+        
+    ///
     /// Creates an Ethereum RPC request whose purpose is typically to query the RPC node for chain-based or network-
     /// based data. Examples are retrieving the contents of a block, checking a transaction receipt, or getting an
     /// account balance.
@@ -211,7 +293,9 @@ module RPCConnector =
           paramList = paramList |> EthGenericRPC
           blockHeight = LATEST }
         |> rpcConnection
-        // TODO 0.2.0: log, transform into one of many potential output types based on the EthMethod used
+        |> logRPCResult
+        |> decomposeResult method
+        
 
 
     ///
@@ -268,7 +352,6 @@ module RPCConnector =
                   paramList = _params 
                   blockHeight = blockHeight' }
                 |> rpcConnection)
-        |> logRPCResult
         |> Result.bind (fun r ->
             let unpacked = unpackRoot r |> stringAndTrim
             {raw = unpacked

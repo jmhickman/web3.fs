@@ -44,19 +44,18 @@ module ABIFunctions =
     /// Intended to be used with `padTo32BytesRight` or `padTo32BytesLeft` on 
     /// `bytes` types, numeric types and `string` types. 
     /// 
-    let private formatTypes (f: string -> string) s = bigint.Parse(s).ToString("X").ToLowerInvariant() |> f
+    let private formatTypes (f: string -> string) s =
+        bigint.Parse(s).ToString("X").ToLowerInvariant() |> f
 
 
     ///
-    /// Returns the properly padded hexadecimal representation of a signed value.
+    /// Returns the properly padded hexadecimal representation numeric value.
     let private formatTypesInt s = 
         let int' = bigint.Parse(s)
         match int' with
         | x when x.Sign = -1 -> 
             x.ToString("X").ToLowerInvariant() |> padTo32BytesLeftF
-        | x when x.Sign >= 0 ->
-            x.ToString("X").ToLowerInvariant() |> padTo32BytesLeft
-        | x -> x.ToString("X").ToLowerInvariant() |> padTo32BytesLeft
+        | x -> x.ToString("X").ToLowerInvariant().TrimStart('0') |> padTo32BytesLeft
         
 
     ///
@@ -216,14 +215,14 @@ module ABIFunctions =
                     let tail = tail @ [ arr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesLeft}") (returnCountOfItems arr) |> Blob ]
                     unpackInputAndProcess tail acc (cursor + arr.Length + 1)
                 
-                | Uint256 u -> unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
+                | Uint256 u -> unpackInputAndProcess tail (acc + $"{formatTypesInt u}") cursor
                 
                 | Uint256ArraySz uArr ->
-                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
+                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypesInt}") |> String.concat "")) cursor
                 
                 | Uint256Array uArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
+                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
                     unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
                 
                 | Int256 i -> unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
