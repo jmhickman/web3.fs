@@ -46,16 +46,7 @@ module Helpers =
         (txn, maxFeePerGas, maxPriorityFeePerGas, data)
 
       
-    ///
-    /// Used by the `makeEth_` functions to handle users specifying functions by name (string) or by directly supplying
-    /// the function.
-    ///  
-    let internal bindFunctionIndicator contract s =
-        match s with
-        | IndicatedFunction f -> f
-        | ByString s ->
-            contract.functions
-            |> List.find (fun p -> p.name = s)
+  
 
     
     ///
@@ -86,7 +77,22 @@ module Helpers =
             |> List.filter(fun p -> p.config = stateMutability)
             |> List.map (fun f -> f |> IndicatedFunction)
         
-                
+    
+    ///
+    /// Used by the `makeEth_` functions to handle users specifying functions by name (string) or by directly supplying
+    /// the function. 
+    ///  
+    let rec internal bindFunctionIndicator contract s =
+        match s with
+        | IndicatedFunction f -> f
+        | ByString s ->
+            findFunction contract (s |> Name)
+            |> List.head
+            |> bindFunctionIndicator contract
+            
+            
+            
+            
     ///
     /// Returns a list containing contracts whose import succeeded.  
     let public bindDeployedContract result =

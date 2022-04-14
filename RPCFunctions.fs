@@ -153,7 +153,7 @@ module RPCFunctions =
     /// Returns a Txn object for use in the validation function `ValidateRPCParams`
     let private createUnvalidatedTxn constants contract evmFunction arguments value =
         let txn, maxfee, priority, data = constantsBind constants
-        let iValue =
+        let hexValue =
             value
             |> bigintToHex
             |> fun s -> s.TrimStart('0')// bigintToHex will stick extra 0s on that we don't need.
@@ -181,7 +181,7 @@ module RPCFunctions =
               utoAddr = contract.address
               ufrom = constants.walletAddress
               ugas = ""
-              uvalue = iValue
+              uvalue = hexValue
               udata = udata
               umaxFeePerGas = maxfee
               umaxPriorityFeePerGas = priority
@@ -197,7 +197,7 @@ module RPCFunctions =
                   utoAddr = contract.address
                   ufrom = constants.walletAddress
                   ugas = ""
-                  uvalue = iValue
+                  uvalue = hexValue
                   udata = udata
                   umaxFeePerGas = maxfee
                   umaxPriorityFeePerGas = priority
