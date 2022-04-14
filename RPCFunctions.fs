@@ -146,63 +146,61 @@ module RPCFunctions =
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Ethereum call functions using the RPC connection
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+    
+    
+    ///
+    ///
+    let returnUnvalidatedRecord address txn maxfee priority data contract value =
+        { utxnType = txn
+          unonce = ""
+          utoAddr = contract.address
+          ufrom = address
+          ugas = ""
+          uvalue = value
+          udata = data
+          umaxFeePerGas = maxfee
+          umaxPriorityFeePerGas = priority
+          uaccessList = []
+          uchainId = contract.chainId }
+        
+    
+    ///
+    /// Returns the data string to be included in the transaction based on the presence of arguments in the original
+    /// function call. Otherwise, the default arguments supplied in the ContractConstants will be used. Embeds error
+    /// strings from the input validation layer into the data, which will be surfaced downstream of this function call.
+    /// 
+    let createArguments (evmFunction: EVMFunction) arguments data =
+        match arguments with
+            | Some a ->
+                match checkEVMData a with
+                | Ok _ -> $"{evmFunction.hash |> bindEVMSelector}{createInputByteString a}"
+                | Error e -> $"{e.ToString}"
+            | None ->
+                match checkEVMData data with
+                | Ok _ -> $"{evmFunction.hash |> bindEVMSelector}{createInputByteString data}"
+                | Error e -> $"{e.ToString}"
     
     
     ///
     /// Returns a Txn object for use in the validation function `ValidateRPCParams`
     let private createUnvalidatedTxn constants contract evmFunction arguments value =
         let txn, maxfee, priority, data = constantsBind constants
-        let hexValue =
-            value
-            |> bigintToHex
-            |> fun s -> s.TrimStart('0')// bigintToHex will stick extra 0s on that we don't need.
-            |> prepend0x
-        
-        let evmFunction' =
-            bindFunctionIndicator contract evmFunction
-        
-        let udata =
-            match arguments with
-            | Some a ->
-                match checkEVMData a with
-                | Ok _ -> $"{evmFunction'.hash |> bindEVMSelector}{createInputByteString a}"
-                | Error e -> $"{e.ToString}"
-            | None ->
-                match checkEVMData data with
-                | Ok _ -> $"{evmFunction'.hash |> bindEVMSelector}{createInputByteString data}"
-                | Error e -> $"{e.ToString}"
+        let hexValue = value |> bigintToHex |> prepend0x
+        let evmFunction' = bindFunctionIndicator contract evmFunction
+        let udata = createArguments evmFunction' arguments data            
         
         match evmFunction'.config with
         | Payable -> 
-            if value = "0" then logResult "WARN: 0 value being sent to payable function"
-            { utxnType = txn
-              unonce = ""
-              utoAddr = contract.address
-              ufrom = constants.walletAddress
-              ugas = ""
-              uvalue = hexValue
-              udata = udata
-              umaxFeePerGas = maxfee
-              umaxPriorityFeePerGas = priority
-              uaccessList = []
-              uchainId = contract.chainId }
+            if hexValue = "0x0" then logResult "WARNING: 0 value being sent to payable function"
+            
+            returnUnvalidatedRecord constants.walletAddress txn maxfee priority udata contract hexValue
             |> Ok
         | _ ->
-            if not(value = "0") then
+            if not(hexValue = "0x0") then 
                 ValueToNonPayableFunctionError |> Error
             else
-                { utxnType = txn
-                  unonce = ""
-                  utoAddr = contract.address
-                  ufrom = constants.walletAddress
-                  ugas = ""
-                  uvalue = hexValue
-                  udata = udata
-                  umaxFeePerGas = maxfee
-                  umaxPriorityFeePerGas = priority
-                  uaccessList = []
-                  uchainId = contract.chainId }
+                returnUnvalidatedRecord constants.walletAddress txn maxfee priority udata contract hexValue
                 |> Ok
 
     

@@ -659,8 +659,9 @@ module ABIFunctions =
         
     ///
     /// Returns the input EVMDatatype list if the inputs conform to some basic checks, otherwise an error string that
-    /// will bubble up later in the pipeline.
+    /// will bubble up later in the pipeline. 
     ///
+    //  TODO: This should be expanded to include checks against number of matching arguments, etc.
     let internal checkEVMData evmDataList =
         let rec checkEVMDataConforming evmDataList =
             match evmDataList with

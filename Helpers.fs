@@ -258,7 +258,7 @@ module Helpers =
     ///
     /// Returns a hexadecimal string with no padding. Useful for QUANTITY values in the ABI.
     let public bigintToHex num =
-        num |> fun n -> bigint.Parse(n).ToString("X")
+        if num = "0" then "0x0" else num |> fun n -> bigint.Parse(n).ToString("X").TrimStart('0')
 
 
     ///
