@@ -395,7 +395,7 @@ module Types =
         | TransactionReceiptResult of RPCTransactionResponse
         | Transaction of MinedTransaction
         | CallResult of CallResult
-        | Null 
+        | Web3Error
     
         
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -422,7 +422,7 @@ module Types =
     ///
     /// MailboxProcessor for monitoring pending transactions
     type MailboxReceiptManager =
-        ReceiptMessageAndReply of EthTransactionHash * AsyncReplyChannel<Result<CallResponses, Web3Error>>
+        ReceiptMessageAndReply of EthTransactionHash * AsyncReplyChannel<CallResponses>
     
     ///
     /// Convenience type

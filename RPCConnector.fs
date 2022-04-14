@@ -204,6 +204,27 @@ module RPCConnector =
     let private returnCurrentBlock (result: RPCResponse.Result) =
         result |> stringAndTrim
     
+    
+    ///
+    /// Creates a TransactionReceiptResult from an incoming RPCResponse. Intended to be paired with `bindCallResult`.
+    let private returnTransactionReceiptRecord (result: RPCResponse.Result) =
+        { blockHash = result.BlockHash
+          blockNumber = result.BlockNumber
+          contractAddress = result.ContractAddress.JsonValue.ToString() |> trimParameter |> Some
+          cumulativeGasUsed = result.CumulativeGasUsed
+          effectiveGasPrice = result.EffectiveGasPrice
+          from = result.From
+          gasUsed = result.GasUsed
+          logs = result.Logs |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
+          logsBloom = result.LogsBloom
+          status = result.Status
+          toAddr = result.To.JsonValue.ToString() |> EthAddress
+          transactionHash = result.TransactionHash
+          transactionIndex = result.TransactionIndex
+          tType = result.Type }
+        
+       
+    
     ///
     /// Returns a record of a mined transaction for use in decomposeResult 
     let private returnMinedTransactionRecord (result: RPCResponse.Result) =
@@ -234,7 +255,7 @@ module RPCConnector =
     ///
     /// Returns a record of an Ethereum block for use in `decomposeResult` 
     ///
-    let returnEthBlock (result: RPCResponse.Result) =
+    let private returnEthBlock (result: RPCResponse.Result) =
         let ethBlock = RPCBlock.Parse(result.JsonValue.ToString())
         let uncles = ethBlock.Uncles |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
         { author = ethBlock.Author
@@ -260,23 +281,24 @@ module RPCConnector =
           uncles = [uncles] }
     
     /// Returns a decomposed RPC response record matching the output of the given EthMethod
-    let private decomposeResult (method: EthMethod) (r: Result<RPCResponse.Root, Web3Error>) : CallResponses =
+    let internal decomposeResult (method: EthMethod) (r: Result<RPCResponse.Root, Web3Error>) : CallResponses =
         r
         |> Result.bind (
             fun root ->
                 let result = unpackRoot root
                 match method with
-                | EthMethod.GetTransactionByHash -> returnMinedTransactionRecord result |> Transaction |> Ok
-                | EthMethod.GetTransactionByBlockHashAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
-                | EthMethod.GetTransactionByBlockNumberAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.BlockNumber -> returnCurrentBlock result |> CurrentBlock |> Ok
                 | EthMethod.GetBlockByNumber -> returnEthBlock result |> Block |> Ok
-                | _ -> Null |> Ok
+                | EthMethod.GetTransactionByBlockHashAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetTransactionByBlockNumberAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetTransactionByHash -> returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetTransactionReceipt -> returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
+                | _ -> Web3Error |> Ok
             )
         |> fun m ->
             match m with
             | Ok o -> o
-            | Error _ -> Null
+            | Error _ -> Web3Error
         
     ///
     /// Creates an Ethereum RPC request whose purpose is typically to query the RPC node for chain-based or network-

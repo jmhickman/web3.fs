@@ -1,6 +1,5 @@
 namespace web3.fs
 
-open web3.fs
 open web3.fs.Types
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -87,9 +86,6 @@ module RPCBindFunctions =
     
     open FSharp.Data
     
-    open Helpers
-    
-    
     ///
     /// Generic logger until I import something more featureful.
     let internal logResult logString =
@@ -145,41 +141,4 @@ module RPCBindFunctions =
         match r.Result with
         | Some r' -> r'
         | None -> RPCResponse.Result(JsonValue.Null)
-    
-    
-    ///
-    /// Higher order function that applies functions to generic RPCResponses in order to extract specific types
-    /// (CallResponses). Intended to be used with the set of `binder_` functions, but can be composed with a lambda if
-    /// required.
-    /// 
-    let private bindCallResult (f: RPCResponse.Root -> CallResponses) (r:Result<RPCResponse.Root,Web3Error>) =
-        match r with
-        | Ok r' -> r' |> f |> Ok
-        | Error e -> e |> Error
-    
-    
-    ///
-    /// Creates a TransactionReceiptResult from an incoming RPCResponse. Intended to be paired with `bindCallResult`.
-    let private binderTransactionResult (r: RPCResponse.Root) =
-        match r.Result with
-        | Some r' -> 
-            { blockHash = r'.BlockHash
-              blockNumber = r'.BlockNumber
-              contractAddress = r'.ContractAddress.JsonValue.ToString() |> trimParameter |> Some
-              cumulativeGasUsed = r'.CumulativeGasUsed
-              effectiveGasPrice = r'.EffectiveGasPrice
-              from = r'.From
-              gasUsed = r'.GasUsed
-              logs = r'.Logs |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
-              logsBloom = r'.LogsBloom
-              status = r'.Status
-              toAddr = r'.To.JsonValue.ToString() |> EthAddress
-              transactionHash = r'.TransactionHash
-              transactionIndex = r'.TransactionIndex
-              tType = r'.Type }
-            |> TransactionReceiptResult 
-        | None -> Null
-
-    
-    let internal bindTransactionResult = bindCallResult binderTransactionResult
     
