@@ -366,7 +366,7 @@ module RPCConnector =
     /// * constants: A ContractConstants record.
     /// * contract: A UndeployedContract that is being deployed
     ///
-    let public deployEthContract (rpcConnection: Web3Connection) constants contract =
+    let public deployEthContract (rpcConnection: Web3Connection) constants contract value =
         let (RawContractBytecode _rawBytecode) = contract.bytecode
         let txn, maxfee, priority, _ = constantsBind constants
 
@@ -380,7 +380,7 @@ module RPCConnector =
           utoAddr = ""
           ufrom = constants.walletAddress
           ugas = ""
-          uvalue = "0" |> bigintToHex |> padTo32BytesLeft
+          uvalue = value |> bigintToHex |> fun p -> p.TrimStart('0')
           udata =
               $"{_rawBytecode}{contract.constructor |> bindEVMSelector |> strip0x}{createInputByteString cArgs}"
               |> prepend0x

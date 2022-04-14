@@ -110,7 +110,7 @@ module RPCBindFunctions =
     
     ///
     /// 
-    let public logCallResult (indicator: DisplayCallResult) (r: Result<CallResponses, Web3Error>) =
+    let public logCallResult indicator r =
         match r with
         | Ok o ->
             match o with
@@ -132,7 +132,7 @@ module RPCBindFunctions =
     /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`. Intended to be
     /// placed in a transaction pipeline to provide realtime logging of transaction completion.
     /// 
-    let public monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash,Web3Error>) =
+    let public monitorTransaction (monitor: Monitor) r =
         r
         |> Result.bind (fun r ->
             printfn $"Beginning monitoring of transaction {r}"
@@ -181,32 +181,5 @@ module RPCBindFunctions =
         | None -> Null
 
     
-    let private binderGetTransactionByHashResult (r: RPCResponse.Root) =
-        match r.Result with
-        | Some m' ->
-            let m = RPCMinedTransaction.Parse(m'.ToString())
-            { accessList = m.AccessList |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
-              blockHash = m.BlockHash
-              blockNumber = m.BlockNumber
-              chainId = m.ChainId
-              from = m.From |> EthAddress
-              gas = m.Gas
-              gasPrice = m.GasPrice
-              hash = m.Hash |> EthTransactionHash
-              input = m.Input
-              maxFeePerGas = m.MaxFeePerGas
-              maxPriorityFeePerGas = m.MaxPriorityFeePerGas
-              nonce = m.Nonce
-              r = m.R
-              s = m.S
-              toAddr = m.To |> EthAddress
-              transactionIndex = m.TransactionIndex
-              tType = m.Type
-              v = m.V
-              value = m.Value }
-            |> Transaction
-        | None ->  Null 
-    
-    
     let internal bindTransactionResult = bindCallResult binderTransactionResult
-    let internal bindGetTransactionByHashResult = bindCallResult binderGetTransactionByHashResult
+    
