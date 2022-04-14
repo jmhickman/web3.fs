@@ -507,17 +507,22 @@ module ContractFunctions =
     
     ///
     /// Returns an UndeployedContract for use in `deployEthContract`. 
-    let public prepareUndeployedContract digest bytecode constructorArguments chainId abi =
+    let public prepareUndeployedContract digest bytecode (constructorArguments: EVMDatatype list option) chainId abi =
         let (ABI _abi) = abi
         
         match JsonValue.TryParse(_abi) with
         | Some json ->
             let _j = json.AsArray()
             let (_, hash), _, _ = parseABIForConstructorFallbackReceive digest _j
-            { abi = abi
-              constructor = (hash |> EVMFunctionHash)
-              bytecode = bytecode
-              chainId = chainId
-              constructorArguments = constructorArguments }
-            |> Ok
+            if hash = "0x90fa17bb" && constructorArguments.IsSome then
+               ConstructorArgumentsToEmptyConstructorError |> Error
+            else if not(hash = "0x90fa17bb") && constructorArguments.IsNone then
+               ConstructorArgumentsMissingError |> Error
+            else
+                { abi = abi
+                  constructor = (hash |> EVMFunctionHash)
+                  bytecode = bytecode
+                  chainId = chainId
+                  constructorArguments = constructorArguments }
+                |> Ok
         | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error

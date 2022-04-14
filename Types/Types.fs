@@ -301,6 +301,8 @@ module Types =
         | HttpClientError of string
         | RPCResponseError of string
         | RPCNullResponse
+        | ConstructorArgumentsToEmptyConstructorError
+        | ConstructorArgumentsMissingError
         | ValueToNonPayableFunctionError
         | EthAddressError
         
