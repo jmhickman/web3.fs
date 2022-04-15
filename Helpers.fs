@@ -86,9 +86,14 @@ module Helpers =
             findFunction contract (s |> Name)
             |> List.head
             |> bindFunctionIndicator contract
-            
-            
-            
+        | Receive ->
+            { name = "receive"
+              hash = "0x" |> EVMFunctionHash
+              canonicalInputs = "" |> EVMFunctionInputs
+              internalOutputs = []
+              canonicalOutputs = "" |> EVMFunctionOutputs
+              config = Payable}
+                
             
     ///
     /// Returns a list containing contracts whose import succeeded.  

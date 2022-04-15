@@ -65,6 +65,7 @@ module Types =
     let ZERO = "0x0"
     let ZEROV = "0"
     let fakedOffset = "0000000000000000000000000000000000000000000000000000000000000020"
+    let zeroEVMValue = "0000000000000000000000000000000000000000000000000000000000000000"
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -392,7 +393,7 @@ module Types =
     /// that a transaction doesn't exist at a particular hash, or that a transaction hasn't been included in the chain
     /// yet. 
     type CallResponses =
-        | CurrentBlock of string
+        | SimpleValue of string
         | Block of EthBlock
         | TransactionHash of EthTransactionHash
         | TransactionReceiptResult of RPCTransactionResponse
@@ -557,6 +558,8 @@ module Types =
     type FunctionIndicator =
         | IndicatedFunction of EVMFunction
         | ByString of string
+        | Receive
+        
 
 
     ///
@@ -596,7 +599,6 @@ module Types =
     ///
     type UndeployedContract =
         { abi: ABI
-          constructor: EVMSelector
           bytecode: RawContractBytecode
           chainId: string
           constructorArguments: EVMDatatype list option}
@@ -611,7 +613,6 @@ module Types =
           events: EVMEvent list
           errors: EVMError list
           //deployedConstructorArguments: string // todo maybe? probably involves some reasonable work to retrieve generically
-          fallback: string
           chainId: string }
     
     type CheckEVMData =

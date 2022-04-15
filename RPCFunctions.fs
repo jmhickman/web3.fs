@@ -117,7 +117,7 @@ module RPCFunctions =
     
     ///
     /// 
-    let public logCallResult indicator (r: Result<CallResponses, Web3Error>) =
+    let public logEthCallResult indicator (r: Result<CallResponses, Web3Error>) =
         match r with
         | Ok o ->
             match o with
@@ -140,7 +140,6 @@ module RPCFunctions =
     /// placed in a transaction pipeline to provide realtime logging of transaction completion.
     /// 
     let public monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash, Web3Error>) =
-        
         match r with
         | Ok o ->
             logResult $"Beginning monitoring of transaction {o}"
@@ -232,7 +231,7 @@ module RPCFunctions =
     
     ///
     /// Returns the current block, meaning the last block at was included in the chain.
-    let private returnCurrentBlock (result: RPCResponse.Result) =
+    let private returnSimpleValue (result: RPCResponse.Result) =
         result |> stringAndTrim
     
     
@@ -318,12 +317,13 @@ module RPCFunctions =
             fun root ->
                 let result = unpackRoot root
                 match method with
-                | EthMethod.BlockNumber -> returnCurrentBlock result |> CurrentBlock |> Ok
+                | EthMethod.BlockNumber -> returnSimpleValue result |> SimpleValue |> Ok
                 | EthMethod.GetBlockByNumber -> returnEthBlock result |> Block |> Ok
                 | EthMethod.GetTransactionByBlockHashAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionByBlockNumberAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionByHash -> returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionReceipt -> returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
+                | EthMethod.GetBalance -> returnSimpleValue result |> SimpleValue |> Ok
                 | _ -> Web3Error |> Ok
             )
         |> fun m ->

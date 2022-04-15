@@ -440,18 +440,14 @@ module ContractFunctions =
     /// When supplied with a Solidity contract ABI in Json format, returns a tuple of the constructor,
     /// an optional fallback function, and optional receive function.
     ///
-    let private parseABIForConstructorFallbackReceive (digest: Keccak) (json: JsonValue array) =
+    let private parseABIForConstructor (digest: Keccak) (json: JsonValue array) =
+        match tryGetConstructorProperties json with
+        | [| Some r |] ->
+            let x = $"constructor{collapseTuples r}"
+            digest.Hash(x).Remove(8)
+        | _ -> "0x90fa17bb"
 
-        let constructor =
-            match tryGetConstructorProperties json with
-            | [| Some r |] ->
-                let x = $"constructor{collapseTuples r}"
-                (x, digest.Hash(x).Remove(8))
-            | _ -> ("constructor()", "0x90fa17bb")
-
-        let fallback = tryGetFallback json |> returnCanonicalInputs
-        let receive = tryGetReceive json |> returnCanonicalInputs
-        (constructor, fallback, receive)
+     
 
     
     ///
@@ -488,15 +484,12 @@ module ContractFunctions =
                 let _fList = parseABIForFunctions digest _j
                 let _eventList = parseABIForEvents digest _j
                 let _errList = parseABIForErrors digest _j
-                let _, fallback, _ = parseABIForConstructorFallbackReceive digest _j
-                let receive = {name = "receive"; hash = ("0xa3e76c0f" |> EVMFunctionHash); canonicalInputs = ("()" |> EVMFunctionInputs); internalOutputs = []; canonicalOutputs = ("()" |> EVMFunctionOutputs); config = Payable}                
                 
                 { address = address 
                   abi = abi
-                  functions = _fList @ [receive]
+                  functions = _fList
                   events = _eventList
                   errors = _errList
-                  fallback = fallback
                   chainId = chainId }
                 |> Ok
             | None ->
@@ -513,14 +506,13 @@ module ContractFunctions =
         match JsonValue.TryParse(_abi) with
         | Some json ->
             let _j = json.AsArray()
-            let (_, hash), _, _ = parseABIForConstructorFallbackReceive digest _j
+            let hash = parseABIForConstructor digest _j
             if hash = "0x90fa17bb" && constructorArguments.IsSome then
                ConstructorArgumentsToEmptyConstructorError |> Error
             else if not(hash = "0x90fa17bb") && constructorArguments.IsNone then
                ConstructorArgumentsMissingError |> Error
             else
                 { abi = abi
-                  constructor = (hash |> EVMFunctionHash)
                   bytecode = bytecode
                   chainId = chainId
                   constructorArguments = constructorArguments }

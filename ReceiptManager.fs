@@ -27,7 +27,7 @@ module ReceiptManager =
     ///
     /// Mailbox processor leveraging the RPCConnector to monitor the status of a transaction.
     let private receiptManager (rpc: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>) (mbox: ReceiptManagerMailbox) =
-        let msgLoop () =
+        let rec msgLoop () =
             async {
                 let! msg = mbox.Receive()
                 let (ReceiptMessageAndReply (txnHash, reply)) = msg
@@ -38,12 +38,14 @@ module ReceiptManager =
                           [ txnHash |> trimParameter ]
                           |> EthGenericRPC
                       blockHeight = LATEST }
-
+                
                 callLoop rpc call
                 |> Async.RunSynchronously
                 |> logRPCResult
                 |> decomposeRPCResult EthMethod.GetTransactionReceipt 
                 |> reply.Reply
+                
+                do! msgLoop ()
             }
         
         msgLoop ()

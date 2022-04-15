@@ -341,7 +341,9 @@ module ABIFunctions =
     ///
     /// Returns the substring with a hex specifier prepended. 
     let private emitSubstringPrepend0x start blob =
-        emitSubstring start blob |> fun s -> s.TrimStart('0') |> prepend0x
+        emitSubstring start blob
+        |> fun s ->
+            if s = zeroEVMValue then s |> prepend0x else s.TrimStart('0') |> prepend0x
 
 
     ///
