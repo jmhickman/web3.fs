@@ -446,7 +446,7 @@ module ContractFunctions =
             match tryGetConstructorProperties json with
             | [| Some r |] ->
                 let x = $"constructor{collapseTuples r}"
-                (x, digest.Hash(x))
+                (x, digest.Hash(x).Remove(8))
             | _ -> ("constructor()", "0x90fa17bb")
 
         let fallback = tryGetFallback json |> returnCanonicalInputs

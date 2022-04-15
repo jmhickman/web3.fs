@@ -42,7 +42,7 @@ module ReceiptManager =
                 callLoop rpc call
                 |> Async.RunSynchronously
                 |> logRPCResult
-                |> decomposeResult EthMethod.GetTransactionReceipt 
+                |> decomposeRPCResult EthMethod.GetTransactionReceipt 
                 |> reply.Reply
             }
         

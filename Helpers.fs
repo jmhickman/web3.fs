@@ -26,7 +26,7 @@ module Helpers =
         let txn =
             match c.transactionType with
             | Some t -> t
-            | None -> ""
+            | None -> "0x2"
 
         let maxFeePerGas =
             match c.maxFeePerGas with
@@ -45,10 +45,7 @@ module Helpers =
 
         (txn, maxFeePerGas, maxPriorityFeePerGas, data)
 
-      
-  
-
-    
+        
     ///
     /// Returns a list of FunctionIndicators that matched the input FunctionSearchTerm criteria. These 
     /// FunctionIndicators can be used directly in `makeEth_` calls instead of using `ByString "someFunction"`. This is 
@@ -353,6 +350,6 @@ module Helpers =
     /// 
     let public returnBytecodeFromFile (path: string) =
         let file = new StreamReader(path)
-        let obj = ContractBytecode.Parse(file.ReadToEnd()) |> fun r -> r.Object
+        let obj = ContractBytecode.Parse(file.ReadToEnd()) |> fun r -> r.Bytecode
         file.Dispose()
         obj |> RawContractBytecode

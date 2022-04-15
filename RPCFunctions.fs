@@ -94,6 +94,16 @@ module RPCFunctions =
         
            
     ///
+    /// 
+    let logWeb3Error (r: Result<'a, Web3Error>) =
+        match r with
+        | Ok o -> o |> Ok
+        | Error e ->
+            printfn $"Web3Error: {e}"
+            e |> Error
+    
+    
+    ///
     /// Emits call response to console. Will replace with proper logging in a future version.
     let public logRPCResult (r: Result<RPCResponse.Root,Web3Error>) =
         match r with
@@ -107,7 +117,7 @@ module RPCFunctions =
     
     ///
     /// 
-    let public logCallResult indicator r =
+    let public logCallResult indicator (r: Result<CallResponses, Web3Error>) =
         match r with
         | Ok o ->
             match o with
@@ -129,11 +139,13 @@ module RPCFunctions =
     /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`. Intended to be
     /// placed in a transaction pipeline to provide realtime logging of transaction completion.
     /// 
-    let public monitorTransaction (monitor: Monitor) r =
-        r
-        |> Result.bind (fun r ->
-            printfn $"Beginning monitoring of transaction {r}"
-            monitor r)
+    let public monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash, Web3Error>) =
+        
+        match r with
+        | Ok o ->
+            logResult $"Beginning monitoring of transaction {o}"
+            monitor o
+        | Error _ -> Web3Error
         
     
     ///
@@ -300,7 +312,7 @@ module RPCFunctions =
     
     ///
     /// Returns a decomposed RPC response record matching the output of the given EthMethod
-    let internal decomposeResult (method: EthMethod) (r: Result<RPCResponse.Root, Web3Error>) : CallResponses =
+    let internal decomposeRPCResult (method: EthMethod) (r: Result<RPCResponse.Root, Web3Error>) : CallResponses =
         r
         |> Result.bind (
             fun root ->
@@ -335,7 +347,7 @@ module RPCFunctions =
           blockHeight = LATEST }
         |> rpcConnection
         |> logRPCResult
-        |> decomposeResult method
+        |> decomposeRPCResult method
         
 
 
@@ -408,7 +420,7 @@ module RPCFunctions =
     /// * constants: A ContractConstants record.
     /// * contract: A UndeployedContract that is being deployed
     ///
-    let public deployEthContract (rpcConnection: Web3Connection) constants contract value =
+    let public deployEthContract (rpcConnection: Web3Connection) constants value contract  =
         let (RawContractBytecode _rawBytecode) = contract.bytecode
         let txn, maxfee, priority, _ = constantsBind constants
 
@@ -421,11 +433,10 @@ module RPCFunctions =
           unonce = ""
           utoAddr = ""
           ufrom = constants.walletAddress
-          ugas = ""
-          uvalue = value |> bigintToHex |> fun p -> p.TrimStart('0')
+          ugas = "0x4C4B40"
+          uvalue = value |> bigintToHex |> prepend0x
           udata =
-              $"{_rawBytecode}{contract.constructor |> bindEVMSelector |> strip0x}{createInputByteString cArgs}"
-              |> prepend0x
+              $"{_rawBytecode}{createInputByteString cArgs}" |> prepend0x              
           umaxFeePerGas = maxfee
           umaxPriorityFeePerGas = priority
           uaccessList = []
