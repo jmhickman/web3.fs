@@ -77,7 +77,9 @@ module Helpers =
     
     ///
     /// Used by the `makeEth_` functions to handle users specifying functions by name (string) or by directly supplying
-    /// the function. 
+    /// the function. Receive and Fallback are special cases to support directly calling these functions against
+    /// contracts, and aren't normally used. Fallback also assumes Payable to keep implementation easy, and at worst a
+    /// warning is emitted on sending 0 value that can be ignored.
     ///  
     let rec internal bindFunctionIndicator contract s =
         match s with
@@ -92,7 +94,16 @@ module Helpers =
               canonicalInputs = "" |> EVMFunctionInputs
               internalOutputs = []
               canonicalOutputs = "" |> EVMFunctionOutputs
-              config = Payable}
+              config = Payable }
+        | Fallback ->
+            { name = "receive"
+              hash = "0xd3adb33f" |> EVMFunctionHash
+              canonicalInputs = "" |> EVMFunctionInputs
+              internalOutputs = []
+              canonicalOutputs = "" |> EVMFunctionOutputs
+              config = Payable }
+                
+            
                 
             
     ///

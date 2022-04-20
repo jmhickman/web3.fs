@@ -343,7 +343,11 @@ module ABIFunctions =
     let private emitSubstringPrepend0x start blob =
         emitSubstring start blob
         |> fun s ->
-            if s = zeroEVMValue then s |> prepend0x else s.TrimStart('0') |> prepend0x
+            if s = zeroEVMValue then
+                s |> prepend0x
+            else
+                s.TrimStart('0')
+                |> prepend0x
 
 
     ///

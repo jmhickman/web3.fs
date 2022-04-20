@@ -506,11 +506,11 @@ module ContractFunctions =
         match JsonValue.TryParse(_abi) with
         | Some json ->
             let _j = json.AsArray()
-            let hash = parseABIForConstructor digest _j
-            if hash = "0x90fa17bb" && constructorArguments.IsSome then
+            let hash = parseABIForConstructor digest _j |> trimParameter
+            if hash = "90fa17bb" && constructorArguments.IsSome then
                ConstructorArgumentsToEmptyConstructorError |> Error
-            else if not(hash = "0x90fa17bb") && constructorArguments.IsNone then
-               ConstructorArgumentsMissingError |> Error
+            else if not(hash = "90fa17bb") && constructorArguments.IsNone then
+               ConstructorArgumentsMissingError hash |> Error
             else
                 { abi = abi
                   bytecode = bytecode

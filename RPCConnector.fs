@@ -1,16 +1,19 @@
 namespace web3.fs
 
+
 open web3.fs.Types
 
 [<AutoOpen>]
 module RPCConnector =
     open FsHttp
-    open FsHttp.DslCE
-      
+    
+          
     open RPCMethodFunctions
     open RPCParamFunctions
     
-    
+    GlobalConfig.defaults
+    |> Config.timeoutInSeconds 18.5
+    |> GlobalConfig.set
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC Helper Functions   
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -44,15 +47,13 @@ module RPCConnector =
     /// Returns a result based on the success or failure of the Http request.
     let private requestHttpAsync url rjson = async {
         try
-            let! response = httpAsync {
-                POST url
-                Origin "Web3.fs"
-                ContentType "application/json"
-                body
-                json rjson
-                config_timeoutInSeconds 18.5
-            }
-            let! o = response.content.ReadAsStringAsync() |> Async.AwaitTask
+            let! response =
+                http { POST url
+                       Origin "Web3.fs"
+                       body
+                       json rjson }
+                |> Request.sendAsync
+            let! o = response |> Response.toTextAsync
             return o |> Ok
         with e -> return $"{e.Message}" |> HttpClientError |> Error
     }

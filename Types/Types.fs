@@ -64,7 +64,7 @@ module Types =
     let PENDING = "pending"
     let ZERO = "0x0"
     let ZEROV = "0"
-    let fakedOffset = "0000000000000000000000000000000000000000000000000000000000000020"
+    let fakedOffset =  "0000000000000000000000000000000000000000000000000000000000000020"
     let zeroEVMValue = "0000000000000000000000000000000000000000000000000000000000000000"
     
     
@@ -304,7 +304,7 @@ module Types =
         | RPCResponseError of string
         | RPCNullResponse
         | ConstructorArgumentsToEmptyConstructorError
-        | ConstructorArgumentsMissingError
+        | ConstructorArgumentsMissingError of string
         | ValueToNonPayableFunctionError
         | EthAddressError
         
@@ -559,6 +559,7 @@ module Types =
         | IndicatedFunction of EVMFunction
         | ByString of string
         | Receive
+        | Fallback
         
 
 

@@ -324,6 +324,7 @@ module RPCFunctions =
                 | EthMethod.GetTransactionByHash -> returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionReceipt -> returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
                 | EthMethod.GetBalance -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetStorageAt -> returnSimpleValue result |> SimpleValue |> Ok
                 | _ -> Web3Error |> Ok
             )
         |> fun m ->
