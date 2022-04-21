@@ -293,22 +293,6 @@ module Types =
           paramList: EthParam
           blockHeight: string }
 
-    
-    ///
-    /// Overall type for errors in various places in the pipeline. Not final at all.
-    type Web3Error =
-        | ContractParseFailure of string
-        | ConnectionError of string
-        | DataValidatorError of string
-        | HttpClientError of string
-        | RPCResponseError of string
-        | RPCNullResponse
-        | ConstructorArgumentsToEmptyConstructorError
-        | ConstructorArgumentsMissingError of string
-        | ValueToNonPayableFunctionError
-        | EthAddressError
-        
-
     type CallResult =
         { raw: string
           typed: EVMDatatype list }
@@ -389,6 +373,21 @@ module Types =
         
     
     ///
+    /// Overall type for errors in various places in the pipeline. Not final at all.
+    type Web3Error =
+        | ContractParseFailure of string
+        | ConnectionError of string
+        | DataValidatorError of string
+        | HttpClientError of string
+        | RPCResponseError of string
+        | RPCNullResponse
+        | ConstructorArgumentsToEmptyConstructorError
+        | ConstructorArgumentsMissingError of string
+        | ValueToNonPayableFunctionError
+        | EthAddressError
+        
+        
+    ///
     /// Union of potential responses from the EVM through an RPC node. Null here is a 'valid' result, usually indicating
     /// that a transaction doesn't exist at a particular hash, or that a transaction hasn't been included in the chain
     /// yet. 
@@ -399,9 +398,16 @@ module Types =
         | TransactionReceiptResult of RPCTransactionResponse
         | Transaction of MinedTransaction
         | CallResult of CallResult
-        | Web3Error
+        | Empty
     
-        
+    
+    ///
+    /// Provides signals for the logger 
+    type LogSignal =
+        | Log
+        | Emit
+        | LogAndEmit
+    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // MailboxProcessor types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -426,7 +432,7 @@ module Types =
     ///
     /// MailboxProcessor for monitoring pending transactions
     type MailboxReceiptManager =
-        ReceiptMessageAndReply of EthTransactionHash * AsyncReplyChannel<CallResponses>
+        ReceiptMessageAndReply of EthTransactionHash * AsyncReplyChannel<Result<CallResponses, Web3Error>>
     
     ///
     /// Convenience type
@@ -434,7 +440,7 @@ module Types =
 
     ///
     /// Convenience type
-    type Monitor = EthTransactionHash -> CallResponses
+    type Monitor = EthTransactionHash -> Result<CallResponses, Web3Error>
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

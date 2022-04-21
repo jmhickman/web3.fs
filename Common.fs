@@ -3,7 +3,7 @@ namespace web3.fs
 open web3.fs.Types
 
 [<AutoOpen>]
-module Helpers =
+module Common =
     open System
     open System.IO
     open System.Text
@@ -96,7 +96,7 @@ module Helpers =
               canonicalOutputs = "" |> EVMFunctionOutputs
               config = Payable }
         | Fallback ->
-            { name = "receive"
+            { name = "fallback"
               hash = "0xd3adb33f" |> EVMFunctionHash
               canonicalInputs = "" |> EVMFunctionInputs
               internalOutputs = []

@@ -1,5 +1,6 @@
 namespace web3.fs
 
+
 open web3.fs.Types
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +62,7 @@ module RPCMethodFunctions =
 
 module RPCParamFunctions =
     
-    open Helpers
+    open Common
 
     
     //
@@ -85,7 +86,7 @@ module RPCParamFunctions =
 module RPCFunctions =
     
     open FSharp.Data
-    open web3.fs.Helpers
+    open Common
     
     ///
     /// Generic logger until I import something more featureful.
@@ -142,10 +143,35 @@ module RPCFunctions =
     let public monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash, Web3Error>) =
         match r with
         | Ok o ->
-            logResult $"Beginning monitoring of transaction {o}"
-            monitor o
-        | Error _ -> Web3Error
+            logResult $"Monitoring transaction {o}..."
+            monitor o 
+        | Error e -> e |> Error 
         
+    
+    
+    let logCallResponse (callResponse: CallResponses) =
+        match callResponse with
+        | SimpleValue s -> printfn $"Value:\n{s}"
+        | Block b -> printfn $"Ethereum block:\n{b}"
+        | TransactionReceiptResult h -> printfn $"Transaction result:\n{h}"
+        
+    
+    
+    let logCallResponsesOrWeb3Errors (pipeResult: Result<CallResponses, Web3Error>) =
+        match pipeResult with
+        | Ok o -> ()
+        | Error e -> ()
+    
+    
+    ///
+    /// Generic logger for use in all RPC calls. Takes a signal to indicate whether the user wants just a log to console,
+    /// to emit a wrapped record, or both.
+    let log signal (pipeResult: Result<CallResponses, Web3Error>) =
+        match signal with
+        | Log -> ()
+        | Emit -> ()
+        | LogAndEmit -> ()
+    
     
     ///
     /// Unpacks Result from a RPCResponse.Root for logging
@@ -311,7 +337,7 @@ module RPCFunctions =
     
     ///
     /// Returns a decomposed RPC response record matching the output of the given EthMethod
-    let internal decomposeRPCResult (method: EthMethod) (r: Result<RPCResponse.Root, Web3Error>) : CallResponses =
+    let internal decomposeRPCResult (method: EthMethod) (r: Result<RPCResponse.Root, Web3Error>) =
         r
         |> Result.bind (
             fun root ->
@@ -325,12 +351,9 @@ module RPCFunctions =
                 | EthMethod.GetTransactionReceipt -> returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
                 | EthMethod.GetBalance -> returnSimpleValue result |> SimpleValue |> Ok
                 | EthMethod.GetStorageAt -> returnSimpleValue result |> SimpleValue |> Ok
-                | _ -> Web3Error |> Ok
+                | fallback -> SimpleValue $"{fallback}" |> Ok
             )
-        |> fun m ->
-            match m with
-            | Ok o -> o
-            | Error _ -> Web3Error
+        
         
     ///
     /// Creates an Ethereum RPC request whose purpose is typically to query the RPC node for chain-based or network-
@@ -378,7 +401,11 @@ module RPCFunctions =
                   paramList = _params 
                   blockHeight = blockHeight' }
                 |> rpcConnection)
-        |> Result.bind (fun r -> unpackRoot r |> stringAndTrim |> EthTransactionHash |> Ok)            
+        |> Result.bind (fun r ->
+            unpackRoot r
+            |> stringAndTrim
+            |> EthTransactionHash
+            |> )            
 
 
     ///

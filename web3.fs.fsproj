@@ -13,7 +13,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Types\Types.fs" />
-    <Compile Include="Helpers.fs" />
+    <Compile Include="Common.fs" />
     <Compile Include="ABI.fs" />
     <Compile Include="Contracts.fs" />
     <Compile Include="RPCFunctions.fs" />
