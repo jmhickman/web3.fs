@@ -774,19 +774,4 @@ module ABIFunctions =
         | Error _ -> EthAddressError |> Error
     
     
-    ///
-    /// Convenience function that returns a ContractConstants that contains the address used for the session, along
-    /// with other values ready for manipulation via the `with` statement for modifying records. If the RPC is a wallet,
-    /// these defaults should work perfectly well. If the RPC is an actual Ethereum node, the gas values and transaction
-    /// type should be changed as required.
-    /// 
-    let public createDefaultConstants (address: string) =
-        {
-        walletAddress = address |> EthAddress
-        transactionType = None
-        maxFeePerGas = None
-        maxPriorityFeePerGas = None
-        data = None
-        blockHeight = Some LATEST
-        defaultValue = Some "0"
-        }
+
