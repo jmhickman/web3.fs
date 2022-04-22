@@ -20,8 +20,11 @@ module Helpers =
         defaultValue = Some "0"
         }
         
-    let createWeb3Environment url version address =
+    let public createWeb3Environment url version address =
         let rpc = createWeb3Connection url version
-        (rpc, createReceiptMonitor rpc, createDefaultConstants address)
+        {connection = rpc
+         monitor = createReceiptMonitor rpc
+         constants = createDefaultConstants address
+         digest = newKeccakDigest}
         
 

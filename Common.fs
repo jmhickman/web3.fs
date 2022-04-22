@@ -15,6 +15,119 @@ module Common =
     open SHA3Core.Keccak
     
     
+    ///
+    /// The Json RPC type provider returns results that have their own strings wrapped in double quotes. This
+    /// causes issue elsewhere, so this function is used here and there to remove extraneous quotes when the values
+    /// must be used in the code. `TrimStart` and `TrimEnd` are specifically used because of potential knock-on effects
+    /// of overzealous quote stripping.
+    /// 
+    let internal trimParameter (p: string) =
+        p
+        |> fun s -> s.TrimStart('"')
+        |> fun s -> s.TrimEnd('"')    
+    
+    
+    ///
+    /// Common function of changing a RPC Result into a string and trimming " characters
+    let internal stringAndTrim (r: RPCResponse.Result) =
+        r.ToString() |> trimParameter
+    
+    
+    ///
+    /// Returns a string formatted into a hexadecimal representation of its UTF-8 bytes.
+    let internal formatToBytes (s: string) =
+        Encoding.UTF8.GetBytes(s)
+        |> Array.map (fun (x: byte) -> String.Format("{0:X2}", x))
+        |> String.concat ""
+
+
+    
+    ///
+    /// Returns the bytecode of a compiled contract from a json file, as in the output of the `solc` binary. Note, the
+    /// path string should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
+    /// slashes, i.e. "c:/users/user/some/more/path/contract.json"
+    /// 
+    let public returnBytecodeFromFile (path: string) =
+        let file = new StreamReader(path)
+        let obj = ContractBytecode.Parse(file.ReadToEnd()) |> fun r -> r.Bytecode
+        file.Dispose()
+        obj |> RawContractBytecode
+    
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Hex and bigint functions
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ///
+    /// Prepends a hexadecimal specifier to a string.
+    let public prepend0x (s: string) =
+        if not(s.StartsWith("0x")) then
+            $"0x{s}"
+        else s
+
+
+    ///
+    /// Removes a hexadecimal specifier from a string.
+    let public strip0x (s: string) =
+        if s.StartsWith("0x") then
+            s.Remove(0, 2)
+        else
+            s
+
+    ///
+    /// Returns a hexadecimal string with no padding. Useful for QUANTITY values in the ABI.
+    let public bigintToHex num =
+        if num = "0" then "0x0" else num |> fun n -> bigint.Parse(n).ToString("X").TrimStart('0').ToLower()
+
+
+    ///
+    /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
+    /// so mind what strings are passed in. This attempts to negate issues with certain
+    /// hex strings, and is a bodge.
+    /// 
+    let public hexToBigIntP (hexString: string) =
+        if not(hexString.StartsWith('0')) then
+            bigint.Parse($"0{hexString}", NumberStyles.AllowHexSpecifier)
+        else
+            hexString |> trimParameter |> fun h -> bigint.Parse(h, NumberStyles.AllowHexSpecifier)
+    
+    ///
+    /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
+    /// so mind what strings are passed in.
+    /// 
+    let public hexToBigInt (hexString: string) =
+        hexString |> strip0x |> trimParameter |> fun h -> bigint.Parse(h, NumberStyles.AllowHexSpecifier)
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Wei/ETH conversion
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ///
+    /// Returns a string quantity of Eth, given a BigInteger representation of wei. To convert wei from an RPC response,
+    /// first run that string through hexToBigIntP.
+    /// 
+    let public convertWeiToEth wei =
+        let eth, frac = bigint.DivRem(wei, weiDiv)
+        let rem = frac.ToString().PadLeft(18, '0')
+        $"{eth.ToString()}.{rem.Remove(17)}"
+
+    
+    ///
+    /// Returns a string for working in wei. A string is chosen because the actual input used in the 'value' argument
+    /// is a string, not a naked BigInt.
+    let public convertEthToWei (eth: string) =
+        let _eth =
+            match not (eth.Contains('.')) with
+            | true -> eth + "."
+            | false -> eth
+
+        let xa = _eth.Split('.')
+        let x, xs = (xa.[0], xa.[1])
+        let e = x.TrimStart('0')
+        let wei = xs.PadRight(18, '0').Remove(18)
+        bigint.Parse(e + wei).ToString()
+
+    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Binders
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -30,12 +143,12 @@ module Common =
 
         let maxFeePerGas =
             match c.maxFeePerGas with
-            | Some t -> t
+            | Some t -> t |> bigintToHex |> prepend0x
             | None -> ""
 
         let maxPriorityFeePerGas =
             match c.maxPriorityFeePerGas with
-            | Some t -> t
+            | Some t -> t |> bigintToHex |> prepend0x
             | None -> ""
 
         let data =
@@ -248,79 +361,7 @@ module Common =
         |> fun s -> s.TrimEnd(',', ' ')
 
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Hex and bigint functions
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    ///
-    /// Prepends a hexadecimal specifier to a string.
-    let public prepend0x (s: string) =
-        if not(s.StartsWith("0x")) then
-            $"0x{s}"
-        else s
-
-
-    ///
-    /// Removes a hexadecimal specifier from a string.
-    let public strip0x (s: string) =
-        if s.StartsWith("0x") then
-            s.Remove(0, 2)
-        else
-            s
-
-    ///
-    /// Returns a hexadecimal string with no padding. Useful for QUANTITY values in the ABI.
-    let public bigintToHex num =
-        if num = "0" then "0x0" else num |> fun n -> bigint.Parse(n).ToString("X").TrimStart('0')
-
-
-    ///
-    /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
-    /// so mind what strings are passed in. This attempts to negate issues with certain
-    /// hex strings, and is a bodge.
-    /// 
-    let public hexToBigIntP (hexString: string) =
-        if not(hexString.StartsWith('0')) then
-            bigint.Parse($"0{hexString}", NumberStyles.AllowHexSpecifier)
-        else
-            bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
     
-    ///
-    /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
-    /// so mind what strings are passed in.
-    /// 
-    let public hexToBigInt (hexString: string) =
-        bigint.Parse(hexString, NumberStyles.AllowHexSpecifier)
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Wei/ETH conversion
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    ///
-    /// Returns a string quantity of Eth, given a BigInteger representation of wei. To convert wei from an RPC response,
-    /// first run that string through hexToBigIntP.
-    /// 
-    let public convertWeiToEth wei =
-        let eth, frac = bigint.DivRem(wei, weiDiv)
-        let rem = frac.ToString().PadLeft(18, '0')
-        $"{eth.ToString()}.{rem.Remove(17)}"
-
-    
-    ///
-    /// Returns a string for working in wei. A string is chosen because the actual input used in the 'value' argument
-    /// is a string, not a naked BigInt.
-    let public convertEthToWei (eth: string) =
-        let _eth =
-            match not (eth.Contains('.')) with
-            | true -> eth + "."
-            | false -> eth
-
-        let xa = _eth.Split('.')
-        let x, xs = (xa.[0], xa.[1])
-        let e = x.TrimStart('0')
-        let wei = xs.PadRight(18, '0').Remove(18)
-        bigint.Parse(e + wei).ToString()
-
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Miscellaneous
@@ -332,40 +373,4 @@ module Common =
     let public newKeccakDigest = Keccak(KeccakBitType.K256)
 
     
-    ///
-    /// The Json RPC type provider returns results that have their own strings wrapped in double quotes. This
-    /// causes issue elsewhere, so this function is used here and there to remove extraneous quotes when the values
-    /// must be used in the code. `TrimStart` and `TrimEnd` are specifically used because of potential knock-on effects
-    /// of overzealous quote stripping.
-    /// 
-    let internal trimParameter (p: string) =
-        p
-        |> fun s -> s.TrimStart('"')
-        |> fun s -> s.TrimEnd('"')    
     
-    
-    ///
-    /// Common function of changing a RPC Result into a string and trimming " characters
-    let public stringAndTrim (r: RPCResponse.Result) =
-        r.ToString() |> trimParameter
-    
-    
-    ///
-    /// Returns a string formatted into a hexadecimal representation of its UTF-8 bytes.
-    let internal formatToBytes (s: string) =
-        Encoding.UTF8.GetBytes(s)
-        |> Array.map (fun (x: byte) -> String.Format("{0:X2}", x))
-        |> String.concat ""
-
-
-    
-    ///
-    /// Returns the bytecode of a compiled contract from a json file, as in the output of the `solc` binary. Note, the
-    /// path string should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
-    /// slashes, i.e. "c:/users/user/some/more/path/contract.json"
-    /// 
-    let public returnBytecodeFromFile (path: string) =
-        let file = new StreamReader(path)
-        let obj = ContractBytecode.Parse(file.ReadToEnd()) |> fun r -> r.Bytecode
-        file.Dispose()
-        obj |> RawContractBytecode

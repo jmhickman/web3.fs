@@ -76,11 +76,7 @@ module RPCParamFunctions =
         | EthParam1559EstimateGas _e -> createJsonObj _e
         | EthParam1559SendTransaction _e -> createJsonObj _e
         | EthParam1559SignTransaction _e -> createJsonObj _e
-        
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // RPC Bind Functions
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
 [<AutoOpen>]    
 module RPCFunctions =
@@ -88,59 +84,22 @@ module RPCFunctions =
     open FSharp.Data
     open Common
     
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Logging
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    
     ///
     /// Generic logger until I import something more featureful.
     let internal logResult logString =
         printfn $"{logString}"
         
-           
-    ///
-    /// 
-    let logWeb3Error (r: Result<'a, Web3Error>) =
-        match r with
-        | Ok o -> o |> Ok
-        | Error e ->
-            printfn $"Web3Error: {e}"
-            e |> Error
-    
-    
-    ///
-    /// Emits call response to console. Will replace with proper logging in a future version.
-    let public logRPCResult (r: Result<RPCResponse.Root,Web3Error>) =
-        match r with
-        | Ok o ->
-            logResult $"RPC returned:\n{o.Result.Value}"
-            o |> Ok
-        | Error e ->
-            logResult $"RPC Error:\n{e}"
-            e |> Error
-    
-    
-    ///
-    /// 
-    let public logEthCallResult indicator (r: Result<CallResponses, Web3Error>) =
-        match r with
-        | Ok o ->
-            match o with
-            | CallResult _r ->
-                match indicator with
-                | Typed ->
-                    printfn $"{_r.typed}"
-                    o |> Ok
-                | Raw ->
-                    printfn $"{_r.raw}"
-                    o |> Ok
-            | _ -> o |> Ok
-        | Error e ->
-            printfn $"Got Web3Error: {e}"
-            e |> Error
-    
     
     ///
     /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`. Intended to be
     /// placed in a transaction pipeline to provide realtime logging of transaction completion.
     /// 
-    let public monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash, Web3Error>) =
+    let private monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash, Web3Error>) =
         match r with
         | Ok o ->
             logResult $"Monitoring transaction {o}..."
@@ -148,47 +107,98 @@ module RPCFunctions =
         | Error e -> e |> Error 
         
     
-    
-    let logCallResponse (callResponse: CallResponses) =
+    ///
+    /// Handles the emission of information to the console
+    let private logCallResponse callResponse =
         match callResponse with
         | SimpleValue s -> printfn $"Value:\n{s}"
-        | Block b -> printfn $"Ethereum block:\n{b}"
-        | TransactionReceiptResult h -> printfn $"Transaction result:\n{h}"
+        | Block ethBlock -> printfn $"Ethereum block:\n{ethBlock}"
+        | TransactionHash _ -> () // Handled by the monitor
+        | TransactionReceiptResult rpcTransactionResponse -> printfn $"Transaction receipt:\n{rpcTransactionResponse}"
+        | Transaction mTransaction -> printfn $"Transaction:\n{mTransaction}"
+        | CallResult callResult -> printfn $"Call result:\n{callResult}"
+        | Empty -> () // Do nothing
         
-    
-    
-    let logCallResponsesOrWeb3Errors (pipeResult: Result<CallResponses, Web3Error>) =
+        
+    ///
+    /// Forwards CallResponses, logs errors to the console
+    let private logCallResponsesOrWeb3Errors pipeResult =
         match pipeResult with
-        | Ok o -> ()
-        | Error e -> ()
+        | Ok o -> logCallResponse o
+        | Error e -> printfn $"Error:\n{e}"
+    
+    
+    ///
+    /// Unwraps Result for the logging mechanism when Emit or LogAndEmit are signalled.
+    let private emitter pipeResult =
+        match pipeResult with
+        | Ok callResponses -> callResponses
+        | Error _ -> Empty
     
     
     ///
     /// Generic logger for use in all RPC calls. Takes a signal to indicate whether the user wants just a log to console,
     /// to emit a wrapped record, or both.
-    let log signal (pipeResult: Result<CallResponses, Web3Error>) =
+    /// 
+    let public log signal pipeResult =
         match signal with
-        | Log -> ()
-        | Emit -> ()
-        | LogAndEmit -> ()
+        | Log ->
+            logCallResponsesOrWeb3Errors pipeResult
+            Empty
+        | Emit -> emitter pipeResult
+        | LogAndEmit ->
+            logCallResponsesOrWeb3Errors pipeResult
+            emitter pipeResult
+        | Quiet -> Empty
     
     
     ///
-    /// Unpacks Result from a RPCResponse.Root for logging
-    let internal unpackRoot (r:RPCResponse.Root) =
-        match r.Result with
-        | Some r' -> r'
-        | None -> RPCResponse.Result(JsonValue.Null)
+    /// Unwraps CallResponses to a SimpleValue
+    let public unwrapSimpleValue callResponse =
+        match callResponse with
+        | SimpleValue s -> s
+        | _ -> "wrong unwrap or upstream web3 error"
     
-
+    
+    ///
+    /// Unwraps CallResponses to a EVMDatatype list. Use with makeEthCall.
+    let public unwrapCallResult callResponse =
+        match callResponse with
+        | CallResult evmDatatypes -> evmDatatypes
+        | _ -> [String "wrong unwrap or upstream web3 error"]
+    
+    
+    ///
+    /// Unwraps CallResponses to a transaction receipt.
+    let public unwrapTransactionReceipt callResponse =
+        match callResponse with
+        | TransactionReceiptResult rpcTransactionResponse -> rpcTransactionResponse
+        | _ -> nullTransactionReceipt
+    
+    
+    ///
+    /// Unwraps CallResponses to a Transaction
+    let public unwrapTransaction callResponse =
+        match callResponse with
+        | Transaction transaction -> transaction
+        | _ -> nullMinedTransaction
+        
+    
+    ///
+    /// Unwraps CallResponse to a EthBlock
+    let public unwrapBlock callResponse =
+        match callResponse with
+        | Block ethBlock -> ethBlock
+        | _ -> nullEthBlock
+    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Ethereum call functions using the RPC connection
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
     
     
     ///
-    ///
-    let returnUnvalidatedRecord address txn maxfee priority data contract value =
+    /// Creates an unvalidated record
+    let private returnUnvalidatedRecord address txn maxfee priority data contract value =
         { utxnType = txn
           unonce = ""
           utoAddr = contract.address
@@ -196,8 +206,8 @@ module RPCFunctions =
           ugas = ""
           uvalue = value
           udata = data
-          umaxFeePerGas = maxfee
-          umaxPriorityFeePerGas = priority
+          umaxFeePerGas = maxfee 
+          umaxPriorityFeePerGas = priority 
           uaccessList = []
           uchainId = contract.chainId }
         
@@ -256,6 +266,14 @@ module RPCFunctions =
     
     
     ///
+    /// Unpacks Result from a RPCResponse.Root for logging
+    let internal unpackRoot (r:RPCResponse.Root) =
+        match r.Result with
+        | Some r' -> r'
+        | None -> RPCResponse.Result(JsonValue.Null)
+        
+        
+    ///
     /// Returns the current block, meaning the last block at was included in the chain.
     let private returnSimpleValue (result: RPCResponse.Result) =
         result |> stringAndTrim
@@ -264,9 +282,17 @@ module RPCFunctions =
     ///
     /// Creates a TransactionReceiptResult from an incoming RPCResponse.
     let private returnTransactionReceiptRecord (result: RPCResponse.Result) =
+        let toAddr =
+            let a = result.To.JsonValue.ToString() |> trimParameter
+            if a = "null" then None else a  |> EthAddress |> Some
+            
+        let contractAddress =
+            let b = result.ContractAddress.JsonValue.ToString() |> trimParameter
+            if b = "null" then None else b |> EthAddress |> Some
+        
         { blockHash = result.BlockHash
           blockNumber = result.BlockNumber
-          contractAddress = result.ContractAddress.JsonValue.ToString() |> trimParameter |> Some
+          contractAddress = contractAddress
           cumulativeGasUsed = result.CumulativeGasUsed
           effectiveGasPrice = result.EffectiveGasPrice
           from = result.From
@@ -274,7 +300,7 @@ module RPCFunctions =
           logs = result.Logs |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
           logsBloom = result.LogsBloom
           status = result.Status
-          toAddr = result.To.JsonValue.ToString() |> EthAddress
+          toAddr = toAddr
           transactionHash = result.TransactionHash
           transactionIndex = result.TransactionIndex
           tType = result.Type }
@@ -337,8 +363,8 @@ module RPCFunctions =
     
     ///
     /// Returns a decomposed RPC response record matching the output of the given EthMethod
-    let internal decomposeRPCResult (method: EthMethod) (r: Result<RPCResponse.Root, Web3Error>) =
-        r
+    let internal decomposeRPCResult method result =
+        result
         |> Result.bind (
             fun root ->
                 let result = unpackRoot root
@@ -365,12 +391,11 @@ module RPCFunctions =
     /// Note that some EthMethods have no arguments, while others have object arguments. Use `makeEthCall` or
     /// `makeEthTxn` in those cases.
     ///
-    let public makeEthRPCCall (rpcConnection: Web3Connection) method (paramList: string list) =
+    let public makeEthRPCCall env method paramList =
         { method = method
           paramList = paramList |> EthGenericRPC
           blockHeight = LATEST }
-        |> rpcConnection
-        |> logRPCResult
+        |> env.connection
         |> decomposeRPCResult method
         
 
@@ -385,27 +410,28 @@ module RPCFunctions =
     /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
     /// value: the wei-denominated amount of ETH to send along with a transaction to a `payable` function.
     ///
-    let public makeEthTxn (rpcConnection: Web3Connection) constants contract evmFunction arguments value =
-        let blockHeight' = blockHeight constants
+    let public makeEthTxn env contract evmFunction arguments value =
+        let blockHeight' = blockHeight env.constants
         
         let args =
             match arguments with
             | [] -> None
             | x -> Some x
         
-        createUnvalidatedTxn constants contract evmFunction args value
+        createUnvalidatedTxn env.constants contract evmFunction args value
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
                 { method = EthMethod.SendTransaction 
                   paramList = _params 
                   blockHeight = blockHeight' }
-                |> rpcConnection)
+                |> env.connection)
         |> Result.bind (fun r ->
             unpackRoot r
             |> stringAndTrim
             |> EthTransactionHash
-            |> )            
+            |> Ok)
+        |> monitorTransaction env.monitor
 
 
     ///
@@ -417,26 +443,24 @@ module RPCFunctions =
     /// ByString) or a IndicatedFunction (returned by `findFunction`)
     /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
     ///
-    let public makeEthCall (rpcConnection: Web3Connection) constants contract evmFunction arguments =
-        let blockHeight' = blockHeight constants
+    let public makeEthCall env contract evmFunction arguments =
+        let blockHeight' = blockHeight env.constants
 
         let args =
             match arguments with
             | [] -> None
             | x -> Some x
             
-        createUnvalidatedCall constants contract evmFunction args
+        createUnvalidatedCall env.constants contract evmFunction args
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
                 { method = EthMethod.Call 
                   paramList = _params 
                   blockHeight = blockHeight' }
-                |> rpcConnection)
+                |> env.connection)
         |> Result.bind (fun r ->
-            let unpacked = unpackRoot r |> stringAndTrim
-            {raw = unpacked
-             typed = returnOutputAsEVMDatatypes contract evmFunction unpacked}
+            returnOutputAsEVMDatatypes contract evmFunction (unpackRoot r |> stringAndTrim)
             |> CallResult
             |> Ok)
     
@@ -448,9 +472,9 @@ module RPCFunctions =
     /// * constants: A ContractConstants record.
     /// * contract: A UndeployedContract that is being deployed
     ///
-    let public deployEthContract (rpcConnection: Web3Connection) constants value contract  =
+    let public deployEthContract env value contract  =
         let (RawContractBytecode _rawBytecode) = contract.bytecode
-        let txn, maxfee, priority, _ = constantsBind constants
+        let txn, maxfee, priority, _ = constantsBind env.constants
 
         let cArgs =
             match contract.constructorArguments with
@@ -460,7 +484,7 @@ module RPCFunctions =
         { utxnType = txn
           unonce = ""
           utoAddr = ""
-          ufrom = constants.walletAddress
+          ufrom = env.constants.walletAddress
           ugas = "0x4C4B40"
           uvalue = value |> bigintToHex |> prepend0x
           udata =
@@ -475,6 +499,10 @@ module RPCFunctions =
                 { method = EthMethod.SendTransaction 
                   paramList = _params 
                   blockHeight = LATEST }
-                |> rpcConnection)
-        |> logRPCResult
-        |> Result.bind (fun r -> unpackRoot r |> stringAndTrim |> EthTransactionHash |> Ok)
+                |> env.connection)
+        |> Result.bind (fun r ->
+            unpackRoot r
+            |> stringAndTrim
+            |> EthTransactionHash
+            |> Ok)
+        |> monitorTransaction env.monitor

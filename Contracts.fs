@@ -472,7 +472,7 @@ module ContractFunctions =
     /// such as '0x01' (mainnet) or '0x04' (rinkeby). Can be partially applied if many contracts will be loaded from a
     /// map() of addresses, network and ABIs.
     ///
-    let public loadDeployedContract digest address chainId abi =
+    let public loadDeployedContract env address chainId abi =
         let (ABI _abi) = abi
                 
         match address |> wrapEthAddress with
@@ -481,9 +481,9 @@ module ContractFunctions =
             | Some json ->
             
                 let _j = json.AsArray()
-                let _fList = parseABIForFunctions digest _j
-                let _eventList = parseABIForEvents digest _j
-                let _errList = parseABIForErrors digest _j
+                let _fList = parseABIForFunctions env.digest _j
+                let _eventList = parseABIForEvents env.digest _j
+                let _errList = parseABIForErrors env.digest _j
                 
                 { address = address 
                   abi = abi
@@ -500,13 +500,13 @@ module ContractFunctions =
     
     ///
     /// Returns an UndeployedContract for use in `deployEthContract`. 
-    let public prepareUndeployedContract digest bytecode (constructorArguments: EVMDatatype list option) chainId abi =
+    let public prepareUndeployedContract env bytecode (constructorArguments: EVMDatatype list option) chainId abi =
         let (ABI _abi) = abi
         
         match JsonValue.TryParse(_abi) with
         | Some json ->
             let _j = json.AsArray()
-            let hash = parseABIForConstructor digest _j |> trimParameter
+            let hash = parseABIForConstructor env.digest _j |> trimParameter
             if hash = "90fa17bb" && constructorArguments.IsSome then
                ConstructorArgumentsToEmptyConstructorError |> Error
             else if not(hash = "90fa17bb") && constructorArguments.IsNone then

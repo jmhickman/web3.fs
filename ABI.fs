@@ -724,27 +724,27 @@ module ABIFunctions =
     /// 
     let rec public unwrapEVMValue (evmDataType: EVMDatatype) =
         match evmDataType with
-        | Address a -> a
-        | AddressArraySz a -> a |> String.concat(",")
-        | AddressArray a -> a |> String.concat(",")
-        | Uint256 u -> u
-        | Uint256ArraySz a -> a |> String.concat(",")
-        | Uint256Array a -> a |> String.concat(",")
-        | Int256 u -> u
-        | Int256ArraySz a -> a |> String.concat(",")
-        | Int256Array a -> a |> String.concat(",")
-        | BytesSz b -> b
-        | BytesSzArraySz a -> a |> String.concat(",")
-        | BytesSzArray a -> a |> String.concat(",")
-        | Bytes b -> b
-        | BytesArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",")
-        | BytesArray b -> b |> List.map unwrapEVMValue |> String.concat(",")
-        | Function f -> f
-        | FunctionArraySz l -> l |> String.concat(",")
-        | FunctionArray l -> l |> String.concat(",")
-        | String s -> s
-        | StringArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",")
-        | StringArray b -> b |> List.map unwrapEVMValue |> String.concat(",")
+        | Address a -> a |> trimParameter
+        | AddressArraySz a -> a |> String.concat(",") |> trimParameter
+        | AddressArray a -> a |> String.concat(",") |> trimParameter
+        | Uint256 u -> u |> trimParameter
+        | Uint256ArraySz a -> a |> String.concat(",") |> trimParameter
+        | Uint256Array a -> a |> String.concat(",") |> trimParameter
+        | Int256 u -> u |> trimParameter 
+        | Int256ArraySz a -> a |> String.concat(",") |> trimParameter
+        | Int256Array a -> a |> String.concat(",") |> trimParameter
+        | BytesSz b -> b |> trimParameter
+        | BytesSzArraySz a -> a |> String.concat(",") |> trimParameter
+        | BytesSzArray a -> a |> String.concat(",") |> trimParameter
+        | Bytes b -> b |> trimParameter
+        | BytesArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
+        | BytesArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
+        | Function f -> f |> trimParameter
+        | FunctionArraySz l -> l |> String.concat(",") |> trimParameter
+        | FunctionArray l -> l |> String.concat(",") |> trimParameter
+        | String s -> s |> trimParameter
+        | StringArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
+        | StringArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
         | _ -> ""
     
     

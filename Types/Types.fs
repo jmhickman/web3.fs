@@ -1,5 +1,6 @@
 namespace web3.fs
 
+open SHA3Core.Keccak
 
 [<AutoOpen>]
 module Types =
@@ -137,7 +138,7 @@ module Types =
         | EVMInt64
         | EVMInt128
         
-    
+    type CheckEVMData = CheckedSuccess
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC Data Types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -293,19 +294,10 @@ module Types =
           paramList: EthParam
           blockHeight: string }
 
-    type CallResult =
-        { raw: string
-          typed: EVMDatatype list }
-
-            
-    type DisplayCallResult =
-        | Raw
-        | Typed
-    
     
     ///
     /// Record representing a transaction receipt object from the RPC node.
-    type RPCTransactionResponse =
+    type TransactionReceipt =
         { blockHash: string
           blockNumber: string
           contractAddress: EthAddress option
@@ -316,11 +308,27 @@ module Types =
           logs: string list
           logsBloom: string
           status: string
-          toAddr: EthAddress
+          toAddr: EthAddress option
           transactionHash: EthTransactionHash
           transactionIndex: string
           tType: string }
     
+    
+    let nullTransactionReceipt =
+        { blockHash = "wrong unwrap or upstream web3 error"
+          blockNumber = "wrong unwrap or upstream web3 error"
+          contractAddress = None
+          cumulativeGasUsed = "wrong unwrap or upstream web3 error"
+          effectiveGasPrice = "wrong unwrap or upstream web3 error"
+          from = zeroEVMValue |> EthAddress
+          gasUsed = "wrong unwrap or upstream web3 error"
+          logs = ["wrong unwrap or upstream web3 error"]
+          logsBloom = "wrong unwrap or upstream web3 error"
+          status = "wrong unwrap or upstream web3 error"
+          toAddr = None
+          transactionHash = zeroEVMValue |> EthTransactionHash
+          transactionIndex = "wrong unwrap or upstream web3 error"
+          tType = "wrong unwrap or upstream web3 error" }
     
     ///
     /// Record representing a block on the Ethereum blockchain 
@@ -346,6 +354,32 @@ module Types =
           transactions: string list
           transactionsRoot: string
           uncles: string list }
+        
+    
+    ///
+    /// Record representing a block on the Ethereum blockchain 
+    let nullEthBlock =
+        { author = "wrong unwrap or upstream web3 error"
+          baseFeePerGas = "wrong unwrap or upstream web3 error"
+          difficulty = "wrong unwrap or upstream web3 error"
+          extraData = "wrong unwrap or upstream web3 error"
+          gasLimit = "wrong unwrap or upstream web3 error"
+          gasUsed = "wrong unwrap or upstream web3 error"
+          hash = "wrong unwrap or upstream web3 error" |> EthTransactionHash
+          logsBloom = "wrong unwrap or upstream web3 error"
+          miner = zeroEVMValue |> EthAddress
+          number = "wrong unwrap or upstream web3 error"
+          parentHash = "wrong unwrap or upstream web3 error"
+          receiptsRoot = "wrong unwrap or upstream web3 error"
+          sealFields = ["wrong unwrap or upstream web3 error"]
+          sha3Uncles = "wrong unwrap or upstream web3 error"
+          size = "wrong unwrap or upstream web3 error"
+          stateRoot = "wrong unwrap or upstream web3 error"
+          timestamp = "wrong unwrap or upstream web3 error"
+          totalDifficulty = "wrong unwrap or upstream web3 error"
+          transactions = ["wrong unwrap or upstream web3 error"]
+          transactionsRoot = "wrong unwrap or upstream web3 error"
+          uncles = ["wrong unwrap or upstream web3 error"] }
     
     
     ///
@@ -370,7 +404,29 @@ module Types =
             tType: string
             v: string
             value: string }
-        
+    
+    
+    let nullMinedTransaction =
+          { accessList = ["wrong unwrap or upstream web3 error"]
+            blockHash = "wrong unwrap or upstream web3 error"
+            blockNumber = "wrong unwrap or upstream web3 error"
+            chainId = "wrong unwrap or upstream web3 error"
+            from = zeroEVMValue |> EthAddress
+            gas = "wrong unwrap or upstream web3 error"
+            gasPrice = "wrong unwrap or upstream web3 error"
+            hash = zeroEVMValue |> EthTransactionHash
+            input = "wrong unwrap or upstream web3 error"
+            maxFeePerGas = "wrong unwrap or upstream web3 error"
+            maxPriorityFeePerGas = "wrong unwrap or upstream web3 error"
+            nonce = "wrong unwrap or upstream web3 error"
+            r = "wrong unwrap or upstream web3 error"
+            s = "wrong unwrap or upstream web3 error"
+            toAddr = zeroEVMValue |> EthAddress
+            transactionIndex = "wrong unwrap or upstream web3 error"
+            tType = "wrong unwrap or upstream web3 error"
+            v = "wrong unwrap or upstream web3 error"
+            value = "wrong unwrap or upstream web3 error" }
+          
     
     ///
     /// Overall type for errors in various places in the pipeline. Not final at all.
@@ -392,13 +448,13 @@ module Types =
     /// that a transaction doesn't exist at a particular hash, or that a transaction hasn't been included in the chain
     /// yet. 
     type CallResponses =
-        | SimpleValue of string
-        | Block of EthBlock
-        | TransactionHash of EthTransactionHash
-        | TransactionReceiptResult of RPCTransactionResponse
-        | Transaction of MinedTransaction
-        | CallResult of CallResult
-        | Empty
+        | SimpleValue of string //
+        | Block of EthBlock //
+        | TransactionHash of EthTransactionHash // 
+        | TransactionReceiptResult of TransactionReceipt //
+        | Transaction of MinedTransaction //
+        | CallResult of EVMDatatype list //
+        | Empty //
     
     
     ///
@@ -407,6 +463,7 @@ module Types =
         | Log
         | Emit
         | LogAndEmit
+        | Quiet
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // MailboxProcessor types
@@ -622,5 +679,11 @@ module Types =
           //deployedConstructorArguments: string // todo maybe? probably involves some reasonable work to retrieve generically
           chainId: string }
     
-    type CheckEVMData =
-        | CheckedSuccess
+    
+    ///
+    /// Web3Environment is a convenience grouping of necessary functions and data to perform operations with web3.fs.  
+    type Web3Environment =
+        { connection: Web3Connection
+          monitor: Monitor
+          constants: ContractConstants
+          digest: Keccak}
