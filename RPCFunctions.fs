@@ -369,7 +369,10 @@ module RPCFunctions =
             fun root ->
                 let result = unpackRoot root
                 match method with
+                | EthMethod.Accounts -> returnSimpleValue result |> SimpleValue |> Ok
                 | EthMethod.BlockNumber -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.Coinbase -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.ChainId -> returnSimpleValue result |> SimpleValue |> Ok
                 | EthMethod.GetBlockByNumber -> returnEthBlock result |> Block |> Ok
                 | EthMethod.GetTransactionByBlockHashAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionByBlockNumberAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
@@ -472,7 +475,7 @@ module RPCFunctions =
     /// * constants: A ContractConstants record.
     /// * contract: A UndeployedContract that is being deployed
     ///
-    let public deployEthContract env value contract  =
+    let public deployEthContract env value contract =
         let (RawContractBytecode _rawBytecode) = contract.bytecode
         let txn, maxfee, priority, _ = constantsBind env.constants
 
@@ -506,3 +509,33 @@ module RPCFunctions =
             |> EthTransactionHash
             |> Ok)
         |> monitorTransaction env.monitor
+        
+        
+    ///
+    /// Estimate the amount of gas units required for the given transaction to complete. This number can be rather
+    /// inaccurate, so the function allows the specification of additional padding in gas units.
+    let public estimateGas units env contract evmFunction arguments value  =
+        let blockHeight' = blockHeight env.constants
+            
+        let args =
+            match arguments with
+            | [] -> None
+            | x -> Some x
+        
+        createUnvalidatedTxn env.constants contract evmFunction args value
+        |> Result.bind validateRPCParams
+        |> Result.bind
+            (fun _params ->
+                { method = EthMethod.EstimateGas 
+                  paramList = _params 
+                  blockHeight = blockHeight' }
+                |> env.connection)
+        |> fun res ->
+            match res with
+            | Ok o ->
+                let gas = unpackRoot o |> stringAndTrim
+                match units with
+                | HexGas -> gas
+                | DecimalGas -> gas |> strip0x |> hexToBigIntP |> fun i -> i.ToString()
+            | Error e -> $"estimate gas call failed: {e}"
+        
