@@ -8,9 +8,9 @@ module ContractFunctions =
     open FSharp.Data
     open SHA3Core.Keccak
     
-    open ABIFunctions
     open Common
-    
+    open Logging
+    open ABIFunctions
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Unwrappers/binders
@@ -447,8 +447,6 @@ module ContractFunctions =
             digest.Hash(x).Remove(8)
         | _ -> "0x90fa17bb"
 
-     
-
     
     ///
     /// When supplied with a Solidity contract ABI in Json format, returns a list of EVMErrors.
@@ -462,61 +460,86 @@ module ContractFunctions =
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Contract representation functions
+    // Contract deployment and instance functions
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     
     ///
-    /// Returns a Result containing either a DeployedContract for interaction, or an error indicating
-    /// a failure of the JsonValue parser to yield a top-level representation of the ABI. `chainId` is in hex notation,
-    /// such as '0x01' (mainnet) or '0x04' (rinkeby). Can be partially applied if many contracts will be loaded from a
-    /// map() of addresses, network and ABIs.
-    ///
-    let public loadDeployedContract env address chainId abi =
-        let (ABI _abi) = abi
-                
-        match address |> wrapEthAddress with
-        | Ok address -> 
-            match JsonValue.TryParse(_abi) with
-            | Some json ->
-            
-                let _j = json.AsArray()
-                let _fList = parseABIForFunctions env.digest _j
-                let _eventList = parseABIForEvents env.digest _j
-                let _errList = parseABIForErrors env.digest _j
-                
-                { address = address 
-                  abi = abi
-                  functions = _fList
-                  events = _eventList
-                  errors = _errList
-                  chainId = chainId }
-                |> Ok
-            | None ->
-                ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse"
-                |> Error
-        | Error e -> e |> Error
-
+    /// Check that the chain we're trying to work with is actually selected in the signer
+    let checkForChain env chainId (pipe: Result<EthAddress, Web3Error>) =
+        pipe
+        |> Result.bind (fun b ->
+             { method = EthMethod.ChainId
+               paramList = [] |> EthGenericRPC
+               blockHeight =  LATEST}
+            |> env.connection
+            |> decomposeRPCResult EthMethod.ChainId
+            |> log Emit
+            |> unwrapSimpleValue
+            |> fun chain ->
+                if not(chain = chainId ) then
+                    WrongChainInSigner |> Error
+                else b |> Ok )
+    
     
     ///
     /// Generates Web3Error if the abi can't be parsed, implying interacting with the contract after deployment will
     /// fail. Otherwise, passes along the JsonValue.
     /// 
-    let canABIBeParsed abi =
-        match JsonValue.TryParse(abi) with
+    let private canABIBeParsed abi =
+        let (ABI _abi) = abi
+        match JsonValue.TryParse(_abi) with
         | Some v -> v |> Ok
         | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error
     
     
     ///
+    /// Adapted version of canABIBeParsed for different pipeline
+    let private pipeCanABIBeParsed abi (pipe: Result<EthAddress, Web3Error>) =
+        pipe
+        |> Result.bind(fun p -> 
+            canABIBeParsed abi
+            |> Result.bind(fun b ->
+                (p, b) |> Ok ))
+    
+    
+    ///
+    /// Converts JsonValue to an array for further use.
+    let private convertJsonValueToArray (pipe: Result<EthAddress * JsonValue, Web3Error>) =
+        pipe |> Result.bind(fun (a, b) -> (a, b.AsArray()) |> Ok)
+    
+    
+    ///
+    /// Gets the components from the ABI
+    let private getFunctionsEventsErrors env (pipe: Result<EthAddress * JsonValue[], Web3Error>) =
+        pipe
+        |> Result.bind(fun (a, b) ->
+            (a, parseABIForFunctions env.digest b, parseABIForEvents env.digest b, parseABIForErrors env.digest b ) |> Ok)
+        
+        
+    ///
+    /// Check that there aren't any function hash collisions in the contract ABI
+    let private checkForHashCollisions env (pipe: Result<JsonValue, Web3Error>) =
+        pipe
+        |> Result.bind(fun b ->
+            let hashList = b.AsArray() |> parseABIForFunctions env.digest 
+            hashList
+            |> List.map( fun b' -> b'.hash)
+            |> List.distinct
+            |> fun l ->
+                if not(l.Length = hashList.Length) then ContractABIContainsHashCollisionsError |> Error else b |> Ok ) 
+       
+    
+    ///
     /// Extracts the constructor hash for this contract, so that checks can be made. Doesn't generate Web3Errors.
-    let buildConstructorHash env (pipe: Result<JsonValue, Web3Error>) =
+    let private buildConstructorHash env (pipe: Result<JsonValue, Web3Error>) =
         pipe
         |> Result.bind(fun b -> b.AsArray() |> parseABIForConstructor env.digest |> trimParameter |> Ok)
     
     
+    ///
     /// Generates a Web3Error if the user attempted to pass arguments to a `constructor()`
-    let constructorEmptyButArgsGiven (args: 'a list option) (pipe: Result<string, Web3Error>) =
+    let private constructorEmptyButArgsGiven (args: 'a list option) (pipe: Result<string, Web3Error>) =
         pipe
         |> Result.bind (fun b ->
             if b = "90fa17bb" && args.IsSome then ConstructorArgumentsToEmptyConstructorError |> Error
@@ -525,7 +548,7 @@ module ContractFunctions =
     
     ///
     /// Generates a Web3Error if the user failed to supply arguments to a constructor.
-    let constructorRequireArgsAndNoneWereGiven (args: 'a list option) (pipe: Result<string, Web3Error>) =
+    let private constructorRequireArgsAndNoneWereGiven (args: 'a list option) (pipe: Result<string, Web3Error>) =
         pipe
         |> Result.bind (fun b ->
             if not(b = "90fa17bb") && args.IsNone then ConstructorArgumentsMissingError |> Error
@@ -533,12 +556,37 @@ module ContractFunctions =
     
     
     ///
-    /// Returns an UndeployedContract for use in `deployEthContract`. 
+    /// Returns a Result containing either a DeployedContract for interaction, or an error indicating
+    /// a failure of the JsonValue parser to yield a top-level representation of the ABI. `chainId` is in hex notation,
+    /// such as '0x01' (mainnet) or '0x04' (rinkeby). Can be partially applied if many contracts will be loaded from a
+    /// map() of addresses, network and ABIs. Emits Web3Errors in a variety of circumstances, such as the signer being
+    /// on the wrong chain, malformed ABI, bad contract address, or errors in extracting components of the contract.
+    ///
+    let public loadDeployedContract env address chainId abi =
+        address
+        |> wrapEthAddress
+        |> checkForChain env chainId
+        |> pipeCanABIBeParsed abi
+        |> convertJsonValueToArray
+        |> getFunctionsEventsErrors env
+        |> Result.bind (fun (address, functions, events, errors) ->
+            { address = address
+              abi = abi
+              functions = functions
+              events = events
+              errors = errors
+              chainId = chainId }
+            |> Ok)
+  
+
+    ///
+    /// Returns an UndeployedContract for use in `deployEthContract`. Emits Web3Errors in a variety of circumstances,
+    /// such as malformed ABI, collisions in the function hashes, and issues with constructors and arguments.
+    /// 
     let public prepareUndeployedContract env bytecode (constructorArguments: EVMDatatype list option) chainId abi =
-        let (ABI _abi) = abi
-                
-        _abi
+        abi
         |> canABIBeParsed
+        |> checkForHashCollisions env
         |> buildConstructorHash env
         |> constructorRequireArgsAndNoneWereGiven constructorArguments
         |> constructorEmptyButArgsGiven constructorArguments

@@ -5,7 +5,6 @@ open web3.fs.Types
 [<AutoOpen>]
 module ReceiptManager =
 
-    open RPCFunctions
     open Common
 
 

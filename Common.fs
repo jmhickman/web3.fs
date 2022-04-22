@@ -10,6 +10,7 @@ module Common =
     open System.Globalization
     open System.Text.RegularExpressions
 
+    open FSharp.Data
     open FSharp.Json
     open SHA3Core.Enums
     open SHA3Core.Keccak
@@ -374,3 +375,170 @@ module Common =
 
     
     
+        ///
+    /// Unpacks Result from a RPCResponse.Root for logging
+    let internal unpackRoot (r:RPCResponse.Root) =
+        match r.Result with
+        | Some r' -> r'
+        | None -> RPCResponse.Result(JsonValue.Null)
+        
+        
+    ///
+    /// Returns the current block, meaning the last block at was included in the chain.
+    let private returnSimpleValue (result: RPCResponse.Result) =
+        result |> stringAndTrim
+    
+    
+    ///
+    /// Creates a TransactionReceiptResult from an incoming RPCResponse.
+    let private returnTransactionReceiptRecord (result: RPCResponse.Result) =
+        let toAddr =
+            let a = result.To.JsonValue.ToString() |> trimParameter
+            if a = "null" then None else a  |> EthAddress |> Some
+            
+        let contractAddress =
+            let b = result.ContractAddress.JsonValue.ToString() |> trimParameter
+            if b = "null" then None else b |> EthAddress |> Some
+        
+        { blockHash = result.BlockHash
+          blockNumber = result.BlockNumber
+          contractAddress = contractAddress
+          cumulativeGasUsed = result.CumulativeGasUsed
+          effectiveGasPrice = result.EffectiveGasPrice
+          from = result.From
+          gasUsed = result.GasUsed
+          logs = result.Logs |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
+          logsBloom = result.LogsBloom
+          status = result.Status
+          toAddr = toAddr
+          transactionHash = result.TransactionHash
+          transactionIndex = result.TransactionIndex
+          tType = result.Type }
+           
+    
+    ///
+    /// Returns a record of a mined transaction for use in decomposeResult 
+    let private returnMinedTransactionRecord (result: RPCResponse.Result) =
+        let mined = RPCMinedTransaction.Parse(result.JsonValue.ToString()) 
+        let access = mined.AccessList |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
+        
+        { MinedTransaction.accessList = [access]
+          MinedTransaction.blockHash = mined.BlockHash
+          MinedTransaction.blockNumber = mined.BlockNumber
+          MinedTransaction.chainId = mined.ChainId
+          MinedTransaction.from = mined.From |> EthAddress
+          MinedTransaction.gas = mined.Gas
+          MinedTransaction.gasPrice = mined.GasPrice
+          MinedTransaction.hash = mined.Hash |> EthTransactionHash
+          MinedTransaction.input = mined.Input
+          MinedTransaction.maxFeePerGas = mined.MaxFeePerGas
+          MinedTransaction.maxPriorityFeePerGas = mined.MaxPriorityFeePerGas
+          MinedTransaction.nonce = mined.Nonce
+          MinedTransaction.r = mined.R
+          MinedTransaction.s = mined.S
+          MinedTransaction.v = mined.V
+          MinedTransaction.toAddr = mined.To |> EthAddress
+          MinedTransaction.transactionIndex = mined.TransactionIndex
+          MinedTransaction.tType = mined.Type
+          MinedTransaction.value = mined.Value }
+        
+    
+    ///
+    /// Returns a record of an Ethereum block for use in `decomposeResult` 
+    let private returnEthBlock (result: RPCResponse.Result) =
+        let ethBlock = RPCBlock.Parse(result.JsonValue.ToString())
+        let uncles = ethBlock.Uncles |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
+        { author = ethBlock.Author
+          baseFeePerGas = ethBlock.BaseFeePerGas
+          difficulty = ethBlock.Difficulty
+          extraData = ethBlock.ExtraData
+          gasLimit = ethBlock.GasLimit
+          gasUsed = ethBlock.GasUsed
+          hash = ethBlock.Hash
+          logsBloom = ethBlock.LogsBloom
+          miner = ethBlock.Miner
+          number = ethBlock.Number
+          parentHash = ethBlock.ParentHash
+          receiptsRoot = ethBlock.ReceiptsRoot
+          sealFields = ethBlock.SealFields |> Array.toList
+          sha3Uncles = ethBlock.Sha3Uncles
+          size = ethBlock.Size
+          stateRoot = ethBlock.StateRoot
+          timestamp = ethBlock.Timestamp
+          totalDifficulty = ethBlock.TotalDifficulty
+          transactions = ethBlock.Transactions |> Array.toList
+          transactionsRoot = ethBlock.TransactionsRoot
+          uncles = [uncles] }
+    
+    
+    ///
+    /// Returns a decomposed RPC response record matching the output of the given EthMethod
+    let internal decomposeRPCResult method result =
+        result
+        |> Result.bind (
+            fun root ->
+                let result = unpackRoot root
+                match method with
+                | EthMethod.Accounts -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.BlockNumber -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.Coinbase -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.ChainId -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GasPrice -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetBalance -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetBlockByHash -> returnEthBlock result |> Block |> Ok
+                | EthMethod.GetBlockByNumber -> returnEthBlock result |> Block |> Ok
+                | EthMethod.GetBlockTransactionCountByHash -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetBlockTransactionCountByNumber -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetCode -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetStorageAt -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetTransactionCount -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetTransactionByHash -> returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetTransactionByBlockHashAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetTransactionByBlockNumberAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetTransactionReceipt -> returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
+                | EthMethod.GetUncleCountByBlockHash -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetUncleCountByBlockNumber -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.ProtocolVersion -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.Syncing -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.Sign -> returnSimpleValue result |> SimpleValue |> Ok
+                | _ -> EthCallIntoNonCallPipeline |> Error
+            )
+        
+    ///
+    /// Unwraps CallResponses to a SimpleValue
+    let public unwrapSimpleValue callResponse =
+        match callResponse with
+        | SimpleValue s -> s
+        | _ -> "wrong unwrap or upstream web3 error"
+    
+    
+    ///
+    /// Unwraps CallResponses to a EVMDatatype list. Use with makeEthCall.
+    let public unwrapCallResult callResponse =
+        match callResponse with
+        | CallResult evmDatatypes -> evmDatatypes
+        | _ -> [EVMDatatype.String "wrong unwrap or upstream web3 error"]
+    
+    
+    ///
+    /// Unwraps CallResponses to a transaction receipt.
+    let public unwrapTransactionReceipt callResponse =
+        match callResponse with
+        | TransactionReceiptResult rpcTransactionResponse -> rpcTransactionResponse
+        | _ -> nullTransactionReceipt
+    
+    
+    ///
+    /// Unwraps CallResponses to a Transaction
+    let public unwrapTransaction callResponse =
+        match callResponse with
+        | Transaction transaction -> transaction
+        | _ -> nullMinedTransaction
+        
+    
+    ///
+    /// Unwraps CallResponse to a EthBlock
+    let public unwrapBlock callResponse =
+        match callResponse with
+        | Block ethBlock -> ethBlock
+        | _ -> nullEthBlock

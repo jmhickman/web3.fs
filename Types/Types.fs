@@ -437,6 +437,8 @@ module Types =
         | DataValidatorError of string
         | HttpClientError of string
         | RPCResponseError of string
+        | WrongChainInSigner
+        | ContractABIContainsHashCollisionsError
         | EthCallIntoNonCallPipeline
         | RPCNullResponse
         | ConstructorArgumentsToEmptyConstructorError
