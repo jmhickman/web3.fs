@@ -67,6 +67,7 @@ module Types =
     let ZEROV = "0"
     let fakedOffset =  "0000000000000000000000000000000000000000000000000000000000000020"
     let zeroEVMValue = "0000000000000000000000000000000000000000000000000000000000000000"
+    let nullAddress = "0000000000000000000000000000000000000000"
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -261,9 +262,9 @@ module Types =
         | GetBlockTransactionCountByHash
         | GetBlockTransactionCountByNumber
         | GetCode
-        | GetFilterChanges
-        | GetFilterLogs
-        | GetLogs
+        //| GetFilterChanges
+        //| GetFilterLogs
+        //| GetLogs
         | GetStorageAt
         | GetTransactionCount
         | GetTransactionByHash
@@ -272,16 +273,16 @@ module Types =
         | GetTransactionReceipt
         | GetUncleCountByBlockHash
         | GetUncleCountByBlockNumber
-        | NewFilter
-        | NewBlockFilter
-        | NewPendingTransactionFilter
+        //| NewFilter
+        //| NewBlockFilter
+        //| NewPendingTransactionFilter
         | ProtocolVersion
         | Syncing
         | SendTransaction
         | SendRawTransaction
         | Sign
         | SignTransaction
-        | UninstallFilter
+        //| UninstallFilter
 
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -436,9 +437,10 @@ module Types =
         | DataValidatorError of string
         | HttpClientError of string
         | RPCResponseError of string
+        | EthCallIntoNonCallPipeline
         | RPCNullResponse
         | ConstructorArgumentsToEmptyConstructorError
-        | ConstructorArgumentsMissingError of string
+        | ConstructorArgumentsMissingError
         | ValueToNonPayableFunctionError
         | EthAddressError
         

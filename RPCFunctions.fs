@@ -1,6 +1,5 @@
 namespace web3.fs
 
-
 open web3.fs.Types
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -32,9 +31,9 @@ module RPCMethodFunctions =
         | EthMethod.GetBlockTransactionCountByHash -> "eth_getBlockTransactionCountByHash" //
         | EthMethod.GetBlockTransactionCountByNumber -> "eth_getBlockTransactionCountByNumber" //
         | EthMethod.GetCode -> "eth_getCode" //
-        | EthMethod.GetFilterChanges -> "eth_getFilterChanges" //
-        | EthMethod.GetFilterLogs -> "eth_getFilterLogs" //
-        | EthMethod.GetLogs -> "eth_getLogs" //
+        //| EthMethod.GetFilterChanges -> "eth_getFilterChanges" //
+        //| EthMethod.GetFilterLogs -> "eth_getFilterLogs" //
+        //| EthMethod.GetLogs -> "eth_getLogs" //
         | EthMethod.GetStorageAt -> "eth_getStorageAt" //
         | EthMethod.GetTransactionCount -> "eth_getTransactionCount" //
         | EthMethod.GetTransactionByHash -> "eth_getTransactionByHash" //
@@ -43,16 +42,16 @@ module RPCMethodFunctions =
         | EthMethod.GetTransactionReceipt -> "eth_getTransactionReceipt" //
         | EthMethod.GetUncleCountByBlockHash -> "eth_getUncleCountByBlockHash" //
         | EthMethod.GetUncleCountByBlockNumber -> "eth_getUncleCountByBlockNumber" //
-        | EthMethod.NewFilter -> "eth_newFilter" //
-        | EthMethod.NewBlockFilter -> "eth_newBlockFilter" //
-        | EthMethod.NewPendingTransactionFilter -> "eth_newPendingTransactionFilter" //
+        //| EthMethod.NewFilter -> "eth_newFilter" //
+        //| EthMethod.NewBlockFilter -> "eth_newBlockFilter" //
+        //| EthMethod.NewPendingTransactionFilter -> "eth_newPendingTransactionFilter" //
         | EthMethod.ProtocolVersion -> "eth_protocolVersion" //
         | EthMethod.Syncing -> "eth_syncing" //
         | EthMethod.SendTransaction -> "eth_sendTransaction" //
         | EthMethod.SendRawTransaction -> "eth_sendRawTransaction" //
         | EthMethod.Sign -> "eth_sign" //
         | EthMethod.SignTransaction -> "eth_signTransaction" //
-        | EthMethod.UninstallFilter -> "eth_uninstallFilter" //
+        //| EthMethod.UninstallFilter -> "eth_uninstallFilter" //
 
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -373,14 +372,25 @@ module RPCFunctions =
                 | EthMethod.BlockNumber -> returnSimpleValue result |> SimpleValue |> Ok
                 | EthMethod.Coinbase -> returnSimpleValue result |> SimpleValue |> Ok
                 | EthMethod.ChainId -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GasPrice -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetBalance -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetBlockByHash -> returnEthBlock result |> Block |> Ok
                 | EthMethod.GetBlockByNumber -> returnEthBlock result |> Block |> Ok
+                | EthMethod.GetBlockTransactionCountByHash -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetBlockTransactionCountByNumber -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetCode -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetStorageAt -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetTransactionCount -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetTransactionByHash -> returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionByBlockHashAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionByBlockNumberAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
-                | EthMethod.GetTransactionByHash -> returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionReceipt -> returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
-                | EthMethod.GetBalance -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GetStorageAt -> returnSimpleValue result |> SimpleValue |> Ok
-                | fallback -> SimpleValue $"{fallback}" |> Ok
+                | EthMethod.GetUncleCountByBlockHash -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.GetUncleCountByBlockNumber -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.ProtocolVersion -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.Syncing -> returnSimpleValue result |> SimpleValue |> Ok
+                | EthMethod.Sign -> returnSimpleValue result |> SimpleValue |> Ok
+                | _ -> EthCallIntoNonCallPipeline |> Error
             )
         
         
@@ -394,12 +404,13 @@ module RPCFunctions =
     /// Note that some EthMethods have no arguments, while others have object arguments. Use `makeEthCall` or
     /// `makeEthTxn` in those cases.
     ///
-    let public makeEthRPCCall env method paramList =
+    let public makeEthRPCCall env method (paramList: string list) =
         { method = method
           paramList = paramList |> EthGenericRPC
           blockHeight = LATEST }
         |> env.connection
         |> decomposeRPCResult method
+        
         
 
 

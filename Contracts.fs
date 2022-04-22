@@ -499,22 +499,52 @@ module ContractFunctions =
 
     
     ///
+    /// Generates Web3Error if the abi can't be parsed, implying interacting with the contract after deployment will
+    /// fail. Otherwise, passes along the JsonValue.
+    /// 
+    let canABIBeParsed abi =
+        match JsonValue.TryParse(abi) with
+        | Some v -> v |> Ok
+        | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error
+    
+    
+    ///
+    /// Extracts the constructor hash for this contract, so that checks can be made. Doesn't generate Web3Errors.
+    let buildConstructorHash env (pipe: Result<JsonValue, Web3Error>) =
+        pipe
+        |> Result.bind(fun b -> b.AsArray() |> parseABIForConstructor env.digest |> trimParameter |> Ok)
+    
+    
+    /// Generates a Web3Error if the user attempted to pass arguments to a `constructor()`
+    let constructorEmptyButArgsGiven (args: 'a list option) (pipe: Result<string, Web3Error>) =
+        pipe
+        |> Result.bind (fun b ->
+            if b = "90fa17bb" && args.IsSome then ConstructorArgumentsToEmptyConstructorError |> Error
+            else b |> Ok )
+    
+    
+    ///
+    /// Generates a Web3Error if the user failed to supply arguments to a constructor.
+    let constructorRequireArgsAndNoneWereGiven (args: 'a list option) (pipe: Result<string, Web3Error>) =
+        pipe
+        |> Result.bind (fun b ->
+            if not(b = "90fa17bb") && args.IsNone then ConstructorArgumentsMissingError |> Error
+            else b |> Ok )
+    
+    
+    ///
     /// Returns an UndeployedContract for use in `deployEthContract`. 
     let public prepareUndeployedContract env bytecode (constructorArguments: EVMDatatype list option) chainId abi =
         let (ABI _abi) = abi
-        
-        match JsonValue.TryParse(_abi) with
-        | Some json ->
-            let _j = json.AsArray()
-            let hash = parseABIForConstructor env.digest _j |> trimParameter
-            if hash = "90fa17bb" && constructorArguments.IsSome then
-               ConstructorArgumentsToEmptyConstructorError |> Error
-            else if not(hash = "90fa17bb") && constructorArguments.IsNone then
-               ConstructorArgumentsMissingError hash |> Error
-            else
-                { abi = abi
-                  bytecode = bytecode
-                  chainId = chainId
-                  constructorArguments = constructorArguments }
-                |> Ok
-        | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error
+                
+        _abi
+        |> canABIBeParsed
+        |> buildConstructorHash env
+        |> constructorRequireArgsAndNoneWereGiven constructorArguments
+        |> constructorEmptyButArgsGiven constructorArguments
+        |> Result.bind(fun _ ->
+            { abi = abi
+              bytecode = bytecode
+              chainId = chainId
+              constructorArguments = constructorArguments }
+            |> Ok)

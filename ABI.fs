@@ -343,17 +343,19 @@ module ABIFunctions =
     let private emitSubstringPrepend0x start blob =
         emitSubstring start blob
         |> fun s ->
-            if s = zeroEVMValue then
-                s |> prepend0x
-            else
-                s.TrimStart('0')
-                |> prepend0x
+            match s with
+            | x when x = zeroEVMValue -> nullAddress |> prepend0x
+            | x -> x.TrimStart('0') |> prepend0x
 
 
     ///
     /// Returns the substring specifically for sized bytes, with a hex specifier prepended. 
     let private emitSubstringPrepend0xBytes start blob =
-        emitSubstring start blob |> fun s -> s.TrimEnd('0') |> prepend0x
+        emitSubstring start blob
+        |> fun s ->
+            match s with
+            | x when x = zeroEVMValue -> "0" |> prepend0x
+            | x -> x.TrimEnd('0') |> prepend0x
         
         
     ///
