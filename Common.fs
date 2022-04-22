@@ -153,7 +153,7 @@ module Common =
             | None -> ""
 
         let data =
-            match c.data with
+            match c.arguments with
             | Some t -> t
             | None -> []
 

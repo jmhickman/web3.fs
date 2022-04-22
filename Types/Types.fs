@@ -663,7 +663,7 @@ module Types =
           transactionType: string option
           maxFeePerGas: string option
           maxPriorityFeePerGas: string option
-          data: EVMDatatype list option
+          arguments: EVMDatatype list option
           blockHeight: string option
           defaultValue: string option }
     

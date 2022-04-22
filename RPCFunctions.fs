@@ -160,7 +160,68 @@ module RPCFunctions =
         | None -> LATEST
     
     
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //// Call Function Helpers
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
 
+    
+    ///
+    /// Checks that the signer is on the chain we're about to transact with. Emits WrongChainInSigner if not.
+    ///
+    /// Check that the chain we're trying to work with is actually selected in the signer
+    let private checkForChain env chainId  =
+        { method = EthMethod.ChainId
+          paramList = [] |> EthGenericRPC
+          blockHeight =  LATEST}
+          |> env.connection
+          |> decomposeRPCResult EthMethod.ChainId
+          |> log Emit
+          |> unwrapSimpleValue
+          |> fun chain ->
+                if not(chain = chainId ) then
+                    WrongChainInSigner |> Error
+                else () |> Ok 
+    
+    
+    ///
+    /// Unpacks constants from the ContractConstants record
+    let private unpackConstants constants (pipe: Result<'a, Web3Error>) =
+        pipe
+        |> Result.bind (fun _ ->
+            let txn, maxfee, priority, _ = constantsBind constants
+            (txn, maxfee, priority) |> Ok )
+    
+    
+    ///
+    /// Injects de-Optioned contract arguments
+    let private unwrapContractArguments (args: EVMDatatype list option) (pipe: Result<string * string * string, Web3Error>) =
+        match args with
+        | Some d -> pipe |> Result.bind(fun (a, b, c) -> (a, b, c, d) |> Ok)
+        | None -> pipe |> Result.bind(fun (a, b, c) -> (a, b, c, []) |> Ok)
+        
+        
+    let buildDeploymentCall env value contract (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
+        let (RawContractBytecode _rawBytecode) = contract.bytecode
+        pipe
+        |> Result.bind (fun (txn, maxfee, priority, args) ->
+            { utxnType = txn
+              unonce = ""
+              utoAddr = ""
+              ufrom = env.constants.walletAddress
+              ugas = "0x4C4B40"
+              uvalue = value |> bigintToHex |> prepend0x
+              udata =
+                  $"{_rawBytecode}{createInputByteString args}" |> prepend0x              
+              umaxFeePerGas = maxfee
+              umaxPriorityFeePerGas = priority
+              uaccessList = []
+              uchainId = contract.chainId } |> Ok )
+        
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //// Call Functions
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////     
+    
         
     ///
     /// Creates an Ethereum RPC request whose purpose is typically to query the RPC node for chain-based or network-
@@ -254,28 +315,12 @@ module RPCFunctions =
     /// * constants: A ContractConstants record.
     /// * contract: A UndeployedContract that is being deployed
     ///
-    let public deployEthContract env value contract =
-        let (RawContractBytecode _rawBytecode) = contract.bytecode
-        let txn, maxfee, priority, _ = constantsBind env.constants
-
-        let cArgs =
-            match contract.constructorArguments with
-            | Some a -> a
-            | None -> []
-        
-        { utxnType = txn
-          unonce = ""
-          utoAddr = ""
-          ufrom = env.constants.walletAddress
-          ugas = "0x4C4B40"
-          uvalue = value |> bigintToHex |> prepend0x
-          udata =
-              $"{_rawBytecode}{createInputByteString cArgs}" |> prepend0x              
-          umaxFeePerGas = maxfee
-          umaxPriorityFeePerGas = priority
-          uaccessList = []
-          uchainId = contract.chainId }
-        |> validateRPCParams
+    let public deployEthContract env value (contract: UndeployedContract) =
+        checkForChain env contract.chainId
+        |> unpackConstants env.constants
+        |> unwrapContractArguments contract.constructorArguments
+        |> buildDeploymentCall env value contract
+        |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
                 { method = EthMethod.SendTransaction 

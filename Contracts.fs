@@ -9,7 +9,6 @@ module ContractFunctions =
     open SHA3Core.Keccak
     
     open Common
-    open Logging
     open ABIFunctions
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -465,24 +464,6 @@ module ContractFunctions =
     
     
     ///
-    /// Check that the chain we're trying to work with is actually selected in the signer
-    let checkForChain env chainId (pipe: Result<EthAddress, Web3Error>) =
-        pipe
-        |> Result.bind (fun b ->
-             { method = EthMethod.ChainId
-               paramList = [] |> EthGenericRPC
-               blockHeight =  LATEST}
-            |> env.connection
-            |> decomposeRPCResult EthMethod.ChainId
-            |> log Emit
-            |> unwrapSimpleValue
-            |> fun chain ->
-                if not(chain = chainId ) then
-                    WrongChainInSigner |> Error
-                else b |> Ok )
-    
-    
-    ///
     /// Generates Web3Error if the abi can't be parsed, implying interacting with the contract after deployment will
     /// fail. Otherwise, passes along the JsonValue.
     /// 
@@ -565,7 +546,6 @@ module ContractFunctions =
     let public loadDeployedContract env address chainId abi =
         address
         |> wrapEthAddress
-        |> checkForChain env chainId
         |> pipeCanABIBeParsed abi
         |> convertJsonValueToArray
         |> getFunctionsEventsErrors env

@@ -15,7 +15,7 @@ module Helpers =
         transactionType = None
         maxFeePerGas = None
         maxPriorityFeePerGas = None
-        data = None
+        arguments = None
         blockHeight = Some LATEST
         defaultValue = Some "0"
         }
