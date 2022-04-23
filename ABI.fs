@@ -92,8 +92,8 @@ module ABIFunctions =
         match s with
         | x when x.Length <= 64 -> acc @ [x |> padTo32BytesRight]
         | x when x.Length > 64 -> 
-            let _x = x.[..63]
-            let x = x.[64..]
+            let _x = x[..63]
+            let x = x[64..]
             wrapBytesAcrossWords x [_x]
         | _ -> [""]
 

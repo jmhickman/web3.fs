@@ -14,6 +14,7 @@
   <ItemGroup>
     <Compile Include="Types\Types.fs" />
     <Compile Include="Common.fs" />
+    <Compile Include="Logger.fs" />
     <Compile Include="Logging.fs" />
     <Compile Include="ABI.fs" />
     <Compile Include="Contracts.fs" />

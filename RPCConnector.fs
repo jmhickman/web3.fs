@@ -1,12 +1,10 @@
 namespace web3.fs
 
-
 open web3.fs.Types
 
 [<AutoOpen>]
 module RPCConnector =
-    open FsHttp
-    
+    open FsHttp    
           
     open RPCMethodFunctions
     open RPCParamFunctions
@@ -14,6 +12,8 @@ module RPCConnector =
     GlobalConfig.defaults
     |> Config.timeoutInSeconds 18.5
     |> GlobalConfig.set
+    
+    
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC Helper Functions   
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,9 +26,11 @@ module RPCConnector =
     /// parameter already, and so come through this function as 'false' because the parameter doesn't need to be
     /// handled here. 
     ///
-    let private needsBlockArgs (m: EthMethod) =
-        match m with
-        | _m when _m = EthMethod.Call || _m = EthMethod.EstimateGas -> true
+    let private needsBlockArgs method =
+        match method with
+        | m when
+            m = EthMethod.Call ||
+            m = EthMethod.EstimateGas -> true
         | _ -> false
         
 
@@ -64,8 +66,8 @@ module RPCConnector =
     /// issues if not handled first. This means the same response is essentially double-filtered, which is inefficient
     /// but not the slowest link in the chain.
     ///  
-    let private filterNullOrErrorResponse (s: string) =
-        match RPCResponse.Parse(s) with
+    let private filterNullOrErrorResponse rpcResponse =
+        match RPCResponse.Parse(rpcResponse) with
         | x when x.Result.IsSome  -> x |> Ok
         | x when x.Error.IsSome -> $"RPC error message: {x.Error.Value}" |> RPCResponseError |> Error
         | _ ->  RPCNullResponse |> Error
@@ -79,7 +81,7 @@ module RPCConnector =
     
     ///
     /// A MailboxProcessor that manages making and returning RPC calls via a Reply channel.
-    let internal rpcConnector (url: string) (rpcVersion: string) (mbox: HttpRPCMailbox) =
+    let internal rpcConnector url rpcVersion (mbox: HttpRPCMailbox) =
         let rec receiveLoop () =
             async {
                 let! msg = mbox.Receive()
@@ -100,13 +102,13 @@ module RPCConnector =
 
     ///
     /// Returns the MailboxProcessor that oversees Http communications with the RPC
-    let private startRpcConnector (url: string) rpcVersion =
+    let private startRpcConnector url rpcVersion =
         MailboxProcessor.Start(rpcConnector url rpcVersion)
 
 
     ///
     /// Function allowing easier pipelining of RPC connection and the two-way communication channel.
-    let private transactionMessage (mbox: HttpRPCMailbox) (rpcMessage: HttpRPCMessage) =
+    let private transactionMessage (mbox: HttpRPCMailbox) rpcMessage =
         mbox.PostAndReply(fun c -> TransactionMessageAndReply(rpcMessage, c))
 
 
@@ -114,7 +116,7 @@ module RPCConnector =
     /// Returns a partially applied function ready to take an HttpRPCMessage and send it to the RPC endpoint and
     /// return a Result.
     ///
-    let public createWeb3Connection url rpcVersion : Web3Connection=
+    let public createWeb3Connection url rpcVersion =
         (url, rpcVersion)
         ||> startRpcConnector
         |> transactionMessage

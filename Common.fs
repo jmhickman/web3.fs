@@ -123,7 +123,7 @@ module Common =
             | false -> eth
 
         let xa = _eth.Split('.')
-        let x, xs = (xa.[0], xa.[1])
+        let x, xs = (xa[0], xa[1])
         let e = x.TrimStart('0')
         let wei = xs.PadRight(18, '0').Remove(18)
         bigint.Parse(e + wei).ToString()
@@ -216,10 +216,8 @@ module Common =
               internalOutputs = []
               canonicalOutputs = "()" |> EVMFunctionOutputs
               config = Payable }
-                
-            
-                
-            
+
+       
     ///
     /// Returns a list containing contracts whose import succeeded.  
     let public bindDeployedContract result =
@@ -479,30 +477,18 @@ module Common =
             fun root ->
                 let result = unpackRoot root
                 match method with
-                | EthMethod.Accounts -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.BlockNumber -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.Coinbase -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.ChainId -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GasPrice -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GetBalance -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GetBlockByHash -> returnEthBlock result |> Block |> Ok
-                | EthMethod.GetBlockByNumber -> returnEthBlock result |> Block |> Ok
-                | EthMethod.GetBlockTransactionCountByHash -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GetBlockTransactionCountByNumber -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GetCode -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GetStorageAt -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GetTransactionCount -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GetTransactionByHash -> returnMinedTransactionRecord result |> Transaction |> Ok
-                | EthMethod.GetTransactionByBlockHashAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
-                | EthMethod.GetTransactionByBlockNumberAndIndex -> returnMinedTransactionRecord result |> Transaction |> Ok
-                | EthMethod.GetTransactionReceipt -> returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
-                | EthMethod.GetUncleCountByBlockHash -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.GetUncleCountByBlockNumber -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.ProtocolVersion -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.Syncing -> returnSimpleValue result |> SimpleValue |> Ok
-                | EthMethod.Sign -> returnSimpleValue result |> SimpleValue |> Ok
-                | _ -> EthCallIntoNonCallPipelineError |> Error
-            )
+                | method when
+                    method = EthMethod.GetBlockByHash ||
+                    method = EthMethod.GetBlockByNumber ->
+                    returnEthBlock result |> Block |> Ok
+                | method when
+                    method = EthMethod.GetTransactionByHash ||
+                    method = EthMethod.GetTransactionByBlockHashAndIndex ||
+                    method = EthMethod.GetTransactionByBlockNumberAndIndex ->
+                    returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetTransactionReceipt ->
+                    returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
+                | _ -> returnSimpleValue result |> SimpleValue |> Ok )
         
     ///
     /// Unwraps CallResponses to a SimpleValue

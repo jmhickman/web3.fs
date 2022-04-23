@@ -164,7 +164,7 @@ module ContractFunctions =
     let private tryGetConstructorProperties (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "constructor")
-        |> Array.map (fun i -> (i.TryGetProperty("inputs")), i.TryGetProperty("stateMutability"))
+        |> Array.map (fun i -> i.TryGetProperty("inputs"), i.TryGetProperty("stateMutability"))
 
 
     ///

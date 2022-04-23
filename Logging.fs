@@ -1,18 +1,16 @@
 namespace web3.fs
 
+open web3.fs.Types
+
 [<AutoOpen>]    
 module Logging =
+    
+    
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Logging
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    
-    ///
-    /// Generic logger until I import something more featureful.
-    let internal logResult logString =
-        printfn $"{logString}"
-        
     
     ///
     /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`. Intended to be
@@ -21,30 +19,33 @@ module Logging =
     let internal monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash, Web3Error>) =
         match r with
         | Ok o ->
-            logResult $"Monitoring transaction {o}..."
             monitor o 
         | Error e -> e |> Error 
         
     
     ///
     /// Handles the emission of information to the console
-    let private logCallResponse callResponse =
+    let private logCallResponse (logger: Logger) callResponse =
         match callResponse with
-        | SimpleValue s -> printfn $"Value:\n{s}"
-        | Block ethBlock -> printfn $"Ethereum block:\n{ethBlock}"
+        | SimpleValue s -> logger.Post (Success, $"Value: {s}")
+        | Block ethBlock -> logger.Post (Info, $"Ethereum block:\n{ethBlock}")
         | TransactionHash _ -> () // Handled by the monitor
-        | TransactionReceiptResult rpcTransactionResponse -> printfn $"Transaction receipt:\n{rpcTransactionResponse}"
-        | Transaction mTransaction -> printfn $"Transaction:\n{mTransaction}"
-        | CallResult callResult -> printfn $"Call result:\n{callResult}"
+        | TransactionReceiptResult rpcTransactionResponse -> logger.Post (Info, $"Transaction receipt:\n{rpcTransactionResponse}")
+        | Transaction mTransaction -> logger.Post (Info, $"Transaction:\n{mTransaction}")
+        | CallResult callResult -> logger.Post (Success, $"Call result: {callResult}")
+        | Library s -> logger.Post (Info, s)
         | Empty -> () // Do nothing
         
         
     ///
     /// Forwards CallResponses, logs errors to the console
-    let private logCallResponsesOrWeb3Errors pipeResult =
+    let private logCallResponsesOrWeb3Errors (logger: Logger) (pipeResult: Result<CallResponses, Web3Error>) =
         match pipeResult with
-        | Ok o -> logCallResponse o
-        | Error e -> printfn $"Error:\n{e}"
+        | Ok o -> logCallResponse logger o
+        | Error e ->
+            match e with
+            | PayableFunctionZeroValueWarning w -> logger.Post (Warn, w)
+            | e -> logger.Post (Failure, $"{e}")
     
     
     ///
@@ -59,15 +60,16 @@ module Logging =
     /// Generic logger for use in all RPC calls. Takes a signal to indicate whether the user wants just a log to console,
     /// to emit a wrapped record, or both.
     /// 
-    let public log signal pipeResult =
+    let public log (logger: Logger) signal (pipeResult: Result<CallResponses, Web3Error>) =
         match signal with
         | Log ->
-            logCallResponsesOrWeb3Errors pipeResult
+            logCallResponsesOrWeb3Errors logger pipeResult
+            Async.Sleep(100) |> Async.RunSynchronously
             Empty
         | Emit -> emitter pipeResult
         | LogAndEmit ->
-            logCallResponsesOrWeb3Errors pipeResult
+            logCallResponsesOrWeb3Errors logger pipeResult
+            Async.Sleep(100) |> Async.RunSynchronously
             emitter pipeResult
         | Quiet -> Empty
-    
-    
+                

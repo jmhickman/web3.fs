@@ -108,7 +108,7 @@ module RPCFunctions =
     let private pipeBindFunction contract evmFunction (pipe: Result<string * string * string * EVMDatatype list * string, Web3Error>) =
         pipe
         |> Result.bind(fun (a, b, c, d, e) -> (a, b, c, d, e, (bindFunctionIndicator contract evmFunction)) |> Ok)
-
+        
     
     ///
     /// Selects the supplied arguments or ones defaulted in the ContractConstants.
@@ -124,13 +124,14 @@ module RPCFunctions =
     /// Checks that we are lined up as far as function signature and supplied arguments.
     let private checkArgsToFunction (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
-        |> Result.bind(fun (a, b, c, args, e, evmFunction) ->
+        |> Result.bind(fun a ->
+            let _, _, _, args, _, evmFunction = a
             match evmFunction.canonicalInputs with
             |x when bindEVMFunctionInputs x = "()" ->
-                if args.Length = 0 then (a, b, c, args, e, evmFunction) |> Ok
+                if args.Length = 0 then a |> Ok
                 else ArgumentsToEmptyFunctionSignatureError |> Error
             | _ ->                
-                if not(args.Length = 0) then (a, b, c, args, e, evmFunction) |> Ok
+                if not(args.Length = 0) then a |> Ok
                 else FunctionArgumentsMissingError |> Error )
         
     
@@ -138,9 +139,10 @@ module RPCFunctions =
     /// Run arguments through checkEVMData
     let private checkArgumentData (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
-        |> Result.bind (fun (a, b, c, args, e, f) ->
+        |> Result.bind (fun a ->
+            let _, _, _, args, _, _ = a
             match checkEVMData args with
-            | Ok _ -> (a, b, c, args, e, f) |> Ok
+            | Ok _ -> a |> Ok
             | Error e -> e |> Error)
     
     
@@ -148,16 +150,14 @@ module RPCFunctions =
     /// Check that we're not sending value to a non-Payable, or warn if 0 to a Payable
     let private checkValueAndStateMutability (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
-        |> Result.bind (fun (a, b, c, d, value, evmFunction) ->
+        |> Result.bind (fun a ->
+            let _, _, _, _, value, evmFunction = a
             match evmFunction.config with
-            | Payable ->
-                if value = "0x0" then
-                    logResult "WARNING: 0 value being sent to payable function"
-                (a, b, c, d, value, evmFunction) |> Ok
+            | Payable -> a |> Ok
             | _ ->
                 if not(value = "0x0") then
                     ValueToNonPayableFunctionError |> Error
-                else (a, b, c, d, value, evmFunction) |> Ok )
+                else a |> Ok )
     
     
     ///
@@ -189,7 +189,9 @@ module RPCFunctions =
     
     ///
     /// Returns a Txn object for use in the validation function `ValidateRPCParams`
-    let private createUnvalidatedTxn constants contract evmFunction arguments value =
+    let private createUnvalidatedTxn constants contract evmFunction arguments value (pipe: Result<'a, Web3Error>) =
+        pipe
+        |> Result.bind (fun _ ->
         constants
         |> unpackConstants
         |> convertValueToHex value
@@ -199,7 +201,7 @@ module RPCFunctions =
         |> checkArgumentData
         |> checkValueAndStateMutability
         |> createDataString
-        |> returnUnvalidatedRecord constants.walletAddress contract
+        |> returnUnvalidatedRecord constants.walletAddress contract )
 
     
     ///
@@ -231,7 +233,7 @@ module RPCFunctions =
           blockHeight =  LATEST}
           |> env.connection
           |> decomposeRPCResult EthMethod.ChainId
-          |> log Emit
+          |> env.log Emit
           |> unwrapSimpleValue
           |> fun chain ->
                 if not(chain = chainId ) then
@@ -258,19 +260,19 @@ module RPCFunctions =
     ///
     /// Check that we aren't supplying value to a non-Payable constructor, which will be accepted but the transaction
     /// will fail with a status 0x0.
+    /// 
     let private checkValueAndStateMutabilityDeploy value contract (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
         match contract.stateMutability with
-        | Payable ->
-            if value = "0x0" then logResult "WARNING: 0 value being sent to payable constructor"
-            pipe
-        | _ ->
-            if value = "0" then pipe else ValueToNonPayableFunctionError |> Error
+        | Payable -> pipe
+        | _ -> if value = "0" then pipe else ValueToNonPayableFunctionError |> Error
     
     
     ///
     /// Creates the unvalidated call record specifically for deployment.
     let private buildDeploymentCall env value contract (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
         let (RawContractBytecode _rawBytecode) = contract.bytecode
+        if contract.stateMutability = Payable && value = "0" then
+            env.log Log (PayableFunctionZeroValueWarning "Zero value sent to payable function" |> Error) |> ignore
         pipe
         |> Result.bind (fun (txn, maxfee, priority, args) ->
             { utxnType = txn
@@ -302,12 +304,14 @@ module RPCFunctions =
     /// Note that some EthMethods have no arguments, while others have object arguments. Use `makeEthCall` or
     /// `makeEthTxn` in those cases.
     ///
-    let public makeEthRPCCall env method (paramList: string list) =
+    let public makeEthRPCCall env chainId method (paramList: string list) =
+        checkForChain env chainId
+        |> Result.bind ( fun _ ->
         { method = method
           paramList = paramList |> EthGenericRPC
           blockHeight = LATEST }
         |> env.connection
-        |> decomposeRPCResult method
+        |> decomposeRPCResult method)
 
 
     ///
@@ -321,7 +325,8 @@ module RPCFunctions =
     /// value: the wei-denominated amount of ETH to send along with a transaction to a `payable` function.
     ///
     let public makeEthTxn env contract evmFunction arguments value =
-        createUnvalidatedTxn env.constants contract evmFunction arguments value
+        checkForChain env contract.chainId
+        |> createUnvalidatedTxn env.constants contract evmFunction arguments value
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -348,7 +353,8 @@ module RPCFunctions =
     ///
     let public makeEthCall env contract evmFunction arguments =
         let blockHeight' = blockHeight env.constants
-        createUnvalidatedCall env.constants contract evmFunction arguments
+        checkForChain env contract.chainId
+        |> createUnvalidatedCall env.constants contract evmFunction arguments
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -386,17 +392,21 @@ module RPCFunctions =
             unpackRoot r
             |> stringAndTrim
             |> EthTransactionHash
-            |> Ok)
+            |> fun ethHash ->
+                env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )|> ignore
+                ethHash
+            |> Ok)        
         |> monitorTransaction env.monitor
         
         
     ///
     /// Estimate the amount of gas units required for the given transaction to complete. This number can be rather
     /// inaccurate, so the function allows the specification of additional padding in gas units.
-    let public estimateGas units env contract evmFunction arguments value  =
+    let public estimateGas env contract evmFunction arguments value  =
         let blockHeight' = blockHeight env.constants
         
-        createUnvalidatedTxn env.constants contract evmFunction arguments value
+        checkForChain env contract.chainId
+        |> createUnvalidatedTxn env.constants contract evmFunction arguments value
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -404,12 +414,6 @@ module RPCFunctions =
                   paramList = _params 
                   blockHeight = blockHeight' }
                 |> env.connection)
-        |> fun res ->
-            match res with
-            | Ok o ->
-                let gas = unpackRoot o |> stringAndTrim
-                match units with
-                | HexGas -> gas
-                | DecimalGas -> gas |> strip0x |> hexToBigIntP |> fun i -> i.ToString()
-            | Error e -> $"estimate gas call failed: {e}"
+        |> decomposeRPCResult EthMethod.EstimateGas
+        
         

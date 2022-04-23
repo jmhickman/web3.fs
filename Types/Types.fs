@@ -10,14 +10,38 @@ module Types =
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Misc types
+    //// Misc types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     let weiDiv = 1000000000000000000I
 
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Type Provider parser setup
+    //// Logging types
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    type ConsoleColor =
+        | Blue
+        | Yellow
+        | Green
+        | Red
+    
+    
+    type LogType =
+        | Info
+        | Warn
+        | Success
+        | Failure
+    
+
+    type LogMessage = LogType * string
+    
+    
+    type Logger = MailboxProcessor<LogMessage>
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //// Type Provider parser setup
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -437,6 +461,7 @@ module Types =
         | DataValidatorError of string
         | HttpClientError of string
         | RPCResponseError of string
+        | PayableFunctionZeroValueWarning of string
         | WrongChainInSignerError
         | ContractABIContainsHashCollisionsError
         | EthCallIntoNonCallPipelineError
@@ -447,6 +472,7 @@ module Types =
         | FunctionArgumentsMissingError
         | ValueToNonPayableFunctionError
         | EthAddressError
+        
         
         
     ///
@@ -460,6 +486,7 @@ module Types =
         | TransactionReceiptResult of TransactionReceipt //
         | Transaction of MinedTransaction //
         | CallResult of EVMDatatype list //
+        | Library of string
         | Empty //
     
     
@@ -479,7 +506,7 @@ module Types =
         | DecimalGas
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // MailboxProcessor types
+    //// Ethereum MailboxProcessor types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     
@@ -700,4 +727,5 @@ module Types =
         { connection: Web3Connection
           monitor: Monitor
           constants: ContractConstants
-          digest: Keccak}
+          digest: Keccak
+          log : LogSignal -> Result<CallResponses, Web3Error> -> CallResponses }
