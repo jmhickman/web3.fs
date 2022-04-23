@@ -75,8 +75,8 @@ module Types =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     
-    let ETHEREUM_MAINNET = "0x01"
-    let RINKEBY = "0x04"
+    let ETHEREUM_MAINNET = "0x1"
+    let RINKEBY = "0x4"
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -437,12 +437,14 @@ module Types =
         | DataValidatorError of string
         | HttpClientError of string
         | RPCResponseError of string
-        | WrongChainInSigner
+        | WrongChainInSignerError
         | ContractABIContainsHashCollisionsError
-        | EthCallIntoNonCallPipeline
+        | EthCallIntoNonCallPipelineError
         | RPCNullResponse
         | ConstructorArgumentsToEmptyConstructorError
         | ConstructorArgumentsMissingError
+        | ArgumentsToEmptyFunctionSignatureError
+        | FunctionArgumentsMissingError
         | ValueToNonPayableFunctionError
         | EthAddressError
         
@@ -676,7 +678,8 @@ module Types =
         { abi: ABI
           bytecode: RawContractBytecode
           chainId: string
-          constructorArguments: EVMDatatype list option}
+          constructorArguments: EVMDatatype list option
+          stateMutability: StateMutability}
 
 
     ///

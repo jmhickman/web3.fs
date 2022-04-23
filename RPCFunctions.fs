@@ -63,7 +63,6 @@ module RPCParamFunctions =
     
     open Common
 
-    
     //
     // Convert call params into json string representation. RPC commands that consume filters will not work, as there
     // is no websocket facility set up as of 0.2.0.
@@ -82,18 +81,99 @@ module RPCFunctions =
     
     open Common
     open Logging
-
-
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Ethereum call functions using the RPC connection
+    // Builder functions for creating unvalidated transaction objects
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
     
     
     ///
-    /// Creates an unvalidated record
-    let private returnUnvalidatedRecord address txn maxfee priority data contract value =
+    /// Get constants values out of the ContractConstants
+    let private unpackConstants (constants: ContractConstants) =
+        constantsBind constants |> (fun a -> a |> Ok)
+        
+    
+    ///
+    /// Convert the supplied value into hex form
+    let private convertValueToHex value (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
+        pipe
+        |> Result.bind(fun (a, b, c, d) ->
+            (a, b, c, d, (value |> bigintToHex |> prepend0x))
+            |> Ok)
+        
+    
+    ///
+    /// Places the actual EVMFunction into the data for later use
+    let private pipeBindFunction contract evmFunction (pipe: Result<string * string * string * EVMDatatype list * string, Web3Error>) =
+        pipe
+        |> Result.bind(fun (a, b, c, d, e) -> (a, b, c, d, e, (bindFunctionIndicator contract evmFunction)) |> Ok)
+
+    
+    ///
+    /// Selects the supplied arguments or ones defaulted in the ContractConstants.
+    let private chooseDefaultOrSuppliedArguments suppliedArgs (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
+        pipe
+        |> Result.bind(fun (a, b, c, defaultArgs, e, f) ->
+            match suppliedArgs with
+            | [] -> (a, b, c, defaultArgs, e, f) |> Ok
+            | s -> (a, b, c, s, e, f) |> Ok)
+    
+    
+    ///
+    /// Checks that we are lined up as far as function signature and supplied arguments.
+    let private checkArgsToFunction (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
+        pipe
+        |> Result.bind(fun (a, b, c, args, e, evmFunction) ->
+            match evmFunction.canonicalInputs with
+            |x when bindEVMFunctionInputs x = "()" ->
+                if args.Length = 0 then (a, b, c, args, e, evmFunction) |> Ok
+                else ArgumentsToEmptyFunctionSignatureError |> Error
+            | _ ->                
+                if not(args.Length = 0) then (a, b, c, args, e, evmFunction) |> Ok
+                else FunctionArgumentsMissingError |> Error )
+        
+    
+    ///
+    /// Run arguments through checkEVMData
+    let private checkArgumentData (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
+        pipe
+        |> Result.bind (fun (a, b, c, args, e, f) ->
+            match checkEVMData args with
+            | Ok _ -> (a, b, c, args, e, f) |> Ok
+            | Error e -> e |> Error)
+    
+    
+    ///
+    /// Check that we're not sending value to a non-Payable, or warn if 0 to a Payable
+    let private checkValueAndStateMutability (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
+        pipe
+        |> Result.bind (fun (a, b, c, d, value, evmFunction) ->
+            match evmFunction.config with
+            | Payable ->
+                if value = "0x0" then
+                    logResult "WARNING: 0 value being sent to payable function"
+                (a, b, c, d, value, evmFunction) |> Ok
+            | _ ->
+                if not(value = "0x0") then
+                    ValueToNonPayableFunctionError |> Error
+                else (a, b, c, d, value, evmFunction) |> Ok )
+    
+    
+    ///
+    /// Create the 'data' value string from arguments and function
+    let private createDataString (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
+        pipe
+        |> Result.bind (fun (a, b, c, args, e, evmFunction) ->
+            let dataString = $"{evmFunction.hash |> bindEVMSelector}{createInputByteString args}"
+            (a, b, c, e, dataString) |> Ok)
+        
+    
+    ///
+    /// Creates an unvalidated record 
+    let private returnUnvalidatedRecord address contract (pipe: Result<string * string * string * string * string, Web3Error>)  =
+        pipe
+        |> Result.bind (fun (txn, maxfee, priority, value, data) -> 
         { utxnType = txn
           unonce = ""
           utoAddr = contract.address
@@ -104,46 +184,22 @@ module RPCFunctions =
           umaxFeePerGas = maxfee 
           umaxPriorityFeePerGas = priority 
           uaccessList = []
-          uchainId = contract.chainId }
+          uchainId = contract.chainId } |> Ok)
         
-    
-    ///
-    /// Returns the data string to be included in the transaction based on the presence of arguments in the original
-    /// function call. Otherwise, the default arguments supplied in the ContractConstants will be used. Embeds error
-    /// strings from the input validation layer into the data, which will be surfaced downstream of this function call.
-    /// 
-    let createArguments (evmFunction: EVMFunction) arguments data =
-        match arguments with
-            | Some a ->
-                match checkEVMData a with
-                | Ok _ -> $"{evmFunction.hash |> bindEVMSelector}{createInputByteString a}"
-                | Error e -> $"{e.ToString}"
-            | None ->
-                match checkEVMData data with
-                | Ok _ -> $"{evmFunction.hash |> bindEVMSelector}{createInputByteString data}"
-                | Error e -> $"{e.ToString}"
-    
     
     ///
     /// Returns a Txn object for use in the validation function `ValidateRPCParams`
     let private createUnvalidatedTxn constants contract evmFunction arguments value =
-        let txn, maxfee, priority, data = constantsBind constants
-        let hexValue = value |> bigintToHex |> prepend0x
-        let evmFunction' = bindFunctionIndicator contract evmFunction
-        let udata = createArguments evmFunction' arguments data            
-        
-        match evmFunction'.config with
-        | Payable -> 
-            if hexValue = "0x0" then logResult "WARNING: 0 value being sent to payable function"
-            
-            returnUnvalidatedRecord constants.walletAddress txn maxfee priority udata contract hexValue
-            |> Ok
-        | _ ->
-            if not(hexValue = "0x0") then 
-                ValueToNonPayableFunctionError |> Error
-            else
-                returnUnvalidatedRecord constants.walletAddress txn maxfee priority udata contract hexValue
-                |> Ok
+        constants
+        |> unpackConstants
+        |> convertValueToHex value
+        |> pipeBindFunction contract evmFunction
+        |> chooseDefaultOrSuppliedArguments arguments
+        |> checkArgsToFunction
+        |> checkArgumentData
+        |> checkValueAndStateMutability
+        |> createDataString
+        |> returnUnvalidatedRecord constants.walletAddress contract
 
     
     ///
@@ -161,7 +217,7 @@ module RPCFunctions =
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //// Call Function Helpers
+    //// Deployment Function Helpers
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
 
     
@@ -179,17 +235,16 @@ module RPCFunctions =
           |> unwrapSimpleValue
           |> fun chain ->
                 if not(chain = chainId ) then
-                    WrongChainInSigner |> Error
+                    WrongChainInSignerError |> Error
                 else () |> Ok 
     
     
     ///
     /// Unpacks constants from the ContractConstants record
-    let private unpackConstants constants (pipe: Result<'a, Web3Error>) =
+    let private unpackDeployConstants constants (pipe: Result<'a, Web3Error>) =
         pipe
         |> Result.bind (fun _ ->
-            let txn, maxfee, priority, _ = constantsBind constants
-            (txn, maxfee, priority) |> Ok )
+            constantsBind constants |> (fun (a, b, c, _) -> (a, b, c) |> Ok))
     
     
     ///
@@ -199,8 +254,22 @@ module RPCFunctions =
         | Some d -> pipe |> Result.bind(fun (a, b, c) -> (a, b, c, d) |> Ok)
         | None -> pipe |> Result.bind(fun (a, b, c) -> (a, b, c, []) |> Ok)
         
-        
-    let buildDeploymentCall env value contract (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
+
+    ///
+    /// Check that we aren't supplying value to a non-Payable constructor, which will be accepted but the transaction
+    /// will fail with a status 0x0.
+    let private checkValueAndStateMutabilityDeploy value contract (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
+        match contract.stateMutability with
+        | Payable ->
+            if value = "0x0" then logResult "WARNING: 0 value being sent to payable constructor"
+            pipe
+        | _ ->
+            if value = "0" then pipe else ValueToNonPayableFunctionError |> Error
+    
+    
+    ///
+    /// Creates the unvalidated call record specifically for deployment.
+    let private buildDeploymentCall env value contract (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
         let (RawContractBytecode _rawBytecode) = contract.bytecode
         pipe
         |> Result.bind (fun (txn, maxfee, priority, args) ->
@@ -239,8 +308,6 @@ module RPCFunctions =
           blockHeight = LATEST }
         |> env.connection
         |> decomposeRPCResult method
-        
-        
 
 
     ///
@@ -254,20 +321,13 @@ module RPCFunctions =
     /// value: the wei-denominated amount of ETH to send along with a transaction to a `payable` function.
     ///
     let public makeEthTxn env contract evmFunction arguments value =
-        let blockHeight' = blockHeight env.constants
-        
-        let args =
-            match arguments with
-            | [] -> None
-            | x -> Some x
-        
-        createUnvalidatedTxn env.constants contract evmFunction args value
+        createUnvalidatedTxn env.constants contract evmFunction arguments value
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
                 { method = EthMethod.SendTransaction 
                   paramList = _params 
-                  blockHeight = blockHeight' }
+                  blockHeight = LATEST }
                 |> env.connection)
         |> Result.bind (fun r ->
             unpackRoot r
@@ -275,8 +335,8 @@ module RPCFunctions =
             |> EthTransactionHash
             |> Ok)
         |> monitorTransaction env.monitor
-
-
+    
+    
     ///
     /// Creates an Ethereum call that does NOT change the state of the blockchain.
     /// * rpcConnection: An activated RPC connection from `createWeb3Connection`
@@ -288,13 +348,7 @@ module RPCFunctions =
     ///
     let public makeEthCall env contract evmFunction arguments =
         let blockHeight' = blockHeight env.constants
-
-        let args =
-            match arguments with
-            | [] -> None
-            | x -> Some x
-            
-        createUnvalidatedCall env.constants contract evmFunction args
+        createUnvalidatedCall env.constants contract evmFunction arguments
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -317,8 +371,9 @@ module RPCFunctions =
     ///
     let public deployEthContract env value (contract: UndeployedContract) =
         checkForChain env contract.chainId
-        |> unpackConstants env.constants
+        |> unpackDeployConstants env.constants
         |> unwrapContractArguments contract.constructorArguments
+        |> checkValueAndStateMutabilityDeploy value contract
         |> buildDeploymentCall env value contract
         |> Result.bind validateRPCParams
         |> Result.bind
@@ -340,13 +395,8 @@ module RPCFunctions =
     /// inaccurate, so the function allows the specification of additional padding in gas units.
     let public estimateGas units env contract evmFunction arguments value  =
         let blockHeight' = blockHeight env.constants
-            
-        let args =
-            match arguments with
-            | [] -> None
-            | x -> Some x
         
-        createUnvalidatedTxn env.constants contract evmFunction args value
+        createUnvalidatedTxn env.constants contract evmFunction arguments value
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->

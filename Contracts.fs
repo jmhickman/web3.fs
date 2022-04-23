@@ -164,7 +164,7 @@ module ContractFunctions =
     let private tryGetConstructorProperties (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "constructor")
-        |> Array.map (fun i -> (i.TryGetProperty("inputs")))
+        |> Array.map (fun i -> (i.TryGetProperty("inputs")), i.TryGetProperty("stateMutability"))
 
 
     ///
@@ -441,10 +441,10 @@ module ContractFunctions =
     ///
     let private parseABIForConstructor (digest: Keccak) (json: JsonValue array) =
         match tryGetConstructorProperties json with
-        | [| Some r |] ->
-            let x = $"constructor{collapseTuples r}"
-            digest.Hash(x).Remove(8)
-        | _ -> "0x90fa17bb"
+        | [| Some inputs, stateMut |] ->
+            let x = $"constructor{collapseTuples inputs}"
+            digest.Hash(x).Remove(8), returnStateMutability stateMut
+        | _ -> "0x90fa17bb", Nonpayable
 
     
     ///
@@ -515,25 +515,28 @@ module ContractFunctions =
     /// Extracts the constructor hash for this contract, so that checks can be made. Doesn't generate Web3Errors.
     let private buildConstructorHash env (pipe: Result<JsonValue, Web3Error>) =
         pipe
-        |> Result.bind(fun b -> b.AsArray() |> parseABIForConstructor env.digest |> trimParameter |> Ok)
+        |> Result.bind(fun b ->
+            b.AsArray()
+            |> parseABIForConstructor env.digest
+            |> fun (hash, stateMut) -> (hash |>trimParameter, stateMut) |> Ok)
     
     
     ///
     /// Generates a Web3Error if the user attempted to pass arguments to a `constructor()`
-    let private constructorEmptyButArgsGiven (args: 'a list option) (pipe: Result<string, Web3Error>) =
+    let private constructorEmptyButArgsGiven (args: 'a list option) (pipe: Result<string * StateMutability, Web3Error>) =
         pipe
-        |> Result.bind (fun b ->
+        |> Result.bind (fun (b, s ) ->
             if b = "90fa17bb" && args.IsSome then ConstructorArgumentsToEmptyConstructorError |> Error
-            else b |> Ok )
+            else (b, s ) |> Ok )
     
     
     ///
     /// Generates a Web3Error if the user failed to supply arguments to a constructor.
-    let private constructorRequireArgsAndNoneWereGiven (args: 'a list option) (pipe: Result<string, Web3Error>) =
+    let private constructorRequireArgsAndNoneWereGiven (args: 'a list option) (pipe: Result<string * StateMutability, Web3Error>) =
         pipe
-        |> Result.bind (fun b ->
+        |> Result.bind (fun (b, s) ->
             if not(b = "90fa17bb") && args.IsNone then ConstructorArgumentsMissingError |> Error
-            else b |> Ok )
+            else (b, s ) |> Ok )
     
     
     ///
@@ -570,9 +573,10 @@ module ContractFunctions =
         |> buildConstructorHash env
         |> constructorRequireArgsAndNoneWereGiven constructorArguments
         |> constructorEmptyButArgsGiven constructorArguments
-        |> Result.bind(fun _ ->
+        |> Result.bind(fun (_, s) ->
             { abi = abi
               bytecode = bytecode
               chainId = chainId
-              constructorArguments = constructorArguments }
+              constructorArguments = constructorArguments
+              stateMutability = s }
             |> Ok)

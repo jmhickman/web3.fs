@@ -205,16 +205,16 @@ module Common =
         | Receive ->
             { name = "receive"
               hash = "0x" |> EVMFunctionHash
-              canonicalInputs = "" |> EVMFunctionInputs
+              canonicalInputs = "()" |> EVMFunctionInputs
               internalOutputs = []
-              canonicalOutputs = "" |> EVMFunctionOutputs
+              canonicalOutputs = "()" |> EVMFunctionOutputs
               config = Payable }
         | Fallback ->
             { name = "fallback"
               hash = "0xd3adb33f" |> EVMFunctionHash
-              canonicalInputs = "" |> EVMFunctionInputs
+              canonicalInputs = "()" |> EVMFunctionInputs
               internalOutputs = []
-              canonicalOutputs = "" |> EVMFunctionOutputs
+              canonicalOutputs = "()" |> EVMFunctionOutputs
               config = Payable }
                 
             
@@ -501,7 +501,7 @@ module Common =
                 | EthMethod.ProtocolVersion -> returnSimpleValue result |> SimpleValue |> Ok
                 | EthMethod.Syncing -> returnSimpleValue result |> SimpleValue |> Ok
                 | EthMethod.Sign -> returnSimpleValue result |> SimpleValue |> Ok
-                | _ -> EthCallIntoNonCallPipeline |> Error
+                | _ -> EthCallIntoNonCallPipelineError |> Error
             )
         
     ///
