@@ -15,11 +15,8 @@ module ContractFunctions =
     // Unwrappers/binders
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
-    
     ///
-    /// Returns a function selector given a configured Keccak instance and the
-    /// canonical representation of a function.
-    /// 
+    /// Returns a function selector given a configured
     let private returnFunctionSelector (digest: Keccak) (rep: CanonicalRepresentation) =
         match rep with
         | CanonicalFunctionRepresentation r ->
@@ -37,46 +34,55 @@ module ContractFunctions =
     
     
     ///
-    /// Returns upwrapped EVMSelector value for use in transaction object construction.
+    /// Unwraps a function hash and emits the raw hash value.
     let internal bindEVMSelector a =
         match a with
         | EVMFunctionHash s -> s 
         | EVMEventSelector s -> s 
     
-    
+
     ///
-    /// Returns unwrapped canonical representation of a function, event or error.
+    ///Returns unwrapped canonical representation of a function, event or error.
     let internal bindCanonicalRepresentation a =
         match a with
         | CanonicalFunctionRepresentation s -> s
         | CanonicalEventRepresentation s -> s
         | CanonicalErrorRepresentation s -> s
         
-        
-    ///
+
+    ///    
     /// Returns upwrapped EVMFunctionInput string.
     let internal bindEVMFunctionInputs = function EVMFunctionInputs s -> s
     
     
-    ///
+    /// 
     /// Returns upwrapped EVMFunctionOutput string.
     let internal bindEVMFunctionOutputs = function EVMFunctionOutputs s -> s
     
     
-    ///
-    /// Convenience function for taking search parameters and typing them for use in `findFunction`
+    /// 
+    /// Convenience function for taking search parameters and typing them for use in `findFunction`.
+    /// * `hashString`: The string containing the function hash you wish to search against. For example:
+    /// 
+    /// `"0xdef7b31c" |> wrapFunctionHash`
     let public wrapFunctionHash hashString =
         hashString |> EVMFunctionHash |> SearchFunctionHash
         
     
     ///
     /// Convenience function for taking search parameters and typing them for use in `findFunction`
+    /// * `inputString`: The string containing the input you wish to search against. For example:
+    /// 
+    /// `"(address)" |> wrapFunctionInputs`
     let public wrapFunctionInputs inputString =
         inputString |> EVMFunctionInputs |> SearchFunctionInputs
     
     
     ///
-    /// Convenience function for taking search parameters and typing them for use in `findFunction`
+    /// Convenience function for taking search parameters and typing them for use in `findFunction`.
+    /// * `state`: The function's state mutability value you wish to search against. For example:
+    /// 
+    /// `Payable |> wrapFunctionMutability`
     let public wrapFunctionMutability state =
         state |> SearchFunctionMutability
     
@@ -540,11 +546,14 @@ module ContractFunctions =
     
     
     ///
-    /// Returns a Result containing either a DeployedContract for interaction, or an error indicating
-    /// a failure of the JsonValue parser to yield a top-level representation of the ABI. `chainId` is in hex notation,
-    /// such as '0x01' (mainnet) or '0x04' (rinkeby). Can be partially applied if many contracts will be loaded from a
-    /// map() of addresses, network and ABIs. Emits Web3Errors in a variety of circumstances, such as the signer being
+    /// Returns a Result containing either a DeployedContract for interaction, or a variety of errors such as the signer being
     /// on the wrong chain, malformed ABI, bad contract address, or errors in extracting components of the contract.
+    /// 
+    /// * `env`: a `Web3Environment`
+    /// * `address`: A string indicating the address the deployed contract may be found out. For example, "0xd2BA82c4777a8d619144d32a2314ee620BC9E09c"
+    /// * `chainId`: A string in hex notation indicating the network the contract is deployed to, such as '0x1' (mainnet) 
+    /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
+    /// * `abi`: An `ABI` associated with the deployed contract.
     ///
     let public loadDeployedContract env address chainId abi =
         address
@@ -565,6 +574,13 @@ module ContractFunctions =
     ///
     /// Returns an UndeployedContract for use in `deployEthContract`. Emits Web3Errors in a variety of circumstances,
     /// such as malformed ABI, collisions in the function hashes, and issues with constructors and arguments.
+    /// 
+    /// * `env`: a `Web3Environment`
+    /// * `bytecode`: a `RawContractBytecode` representing the bytecode to be deployed.
+    /// * `constructorArguments`: An list option of EVMDatatypes representing inputs to the constructor of the contract.
+    /// * `chainId`: A string in hex notation indicating the network the contract is deployed to, such as '0x1' (mainnet) 
+    /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
+    /// * `abi`: An `ABI` associated with the deployed contract.
     /// 
     let public prepareUndeployedContract env bytecode (constructorArguments: EVMDatatype list option) chainId abi =
         abi

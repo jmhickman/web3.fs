@@ -44,9 +44,10 @@ module Common =
 
     
     ///
-    /// Returns the bytecode of a compiled contract from a json file, as in the output of the `solc` binary. Note, the
-    /// path string should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
-    /// slashes, i.e. "c:/users/user/some/more/path/contract.json"
+    /// Returns the bytecode of a compiled contract from a json file, as in the output of the `solc` binary. 
+    /// 
+    /// * `path`: A path string. Should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
+    /// slashes, i.e. "c:/users/user/some/more/path/contract.json".
     /// 
     let public returnBytecodeFromFile (path: string) =
         let file = new StreamReader(path)
@@ -59,8 +60,9 @@ module Common =
     // Hex and bigint functions
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
     ///
-    /// Prepends a hexadecimal specifier to a string.
+    /// Prepends a hexadecimal specifier to a string if one is not already present.
     let public prepend0x (s: string) =
         if not(s.StartsWith("0x")) then
             $"0x{s}"
@@ -68,7 +70,7 @@ module Common =
 
 
     ///
-    /// Removes a hexadecimal specifier from a string.
+    /// Removes a hexadecimal specifier from a string if one is present.
     let public strip0x (s: string) =
         if s.StartsWith("0x") then
             s.Remove(0, 2)
@@ -76,32 +78,36 @@ module Common =
             s
 
     ///
-    /// Returns a hexadecimal string with no padding. Useful for QUANTITY values in the ABI.
+    /// Returns a hexadecimal string with no leading 0's. Useful for QUANTITY values in the ABI.
     let public bigintToHex num =
         if num = "0" then "0x0" else num |> fun n -> bigint.Parse(n).ToString("X").TrimStart('0').ToLower()
 
 
     ///
-    /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
-    /// so mind what strings are passed in. This attempts to negate issues with certain
-    /// hex strings, and is a bodge.
+    /// Converts a hexadecimal string to a BigInt. Use this when the string being supplied was originally a
+    /// QUANTITY in EVM/RPC terms. BigInteger will emit negative numbers when there is no leading 0 and the 
+    /// sign is ambiguous.
     /// 
     let public hexToBigIntP (hexString: string) =
-        if not(hexString.StartsWith('0')) then
-            bigint.Parse($"0{hexString}", NumberStyles.AllowHexSpecifier)
-        else
-            hexString |> trimParameter |> fun h -> bigint.Parse(h, NumberStyles.AllowHexSpecifier)
+        hexString |> strip0x |> fun s ->
+            if not(s.StartsWith('0')) then
+                bigint.Parse($"0{s}", NumberStyles.AllowHexSpecifier)
+            else
+                s |> trimParameter |> fun h -> bigint.Parse(h, NumberStyles.AllowHexSpecifier)
     
     ///
     /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
-    /// so mind what strings are passed in.
+    /// so mind what strings are passed in. For use where leading 0's haven't been trimmed outside of
+    /// Web3.fs.
     /// 
     let public hexToBigInt (hexString: string) =
         hexString |> strip0x |> trimParameter |> fun h -> bigint.Parse(h, NumberStyles.AllowHexSpecifier)
 
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Wei/ETH conversion
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
     ///
     /// Returns a string quantity of Eth, given a BigInteger representation of wei. To convert wei from an RPC response,
@@ -114,8 +120,7 @@ module Common =
 
     
     ///
-    /// Returns a string for working in wei. A string is chosen because the actual input used in the 'value' argument
-    /// is a string, not a naked BigInt.
+    /// Takes a quantity of Eth and returns a string representing the quantity in wei.
     let public convertEthToWei (eth: string) =
         let _eth =
             match not (eth.Contains('.')) with
@@ -164,6 +169,10 @@ module Common =
     /// Returns a list of FunctionIndicators that matched the input FunctionSearchTerm criteria. These 
     /// FunctionIndicators can be used directly in `makeEth_` calls instead of using `ByString "someFunction"`. This is 
     /// also a way to find the right function if a contract uses overloads, by filtering for the outputs or inputs.
+    /// 
+    /// * `contract`: The contract to be searched
+    /// * `search`: The FunctionSearchTerm, created by using one of the wrappers (`wrapFunctionHash`, `wrapFunctionInputs`,
+    ///  `wrapFunctionMutability`) functions on an applicable term.
     /// 
     let public findFunction contract search =
         match search with
@@ -219,7 +228,9 @@ module Common =
 
        
     ///
-    /// Returns a list containing contracts whose import succeeded.  
+    /// Returns a list containing contracts whose import succeeded. Typically piped from `loadDeployedContract`, and 
+    /// terminated with a `List.head`.
+    /// 
     let public bindDeployedContract result =
         match result with
         | Ok o -> [ o ]
@@ -490,22 +501,23 @@ module Common =
                     returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
                 | _ -> returnSimpleValue result |> SimpleValue |> Ok )
         
-    ///
-    /// Unwraps CallResponses to a SimpleValue
-    let public unwrapSimpleValue callResponse =
-        match callResponse with
-        | SimpleValue s -> s
-        | _ -> "wrong unwrap or upstream web3 error"
-    
-    
+
     ///
     /// Unwraps CallResponses to a EVMDatatype list. Use with makeEthCall.
     let public unwrapCallResult callResponse =
         match callResponse with
         | CallResult evmDatatypes -> evmDatatypes
         | _ -> [EVMDatatype.String "wrong unwrap or upstream web3 error"]
-    
-    
+        
+
+    ///
+    /// Unwraps CallResponses to a SimpleValue
+    let public unwrapSimpleValue callResponse =
+        match callResponse with
+        | SimpleValue s -> s
+        | _ -> "wrong unwrap or upstream web3 error"
+
+
     ///
     /// Unwraps CallResponses to a transaction receipt.
     let public unwrapTransactionReceipt callResponse =

@@ -4,6 +4,8 @@ module Logger =
     
     open System
     
+    ///
+    /// Just color bindings.
     let setColor color = 
         match color with
         | Blue -> Console.ForegroundColor <- ConsoleColor.Blue
@@ -12,11 +14,14 @@ module Logger =
         | Red -> Console.ForegroundColor <- ConsoleColor.Red
         
     
+    ///
+    /// Revert the color.
     let revertColor () =Console.ResetColor()
         
         
     ///
-    /// Emits console messages with color and glyphs based on the incoming message
+    /// Emits console messages with color and glyphs based on the incoming message. I'm not certain these locks
+    /// are required, but better safe than sorry I suppose.
     let private loggerMailbox (mbox: Logger) =
         let locker = Object
         let rec receiver () =

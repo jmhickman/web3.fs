@@ -748,15 +748,8 @@ module ABIFunctions =
         | StringArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
         | StringArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
         | _ -> ""
-    
-    
-    ///
-    /// Returns a function's outputs from the EVM as an EVMDatatype list
-    let public returnOutputAsEVMDatatypes contract evmFunction output =
-        bindFunctionIndicator contract evmFunction
-        |> fun s -> createOutputEvmTypes s.internalOutputs output
-     
-     
+
+
     ///
     /// Returns the underlying boolean contained in a wrapped Bool EVMDatatype. For obvious reasons, bools from `Bool`
     /// will return a singleton List.
@@ -767,6 +760,17 @@ module ABIFunctions =
         | BoolArraySz b -> b
         | BoolArray b -> b
         | _ -> []
+
+    
+    ///
+    /// Returns a function's outputs from the EVM as an EVMDatatype list for use elsewhere in Web3.fs. For example, 
+    /// using `makeEthCall` might return an address "0x00000000000000000000000022699e6AdD7159C3C385bf4d7e1C647ddB3a99ea".
+    /// This will convert it to [Address "0x22699e6AdD7159C3C385bf4d7e1C647ddB3a99ea"]
+    /// 
+    let public returnOutputAsEVMDatatypes contract evmFunction output =
+        bindFunctionIndicator contract evmFunction
+        |> fun s -> createOutputEvmTypes s.internalOutputs output
+
         
     ///
     /// Returns a wrapped EthAddress that has been checked for validity 

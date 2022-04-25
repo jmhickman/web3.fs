@@ -24,6 +24,12 @@ module Helpers =
         defaultValue = Some "0"
         }
         
+
+    ///
+    /// Convenience function that creates all of the necessary parts of a functioning web3 environment. The record
+    /// contains the rpc connection, a transaction monitor, contract constants, a Keccak digester, and the initialized
+    /// logger instance.
+    /// 
     let public createWeb3Environment url version address =
         let rpc = createWeb3Connection url version
         {connection = rpc

@@ -13,6 +13,8 @@ module Types =
     //// Misc types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+    /// Convenience value for integer division
     let weiDiv = 1000000000000000000I
 
     
@@ -21,6 +23,7 @@ module Types =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     
+    /// Color bindings
     type ConsoleColor =
         | Blue
         | Yellow
@@ -28,6 +31,7 @@ module Types =
         | Red
     
     
+    /// Signal to indicate logging behavior
     type LogType =
         | Info
         | Warn
@@ -35,10 +39,13 @@ module Types =
         | Failure
     
 
+    /// Simple logging message type for MailboxProcessor
     type LogMessage = LogType * string
     
     
+    /// A MailboxProcessor-based logger
     type Logger = MailboxProcessor<LogMessage>
+
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Type Provider parser setup
@@ -99,8 +106,17 @@ module Types =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     
+    /// Convenience bindings for common networks. These are not assertions of compatibility.
     let ETHEREUM_MAINNET = "0x1"
+    let ROPSTEN = "0x3"
     let RINKEBY = "0x4"
+    let GORLI = "0x5"
+    let ETHCLASSIC = "0x6"
+    let OPTIMISM = "0xa"
+    let KOVAN = "0x2a"
+    let ARBITRUM = "0xa4b1"
+    let MOONRIVER = "0x505"
+    let MOONBEAM = "0x504"
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,43 +215,48 @@ module Types =
     // Eth Parameter Types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // There is a tremendous amount of leeway in acceptable RPC messages in terms of what is
-    // included. This makes the type pretty gross-looking. `data` is the only properly 'required'
-    // value, and in practice toAddr and from will be present as well (but not always!)
+    /// There is a tremendous amount of leeway in acceptable RPC messages in terms of what is
+    /// included. This makes the type pretty gross-looking. `data` is the only properly 'required'
+    /// value, and in practice toAddr and from will be present as well (but not always!). `data` 
+    /// will also be intentionally '0x' when a contract's `receive()` is called.
     type EthParam1559Call =
-        { [<JsonField("type")>] txnType: TxnType option // Seems optional, needs research.
-          nonce: Quantity option // Missing nonce is fine, if talking to a wallet
-          [<JsonField("to")>] toAddr: EthAddress option // Missing to is fine, if deploying a contract
-          from: EthAddress option // Missing 'from' is not great, may cause errors if wallet or node can't determine sender
-          gas: Quantity option // Missing gas limit is fine, if talking to wallet
-          value: Quantity option // Missing value is fine, if making a Call. May still be fine if txn isn't payable
-          data: Data // Calls, txn and deploys should always have a valid data value
-          maxPriorityFeePerGas: Quantity option // Missing gas is fine, if talking to wallet
-          maxFeePerGas: Quantity option // Missing gas is fine, if talking to wallet
-          accessList: AccessList option // Typically empty
-          chainId: Quantity option } // Seems to be genuinely optional at this time, but should be included.
+        { [<JsonField("type")>] txnType: TxnType option
+          nonce: Quantity option
+          [<JsonField("to")>] toAddr: EthAddress option 
+          from: EthAddress option 
+          gas: Quantity option 
+          value: Quantity option 
+          data: Data 
+          maxPriorityFeePerGas: Quantity option 
+          maxFeePerGas: Quantity option 
+          accessList: AccessList option 
+          chainId: Quantity option }
 
     
+    // mostly for potential future compat with override calls, not in use currently.
+    (*
     type EthParam1559OverrideCall =
-        { [<JsonField("type")>] txnType: TxnType option // Seems optional, needs research.
-          nonce: Quantity option // Missing nonce is fine, if talking to a wallet
-          [<JsonField("to")>] toAddr: EthAddress option // Missing to is fine, if deploying a contract
-          from: EthAddress option // Missing 'from' is not great, may cause errors if wallet or node can't determine sender
-          gas: Quantity option // Missing gas limit is fine, if talking to wallet
-          value: Quantity option // Missing value is fine, if making a Call. May still be fine if txn isn't payable
-          data: Data // Calls, txn and deploys should always have a valid data value
-          maxPriorityFeePerGas: Quantity option // Missing gas is fine, if talking to wallet
-          maxFeePerGas: Quantity option // Missing gas is fine, if talking to wallet
-          accessList: AccessList option // Typically empty
+        { [<JsonField("type")>] txnType: TxnType option 
+          nonce: Quantity option 
+          [<JsonField("to")>] toAddr: EthAddress option 
+          from: EthAddress option 
+          gas: Quantity option
+          value: Quantity option 
+          data: Data 
+          maxPriorityFeePerGas: Quantity option 
+          maxFeePerGas: Quantity option 
+          accessList: AccessList option
           chainId: Quantity option
           bytecode: string
           fakeBalance: Quantity option
           fakeNonce: Quantity option
           fakeState: string option
           fakeStateDiff: string option }
-        
-    type EthParam2930CreateAccessList = EthParam1559Call
+    *)
+
+    //type EthParam2930CreateAccessList = EthParam1559Call
     
+    (*
     type EthParamGetLogs =
         { fromBlock: string option
           toBlock: string option
@@ -249,9 +270,10 @@ module Types =
           toBlock: string option
           address: string option
           topics: string array option }
+    *)
+
     
     type EthGenericRPC = string list
-    
     type EthParam1559EstimateGas = EthParam1559Call
     type EthParam1559SendTransaction = EthParam1559Call
     type EthParam1559SignTransaction = EthParam1559Call
@@ -313,7 +335,8 @@ module Types =
     // RPC Message Types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+    
+    /// Basic message container for RPC MailboxProcessor
     type HttpRPCMessage =
         { method: EthMethod
           paramList: EthParam
@@ -355,6 +378,7 @@ module Types =
           transactionIndex = "wrong unwrap or upstream web3 error"
           tType = "wrong unwrap or upstream web3 error" }
     
+
     ///
     /// Record representing a block on the Ethereum blockchain 
     type EthBlock =
@@ -470,6 +494,7 @@ module Types =
         | ConstructorArgumentsMissingError
         | ArgumentsToEmptyFunctionSignatureError
         | FunctionArgumentsMissingError
+        | InvalidValueArgumentError
         | ValueToNonPayableFunctionError
         | EthAddressError
         
@@ -478,7 +503,8 @@ module Types =
     ///
     /// Union of potential responses from the EVM through an RPC node. Null here is a 'valid' result, usually indicating
     /// that a transaction doesn't exist at a particular hash, or that a transaction hasn't been included in the chain
-    /// yet. 
+    /// yet.
+    /// 
     type CallResponses =
         | SimpleValue of string //
         | Block of EthBlock //
@@ -491,19 +517,15 @@ module Types =
     
     
     ///
-    /// Provides signals for the logger 
+    /// Provides signals for the logger. Log will print a message to the console. Emit will produce a record or other
+    /// output ready for unwrapping. LogAndEmit does both. Quiet does neither.
+    ///  
     type LogSignal =
         | Log
         | Emit
         | LogAndEmit
         | Quiet
     
-    
-    ///
-    /// Signals to estimateGas how to render the output
-    type GasUnits =
-        | HexGas
-        | DecimalGas
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Ethereum MailboxProcessor types
@@ -531,9 +553,11 @@ module Types =
     type MailboxReceiptManager =
         ReceiptMessageAndReply of EthTransactionHash * AsyncReplyChannel<Result<CallResponses, Web3Error>>
     
+
     ///
     /// Convenience type
     type ReceiptManagerMailbox = MailboxProcessor<MailboxReceiptManager>
+
 
     ///
     /// Convenience type
@@ -608,7 +632,10 @@ module Types =
     /// Represents a single function exposed by a Solidity contract.
     /// * name: Name of the function from the source code
     /// * hash: The 'function selector' hash, the Keccak256 hash of the 'canonical representation' of the function.
-    /// * config: payable, constant, and mutability description of the function.
+    /// * canonicalInputs: A string representation of the function's inputs, like "(address)".
+    /// * internalOutputs: Web3.fs' model of the output types.
+    /// * canonicalOutputs: A string representation of the function's outputs, like "(uint256)[]"
+    /// * config: The function's state mutability
     ///
     type EVMFunction =
         { name: string
@@ -616,10 +643,7 @@ module Types =
           canonicalInputs: EVMFunctionInputs
           internalOutputs: EVMDatatype list
           canonicalOutputs: EVMFunctionOutputs
-          config: StateMutability
-          // chainId: string
-          // address: EthAddress
-          }
+          config: StateMutability }
 
 
     ///

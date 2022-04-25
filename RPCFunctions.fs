@@ -242,6 +242,13 @@ module RPCFunctions =
     
     
     ///
+    /// Checks that the value string isn't just empty "".
+    let private checkForEmptyValueString (value: string) (pipe: Result<'a, Web3Error>) =
+        let bool, _ = bigint.TryParse(value)
+        if bool then pipe else InvalidValueArgumentError |> Error
+    
+    
+    ///
     /// Unpacks constants from the ContractConstants record
     let private unpackDeployConstants constants (pipe: Result<'a, Web3Error>) =
         pipe
@@ -316,16 +323,17 @@ module RPCFunctions =
 
     ///
     /// Creates an Ethereum transaction (a call that changes the state of the blockchain).
-    /// * rpcConnection: An activated RPC connection from `createWeb3Connection`
-    /// * constants: A ContractConstants record.
-    /// * contract: A DeployedContract that is being called
-    /// * evmFunction: FunctionIndicator corresponding to the the function being called. May be a string (cast to a
+    /// * `rpcConnection`: An activated RPC connection from `createWeb3Connection`
+    /// * `constants`: A ContractConstants record.
+    /// * `contract`: A DeployedContract that is being called
+    /// * `evmFunction`: FunctionIndicator corresponding to the the function being called. May be a string (cast to a
     /// ByString) or a IndicatedFunction (returned by `findFunction`)
-    /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
+    /// * `arguments`: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
     /// value: the wei-denominated amount of ETH to send along with a transaction to a `payable` function.
     ///
     let public makeEthTxn env contract evmFunction arguments value =
         checkForChain env contract.chainId
+        |> checkForEmptyValueString value
         |> createUnvalidatedTxn env.constants contract evmFunction arguments value
         |> Result.bind validateRPCParams
         |> Result.bind
@@ -344,12 +352,12 @@ module RPCFunctions =
     
     ///
     /// Creates an Ethereum call that does NOT change the state of the blockchain.
-    /// * rpcConnection: An activated RPC connection from `createWeb3Connection`
-    /// * constants: A ContractConstants record.
-    /// * contract: A DeployedContract that is being called
-    /// * evmFunction: FunctionIndicator corresponding to the the function being called. May be a string (cast to a
+    /// * `rpcConnection`: An activated RPC connection from `createWeb3Connection`
+    /// * `constants`: A ContractConstants record.
+    /// * `contract`: A DeployedContract that is being called
+    /// * `evmFunction`: FunctionIndicator corresponding to the the function being called. May be a string (cast to a
     /// ByString) or a IndicatedFunction (returned by `findFunction`)
-    /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
+    /// * `arguments`: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
     ///
     let public makeEthCall env contract evmFunction arguments =
         let blockHeight' = blockHeight env.constants
@@ -371,12 +379,13 @@ module RPCFunctions =
     ///
     /// Creates an Ethereum transaction (a call that changes the state of the blockchain) specifically for deploying
     /// a contract's bytecode.
-    /// * rpcConnection: An activated RPC connection from `createWeb3Connection`
-    /// * constants: A ContractConstants record.
-    /// * contract: A UndeployedContract that is being deployed
+    /// * `rpcConnection`: An activated RPC connection from `createWeb3Connection`
+    /// * `constants`: A ContractConstants record.
+    /// * `contract`: A UndeployedContract that is being deployed
     ///
     let public deployEthContract env value (contract: UndeployedContract) =
         checkForChain env contract.chainId
+        |> checkForEmptyValueString value
         |> unpackDeployConstants env.constants
         |> unwrapContractArguments contract.constructorArguments
         |> checkValueAndStateMutabilityDeploy value contract
@@ -400,13 +409,13 @@ module RPCFunctions =
         
         
     ///
-    /// Estimate the amount of gas units required for the given transaction to complete. This number can be rather
-    /// inaccurate, so the function allows the specification of additional padding in gas units.
-    let public estimateGas env contract evmFunction arguments value  =
+    /// Estimate the amount of gas units required for the given transaction to complete. Essentially the same as 
+    /// `makeEthTxn` but with a different underlying call. A static value argument of "0" is supplied.
+    let public estimateGas env contract evmFunction arguments  =
         let blockHeight' = blockHeight env.constants
         
         checkForChain env contract.chainId
-        |> createUnvalidatedTxn env.constants contract evmFunction arguments value
+        |> createUnvalidatedTxn env.constants contract evmFunction arguments "0"
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
