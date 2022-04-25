@@ -2,20 +2,31 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyVersion>0.2.0</AssemblyVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DocumentationFile />
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Types\Types.fs" />
-    <Compile Include="Helpers.fs" />
+    <Compile Include="Common.fs" />
+    <Compile Include="Logger.fs" />
+    <Compile Include="Logging.fs" />
     <Compile Include="ABI.fs" />
     <Compile Include="Contracts.fs" />
     <Compile Include="RPCFunctions.fs" />
     <Compile Include="RPCConnector.fs" />
     <Compile Include="ReceiptManager.fs" />
+    <Compile Include="Helpers.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="4.2.7" />
     <PackageReference Include="FSharp.Json" Version="0.4.1" />
-    <PackageReference Include="FsHttp" Version="8.0.1" />
+    <PackageReference Include="FsHttp" Version="9.0.6" />
     <PackageReference Include="SHA3Core" Version="1.0.1" />
   </ItemGroup>
 </Project>

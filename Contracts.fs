@@ -1,26 +1,22 @@
 namespace web3.fs
 
-open FSharp.Data
 open web3.fs.Types
 
 [<AutoOpen>]
 module ContractFunctions =
     open System
+    open FSharp.Data
     open SHA3Core.Keccak
     
+    open Common
     open ABIFunctions
-    open Helpers
-    
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Unwrappers/binders
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
-    
     ///
-    /// Returns a function selector given a configured Keccak instance and the
-    /// canonical representation of a function.
-    /// 
+    /// Returns a function selector given a configured
     let private returnFunctionSelector (digest: Keccak) (rep: CanonicalRepresentation) =
         match rep with
         | CanonicalFunctionRepresentation r ->
@@ -38,46 +34,55 @@ module ContractFunctions =
     
     
     ///
-    /// Returns upwrapped EVMSelector value for use in transaction object construction.
+    /// Unwraps a function hash and emits the raw hash value.
     let internal bindEVMSelector a =
         match a with
         | EVMFunctionHash s -> s 
         | EVMEventSelector s -> s 
     
-    
+
     ///
-    /// Returns unwrapped canonical representation of a function, event or error.
+    ///Returns unwrapped canonical representation of a function, event or error.
     let internal bindCanonicalRepresentation a =
         match a with
         | CanonicalFunctionRepresentation s -> s
         | CanonicalEventRepresentation s -> s
         | CanonicalErrorRepresentation s -> s
         
-        
-    ///
+
+    ///    
     /// Returns upwrapped EVMFunctionInput string.
     let internal bindEVMFunctionInputs = function EVMFunctionInputs s -> s
     
     
-    ///
+    /// 
     /// Returns upwrapped EVMFunctionOutput string.
     let internal bindEVMFunctionOutputs = function EVMFunctionOutputs s -> s
     
     
-    ///
-    /// Convenience function for taking search parameters and typing them for use in `findFunction`
+    /// 
+    /// Convenience function for taking search parameters and typing them for use in `findFunction`.
+    /// * `hashString`: The string containing the function hash you wish to search against. For example:
+    /// 
+    /// `"0xdef7b31c" |> wrapFunctionHash`
     let public wrapFunctionHash hashString =
         hashString |> EVMFunctionHash |> SearchFunctionHash
         
     
     ///
     /// Convenience function for taking search parameters and typing them for use in `findFunction`
+    /// * `inputString`: The string containing the input you wish to search against. For example:
+    /// 
+    /// `"(address)" |> wrapFunctionInputs`
     let public wrapFunctionInputs inputString =
         inputString |> EVMFunctionInputs |> SearchFunctionInputs
     
     
     ///
-    /// Convenience function for taking search parameters and typing them for use in `findFunction`
+    /// Convenience function for taking search parameters and typing them for use in `findFunction`.
+    /// * `state`: The function's state mutability value you wish to search against. For example:
+    /// 
+    /// `Payable |> wrapFunctionMutability`
     let public wrapFunctionMutability state =
         state |> SearchFunctionMutability
     
@@ -134,7 +139,7 @@ module ContractFunctions =
             (i.TryGetProperty("name"),
              i.TryGetProperty("inputs"),
              i.TryGetProperty("outputs"),
-             i.TryGetProperty("statemutability")))
+             i.TryGetProperty("stateMutability")))
 
 
     ///
@@ -165,7 +170,7 @@ module ContractFunctions =
     let private tryGetConstructorProperties (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "constructor")
-        |> Array.map (fun i -> (i.TryGetProperty("inputs")))
+        |> Array.map (fun i -> i.TryGetProperty("inputs"), i.TryGetProperty("stateMutability"))
 
 
     ///
@@ -200,7 +205,7 @@ module ContractFunctions =
     /// Recursively send tupled components through the function in order to extract and format nested values properly.
     /// Non-tupled values are concatenated directly. ()'s inserted as needed.
     ///
-    let  rec private collapseTuples (_input: JsonValue) =
+    let rec private collapseTuples (_input: JsonValue) =
         match _input with
         | JsonValue.Array elements ->
             elements
@@ -305,7 +310,8 @@ module ContractFunctions =
             | "view" -> View
             | "payable" -> Payable
             | _ -> Nonpayable
-        | None -> Nonpayable
+        | None ->
+            Nonpayable
 
 
     ///
@@ -439,18 +445,12 @@ module ContractFunctions =
     /// When supplied with a Solidity contract ABI in Json format, returns a tuple of the constructor,
     /// an optional fallback function, and optional receive function.
     ///
-    let private parseABIForConstructorFallbackReceive (digest: Keccak) (json: JsonValue array) =
-
-        let constructor =
-            match tryGetConstructorProperties json with
-            | [| Some r |] ->
-                let x = $"constructor{collapseTuples r}"
-                (x, digest.Hash(x))
-            | _ -> ("constructor()", "0x90fa17bb")
-
-        let fallback = tryGetFallback json |> returnCanonicalInputs
-        let receive = tryGetReceive json |> returnCanonicalInputs
-        (constructor, fallback, receive)
+    let private parseABIForConstructor (digest: Keccak) (json: JsonValue array) =
+        match tryGetConstructorProperties json with
+        | [| Some inputs, stateMut |] ->
+            let x = $"constructor{collapseTuples inputs}"
+            digest.Hash(x).Remove(8), returnStateMutability stateMut
+        | _ -> "0x90fa17bb", Nonpayable
 
     
     ///
@@ -465,58 +465,134 @@ module ContractFunctions =
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Contract representation functions
+    // Contract deployment and instance functions
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     
     ///
-    /// Returns a Result containing either a DeployedContract for interaction, or an error indicating
-    /// a failure of the JsonValue parser to yield a top-level representation of the ABI. `chainId` is in hex notation,
-    /// such as '0x01' (mainnet) or '0x04' (rinkeby). Can be partially applied if many contracts will be loaded from a
-    /// map() of addresses, network and ABIs.
-    ///
-    let public loadDeployedContract digest address chainId abi =
+    /// Generates Web3Error if the abi can't be parsed, implying interacting with the contract after deployment will
+    /// fail. Otherwise, passes along the JsonValue.
+    /// 
+    let private canABIBeParsed abi =
         let (ABI _abi) = abi
-                
-        match address |> wrapEthAddress with
-        | Ok address -> 
-            match JsonValue.TryParse(_abi) with
-            | Some json ->
-            
-                let _j = json.AsArray()
-                let _fList = parseABIForFunctions digest _j
-                let _eventList = parseABIForEvents digest _j
-                let _errList = parseABIForErrors digest _j
-                let _, fallback, receive = parseABIForConstructorFallbackReceive digest _j
-
-                { address = address 
-                  abi = abi
-                  functions = _fList
-                  events = _eventList
-                  errors = _errList
-                  fallback = fallback
-                  receive = receive
-                  chainId = chainId }
-                |> Ok
-            | None ->
-                ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse"
-                |> Error
-        | Error e -> e |> Error
-
+        match JsonValue.TryParse(_abi) with
+        | Some v -> v |> Ok
+        | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error
+    
     
     ///
-    /// Returns an UndeployedContract for use in `deployEthContract`. 
-    let public prepareUndeployedContract digest bytecode constructorArguments chainId abi =
-        let (ABI _abi) = abi
+    /// Adapted version of canABIBeParsed for different pipeline
+    let private pipeCanABIBeParsed abi (pipe: Result<EthAddress, Web3Error>) =
+        pipe
+        |> Result.bind(fun p -> 
+            canABIBeParsed abi
+            |> Result.bind(fun b ->
+                (p, b) |> Ok ))
+    
+    
+    ///
+    /// Converts JsonValue to an array for further use.
+    let private convertJsonValueToArray (pipe: Result<EthAddress * JsonValue, Web3Error>) =
+        pipe |> Result.bind(fun (a, b) -> (a, b.AsArray()) |> Ok)
+    
+    
+    ///
+    /// Gets the components from the ABI
+    let private getFunctionsEventsErrors env (pipe: Result<EthAddress * JsonValue[], Web3Error>) =
+        pipe
+        |> Result.bind(fun (a, b) ->
+            (a, parseABIForFunctions env.digest b, parseABIForEvents env.digest b, parseABIForErrors env.digest b ) |> Ok)
         
-        match JsonValue.TryParse(_abi) with
-        | Some json ->
-            let _j = json.AsArray()
-            let (_, hash), _, _ = parseABIForConstructorFallbackReceive digest _j
+        
+    ///
+    /// Check that there aren't any function hash collisions in the contract ABI
+    let private checkForHashCollisions env (pipe: Result<JsonValue, Web3Error>) =
+        pipe
+        |> Result.bind(fun b ->
+            let hashList = b.AsArray() |> parseABIForFunctions env.digest 
+            hashList
+            |> List.map( fun b' -> b'.hash)
+            |> List.distinct
+            |> fun l ->
+                if not(l.Length = hashList.Length) then ContractABIContainsHashCollisionsError |> Error else b |> Ok ) 
+       
+    
+    ///
+    /// Extracts the constructor hash for this contract, so that checks can be made. Doesn't generate Web3Errors.
+    let private buildConstructorHash env (pipe: Result<JsonValue, Web3Error>) =
+        pipe
+        |> Result.bind(fun b ->
+            b.AsArray()
+            |> parseABIForConstructor env.digest
+            |> fun (hash, stateMut) -> (hash |>trimParameter, stateMut) |> Ok)
+    
+    
+    ///
+    /// Generates a Web3Error if the user attempted to pass arguments to a `constructor()`
+    let private constructorEmptyButArgsGiven (args: 'a list option) (pipe: Result<string * StateMutability, Web3Error>) =
+        pipe
+        |> Result.bind (fun (b, s ) ->
+            if b = "90fa17bb" && args.IsSome then ConstructorArgumentsToEmptyConstructorError |> Error
+            else (b, s ) |> Ok )
+    
+    
+    ///
+    /// Generates a Web3Error if the user failed to supply arguments to a constructor.
+    let private constructorRequireArgsAndNoneWereGiven (args: 'a list option) (pipe: Result<string * StateMutability, Web3Error>) =
+        pipe
+        |> Result.bind (fun (b, s) ->
+            if not(b = "90fa17bb") && args.IsNone then ConstructorArgumentsMissingError |> Error
+            else (b, s ) |> Ok )
+    
+    
+    ///
+    /// Returns a Result containing either a DeployedContract for interaction, or a variety of errors such as the signer being
+    /// on the wrong chain, malformed ABI, bad contract address, or errors in extracting components of the contract.
+    /// 
+    /// * `env`: a `Web3Environment`
+    /// * `address`: A string indicating the address the deployed contract may be found out. For example, "0xd2BA82c4777a8d619144d32a2314ee620BC9E09c"
+    /// * `chainId`: A string in hex notation indicating the network the contract is deployed to, such as '0x1' (mainnet) 
+    /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
+    /// * `abi`: An `ABI` associated with the deployed contract.
+    ///
+    let public loadDeployedContract env address chainId abi =
+        address
+        |> wrapEthAddress
+        |> pipeCanABIBeParsed abi
+        |> convertJsonValueToArray
+        |> getFunctionsEventsErrors env
+        |> Result.bind (fun (address, functions, events, errors) ->
+            { address = address
+              abi = abi
+              functions = functions
+              events = events
+              errors = errors
+              chainId = chainId }
+            |> Ok)
+  
+
+    ///
+    /// Returns an UndeployedContract for use in `deployEthContract`. Emits Web3Errors in a variety of circumstances,
+    /// such as malformed ABI, collisions in the function hashes, and issues with constructors and arguments.
+    /// 
+    /// * `env`: a `Web3Environment`
+    /// * `bytecode`: a `RawContractBytecode` representing the bytecode to be deployed.
+    /// * `constructorArguments`: An list option of EVMDatatypes representing inputs to the constructor of the contract.
+    /// * `chainId`: A string in hex notation indicating the network the contract is deployed to, such as '0x1' (mainnet) 
+    /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
+    /// * `abi`: An `ABI` associated with the deployed contract.
+    /// 
+    let public prepareUndeployedContract env bytecode (constructorArguments: EVMDatatype list option) chainId abi =
+        abi
+        |> canABIBeParsed
+        |> checkForHashCollisions env
+        |> buildConstructorHash env
+        |> constructorRequireArgsAndNoneWereGiven constructorArguments
+        |> constructorEmptyButArgsGiven constructorArguments
+        |> Result.bind(fun (_, s) ->
             { abi = abi
-              constructor = (hash |> EVMFunctionHash)
               bytecode = bytecode
               chainId = chainId
-              constructorArguments = constructorArguments }
-            |> Ok
-        | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error
+              constructorArguments = constructorArguments
+              stateMutability = s }
+            |> Ok)

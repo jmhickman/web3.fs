@@ -7,7 +7,7 @@ module ABIFunctions =
     open System
     open System.Text
         
-    open Helpers
+    open Common
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // ABI Helpers
@@ -44,19 +44,18 @@ module ABIFunctions =
     /// Intended to be used with `padTo32BytesRight` or `padTo32BytesLeft` on 
     /// `bytes` types, numeric types and `string` types. 
     /// 
-    let private formatTypes (f: string -> string) s = bigint.Parse(s).ToString("X").ToLowerInvariant() |> f
+    let private formatTypes (f: string -> string) s =
+        bigint.Parse(s).ToString("X").ToLowerInvariant() |> f
 
 
     ///
-    /// Returns the properly padded hexadecimal representation of a signed value.
+    /// Returns the properly padded hexadecimal representation numeric value.
     let private formatTypesInt s = 
         let int' = bigint.Parse(s)
         match int' with
         | x when x.Sign = -1 -> 
             x.ToString("X").ToLowerInvariant() |> padTo32BytesLeftF
-        | x when x.Sign >= 0 ->
-            x.ToString("X").ToLowerInvariant() |> padTo32BytesLeft
-        | x -> x.ToString("X").ToLowerInvariant() |> padTo32BytesLeft
+        | x -> x.ToString("X").ToLowerInvariant().TrimStart('0') |> padTo32BytesLeft
         
 
     ///
@@ -93,8 +92,8 @@ module ABIFunctions =
         match s with
         | x when x.Length <= 64 -> acc @ [x |> padTo32BytesRight]
         | x when x.Length > 64 -> 
-            let _x = x.[..63]
-            let x = x.[64..]
+            let _x = x[..63]
+            let x = x[64..]
             wrapBytesAcrossWords x [_x]
         | _ -> [""]
 
@@ -216,14 +215,14 @@ module ABIFunctions =
                     let tail = tail @ [ arr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesLeft}") (returnCountOfItems arr) |> Blob ]
                     unpackInputAndProcess tail acc (cursor + arr.Length + 1)
                 
-                | Uint256 u -> unpackInputAndProcess tail (acc + $"{formatTypes padTo32BytesLeft u}") cursor
+                | Uint256 u -> unpackInputAndProcess tail (acc + $"{formatTypesInt u}") cursor
                 
                 | Uint256ArraySz uArr ->
-                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypes padTo32BytesLeft }") |> String.concat "")) cursor
+                    unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypesInt}") |> String.concat "")) cursor
                 
                 | Uint256Array uArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypes padTo32BytesLeft }") (returnCountOfItems uArr) |> Blob ]
+                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
                     unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
                 
                 | Int256 i -> unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
@@ -342,13 +341,21 @@ module ABIFunctions =
     ///
     /// Returns the substring with a hex specifier prepended. 
     let private emitSubstringPrepend0x start blob =
-        emitSubstring start blob |> fun s -> s.TrimStart('0') |> prepend0x
+        emitSubstring start blob
+        |> fun s ->
+            match s with
+            | x when x = zeroEVMValue -> nullAddress |> prepend0x
+            | x -> x.TrimStart('0') |> prepend0x
 
 
     ///
     /// Returns the substring specifically for sized bytes, with a hex specifier prepended. 
     let private emitSubstringPrepend0xBytes start blob =
-        emitSubstring start blob |> fun s -> s.TrimEnd('0') |> prepend0x
+        emitSubstring start blob
+        |> fun s ->
+            match s with
+            | x when x = zeroEVMValue -> "0" |> prepend0x
+            | x -> x.TrimEnd('0') |> prepend0x
         
         
     ///
@@ -660,8 +667,9 @@ module ABIFunctions =
         
     ///
     /// Returns the input EVMDatatype list if the inputs conform to some basic checks, otherwise an error string that
-    /// will bubble up later in the pipeline.
+    /// will bubble up later in the pipeline. 
     ///
+    //  TODO: This should be expanded to include checks against number of matching arguments, etc.
     let internal checkEVMData evmDataList =
         let rec checkEVMDataConforming evmDataList =
             match evmDataList with
@@ -715,48 +723,54 @@ module ABIFunctions =
     ///
     /// Returns the string representation of the wrapped EVMData value, except for bool types, which are handled in
     /// `unwrapEVMBool`. EVMDatatypes that are lists return a comma-separated concatenated string.
+    /// 
     let rec public unwrapEVMValue (evmDataType: EVMDatatype) =
         match evmDataType with
-        | Address a -> a
-        | AddressArraySz a -> a |> String.concat(",")
-        | AddressArray a -> a |> String.concat(",")
-        | Uint256 u -> u
-        | Uint256ArraySz a -> a |> String.concat(",")
-        | Uint256Array a -> a |> String.concat(",")
-        | Int256 u -> u
-        | Int256ArraySz a -> a |> String.concat(",")
-        | Int256Array a -> a |> String.concat(",")
-        | BytesSz b -> b
-        | BytesSzArraySz a -> a |> String.concat(",")
-        | BytesSzArray a -> a |> String.concat(",")
-        | Bytes b -> b
-        | BytesArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",")
-        | BytesArray b -> b |> List.map unwrapEVMValue |> String.concat(",")
-        | Function f -> f
-        | FunctionArraySz l -> l |> String.concat(",")
-        | FunctionArray l -> l |> String.concat(",")
-        | String s -> s
-        | StringArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",")
-        | StringArray b -> b |> List.map unwrapEVMValue |> String.concat(",")
+        | Address a -> a |> trimParameter
+        | AddressArraySz a -> a |> String.concat(",") |> trimParameter
+        | AddressArray a -> a |> String.concat(",") |> trimParameter
+        | Uint256 u -> u |> trimParameter
+        | Uint256ArraySz a -> a |> String.concat(",") |> trimParameter
+        | Uint256Array a -> a |> String.concat(",") |> trimParameter
+        | Int256 u -> u |> trimParameter 
+        | Int256ArraySz a -> a |> String.concat(",") |> trimParameter
+        | Int256Array a -> a |> String.concat(",") |> trimParameter
+        | BytesSz b -> b |> trimParameter
+        | BytesSzArraySz a -> a |> String.concat(",") |> trimParameter
+        | BytesSzArray a -> a |> String.concat(",") |> trimParameter
+        | Bytes b -> b |> trimParameter
+        | BytesArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
+        | BytesArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
+        | Function f -> f |> trimParameter
+        | FunctionArraySz l -> l |> String.concat(",") |> trimParameter
+        | FunctionArray l -> l |> String.concat(",") |> trimParameter
+        | String s -> s |> trimParameter
+        | StringArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
+        | StringArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
         | _ -> ""
-    
-    
-    ///
-    /// Returns a function's outputs from the EVM as an EVMDatatype list
-    let internal returnOutputAsEVMDatatypes contract evmFunction output =
-        bindFunctionIndicator contract evmFunction
-        |> fun s -> createOutputEvmTypes s.internalOutputs output
-     
-     
+
+
     ///
     /// Returns the underlying boolean contained in a wrapped Bool EVMDatatype. For obvious reasons, bools from `Bool`
     /// will return a singleton List.
+    /// 
     let internal unwrapEVMBool (evmBools: EVMDatatype) =
         match evmBools with
         | Bool b -> [b]
         | BoolArraySz b -> b
         | BoolArray b -> b
         | _ -> []
+
+    
+    ///
+    /// Returns a function's outputs from the EVM as an EVMDatatype list for use elsewhere in Web3.fs. For example, 
+    /// using `makeEthCall` might return an address "0x00000000000000000000000022699e6AdD7159C3C385bf4d7e1C647ddB3a99ea".
+    /// This will convert it to [Address "0x22699e6AdD7159C3C385bf4d7e1C647ddB3a99ea"]
+    /// 
+    let public returnOutputAsEVMDatatypes contract evmFunction output =
+        bindFunctionIndicator contract evmFunction
+        |> fun s -> createOutputEvmTypes s.internalOutputs output
+
         
     ///
     /// Returns a wrapped EthAddress that has been checked for validity 
@@ -766,19 +780,4 @@ module ABIFunctions =
         | Error _ -> EthAddressError |> Error
     
     
-    ///
-    /// Convenience function that returns a ContractConstants that contains the address used for the session, along
-    /// with other values ready for manipulation via the `with` statement for modifying records. If the RPC is a wallet,
-    /// these defaults should work perfectly well. If the RPC is an actual Ethereum node, the gas values and transaction
-    /// type should be changed as required.
-    /// 
-    let public createDefaultConstants (address: string) =
-        {
-        walletAddress = address |> EthAddress
-        transactionType = None
-        maxFeePerGas = None
-        maxPriorityFeePerGas = None
-        data = None
-        blockHeight = Some LATEST
-        defaultValue = Some "0"
-        }
+

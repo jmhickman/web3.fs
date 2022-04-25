@@ -5,10 +5,7 @@ open web3.fs.Types
 [<AutoOpen>]
 module ReceiptManager =
 
-    open RPCMethodFunctions
-    open RPCParamFunctions
-    open RPCBindFunctions
-    open Helpers
+    open Common
 
 
     ///
@@ -19,7 +16,7 @@ module ReceiptManager =
             | Error e ->
                 match e with
                 | RPCNullResponse ->
-                    do! Async.Sleep 15000
+                    do! Async.Sleep 7500
                     return! callLoop rpc call
                 | e -> return e |> Error
             | Ok o -> return o |> Ok 
@@ -28,26 +25,26 @@ module ReceiptManager =
 
     ///
     /// Mailbox processor leveraging the RPCConnector to monitor the status of a transaction.
-    let private receiptManager (rpc: HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>) (mbox: ReceiptManagerMailbox) =
-        let msgLoop () =
+    let private receiptManager rpc (mbox: ReceiptManagerMailbox) =
+        let rec msgLoop () =
             async {
                 let! msg = mbox.Receive()
                 let (ReceiptMessageAndReply (txnHash, reply)) = msg
                 
                 let call =
-                    { method = EthMethod.GetTransactionReceipt |> wrapEthMethod
+                    { method = EthMethod.GetTransactionReceipt 
                       paramList =
                           [ txnHash |> trimParameter ]
-                          |> EthParam.EthParamGetTransactionReceipt
-                          |> wrapEthParams
+                          |> EthGenericRPC
                       blockHeight = LATEST }
-
+                
                 callLoop rpc call
                 |> Async.RunSynchronously
-                |> logRPCResult
-                |> bindTransactionResult
+                |> decomposeRPCResult EthMethod.GetTransactionReceipt 
                 |> reply.Reply
-            }
+                
+                do! msgLoop ()
+                }
         
         msgLoop ()
 
@@ -66,6 +63,6 @@ module ReceiptManager =
 
     ///
     /// Returns a partially applied function ready to take an RPC connection and a previous RPC result in order to
-    /// monitor an Ethereum transaction's status.
+    /// monitor an Ethereum transaction's status. Automatically called in `createWeb3Environment`.
     let public createReceiptMonitor rpc =
         rpc |> startReceiptManager |> receiptMessage 
