@@ -541,7 +541,6 @@ module ContractFunctions =
     let private constructorRequireArgsAndNoneWereGiven (args: 'a list option) (pipe: Result<string * StateMutability, Web3Error>) =
         pipe
         |> Result.bind (fun (b, s) ->
-            printfn $"{b}"
             if not(b = "90fa17bb") && args.IsNone then ConstructorArgumentsMissingError |> Error
             else (b, s ) |> Ok )
     
