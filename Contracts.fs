@@ -450,7 +450,7 @@ module ContractFunctions =
         | [| Some inputs, stateMut |] ->
             let x = $"constructor{collapseTuples inputs}"
             digest.Hash(x).Remove(8), returnStateMutability stateMut
-        | _ -> "0x90fa17bb", Nonpayable
+        | _ -> "90fa17bb", Nonpayable
 
     
     ///
@@ -541,6 +541,7 @@ module ContractFunctions =
     let private constructorRequireArgsAndNoneWereGiven (args: 'a list option) (pipe: Result<string * StateMutability, Web3Error>) =
         pipe
         |> Result.bind (fun (b, s) ->
+            printfn $"{b}"
             if not(b = "90fa17bb") && args.IsNone then ConstructorArgumentsMissingError |> Error
             else (b, s ) |> Ok )
     
