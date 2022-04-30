@@ -38,4 +38,11 @@ module Helpers =
          digest = newKeccakDigest
          log = startLogger() |> log }
         
+    
+    ///
+    /// Sometimes crafting or exposing bytestrings can be used programmatically, such as to create calldata
+    /// for use in low-level areas. Use with care, this is a deep internal function exposed with no guards.
+    /// 
+    let public returnEVMBytestring evmDatatypes = createInputByteString evmDatatypes
+        
 

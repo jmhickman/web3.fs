@@ -94,7 +94,7 @@ module ABIFunctions =
         | x when x.Length > 64 -> 
             let _x = x[..63]
             let x = x[64..]
-            wrapBytesAcrossWords x [_x]
+            wrapBytesAcrossWords x (acc @ [_x])
         | _ -> [""]
 
     
@@ -255,7 +255,8 @@ module ABIFunctions =
                     let tail = tail @ [ bs |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems bs) |> Blob ]
                     unpackInputAndProcess tail acc (cursor + bs.Length + 1 )
                 
-                | Bytes bs -> 
+                | Bytes bs ->
+                    printfn $"Bytes--->{acc}::{cursor}"
                     let acc = acc + returnCurrentOffset cursor
                     let bs = bs |> strip0x
                     let contents = bs.Length |> byteDivide2 |> formatTypes padTo32BytesLeft |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
@@ -269,8 +270,9 @@ module ABIFunctions =
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64 ))
                 
                 | BytesArray bsArr ->
+                    printfn $"BytesArray--->{acc}::{cursor}"
                     let acc = acc + returnCurrentOffset cursor
-                    let contents = returnCountOfItems bsArr |> fun s -> s + (unpackInputAndProcess bsArr "" (countOfArguments bsArr))
+                    let contents = returnCountOfItems bsArr |> fun s -> s  + (unpackInputAndProcess bsArr "" bsArr.Length)
                     let tail = tail @ [ contents |> Blob ] 
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
                 
@@ -294,7 +296,7 @@ module ABIFunctions =
                 
                 | StringArray sArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let contents = returnCountOfItems sArr |> fun s -> s + (unpackInputAndProcess sArr "" (countOfArguments sArr))
+                    let contents = returnCountOfItems sArr |> fun s -> s + (unpackInputAndProcess sArr "" sArr.Length)
                     let tail = tail @ [ contents |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64) )
                 
