@@ -118,8 +118,6 @@ module ABIFunctions =
                 | Uint256ArraySz uArr -> countLoop tail (acc + uArr.Length)
                 | Int256ArraySz iArr -> countLoop tail (acc + iArr.Length)
                 | BoolArraySz bArr -> countLoop tail (acc + bArr.Length)
-                | String s -> countLoop tail (acc + (wrapBytesAcrossWords s []).Length)
-                | Bytes b -> countLoop tail (acc + (wrapBytesAcrossWords b []).Length)
                 | _ -> countLoop tail (acc + 1)
             | [] -> acc
         countLoop evmDatatypeList 0
@@ -256,7 +254,6 @@ module ABIFunctions =
                     unpackInputAndProcess tail acc (cursor + bs.Length + 1 )
                 
                 | Bytes bs ->
-                    printfn $"Bytes--->{acc}::{cursor}"
                     let acc = acc + returnCurrentOffset cursor
                     let bs = bs |> strip0x
                     let contents = bs.Length |> byteDivide2 |> formatTypes padTo32BytesLeft |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
@@ -270,7 +267,6 @@ module ABIFunctions =
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64 ))
                 
                 | BytesArray bsArr ->
-                    printfn $"BytesArray--->{acc}::{cursor}"
                     let acc = acc + returnCurrentOffset cursor
                     let contents = returnCountOfItems bsArr |> fun s -> s  + (unpackInputAndProcess bsArr "" bsArr.Length)
                     let tail = tail @ [ contents |> Blob ] 
