@@ -385,7 +385,7 @@ module ABIFunctions =
     ///
     /// Returns a bigint that has been converted to a string, based upon the value contained in a substring.
     let private emitSubstringAsConvertedString start blob =
-        emitSubstring start blob |> hexToBigInt |> fun s -> s.ToString()
+        emitSubstring start blob |> hexToBigIntP |> fun s -> s.ToString()
 
 
     ///
@@ -776,6 +776,3 @@ module ABIFunctions =
         match [address |> Address] |> checkEVMData with
         | Ok _ -> address |> EthAddress |> Ok
         | Error _ -> EthAddressError |> Error
-    
-    
-

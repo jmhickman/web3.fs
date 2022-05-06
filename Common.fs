@@ -44,7 +44,7 @@ module Common =
 
     
     ///
-    /// Returns the bytecode of a compiled contract from a json file, as in the output of the `solc` binary. 
+    /// Returns the bytecode of a compiled contract from a <contract>.json file, as in the output of the `solc` binary. 
     /// 
     /// * `path`: A path string. Should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
     /// slashes, i.e. "c:/users/user/some/more/path/contract.json".
@@ -54,6 +54,17 @@ module Common =
         let obj = ContractBytecode.Parse(file.ReadToEnd()) |> fun r -> r.Bytecode
         file.Dispose()
         obj |> RawContractBytecode
+    
+    
+    ///
+    /// Returns the ABI string from the *.abi file emitted by the solc compiler. No checking is done on this, use
+    /// a literal string if you're unsure that the file contains anything else.
+    /// 
+    let public returnABIFromFile (path:string) =
+        let file = new StreamReader(path)
+        let abiString = file.ReadToEnd()
+        file.Dispose()
+        abiString |> ABI
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
