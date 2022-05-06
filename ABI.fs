@@ -384,8 +384,14 @@ module ABIFunctions =
 
     ///
     /// Returns a bigint that has been converted to a string, based upon the value contained in a substring.
-    let private emitSubstringAsConvertedString start blob =
+    let private emitSubstringAsConvertedStringUnsigned start blob =
         emitSubstring start blob |> hexToBigIntP |> fun s -> s.ToString()
+        
+        
+    ///
+    /// Returns a bigint that has been converted to a string, based upon the value contained in a substring.
+    let private emitSubstringAsConvertedStringSigned start blob =
+        emitSubstring start blob |> hexToBigInt |> fun s -> s.ToString()
 
 
     ///
@@ -461,14 +467,14 @@ module ABIFunctions =
                 
                 | Int256 _ ->
                     let pointer = cursor * 64
-                    let acc = acc @ [(Int256 $"{emitSubstringAsConvertedString pointer evmOutput}")]
+                    let acc = acc @ [(Int256 $"{emitSubstringAsConvertedStringSigned pointer evmOutput}")]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
                 | Int256ArraySz iArr ->
                     let mutable offset = (cursor * 64)
                     let contents = List.init iArr.Length (fun count ->
                         offset <- offset + (count * 64)
-                        $"{emitSubstringAsConvertedString offset evmOutput}")
+                        $"{emitSubstringAsConvertedStringSigned offset evmOutput}")
                     let acc = acc @ [Int256ArraySz contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + iArr.Length)
                 
@@ -478,20 +484,20 @@ module ABIFunctions =
                     offset <- offset + 64
                     let contents = List.init count (fun count ->
                         offset <- offset + (count * 64)
-                        $"{emitSubstringAsConvertedString offset evmOutput}")
+                        $"{emitSubstringAsConvertedStringSigned offset evmOutput}")
                     let acc = acc @ [Int256Array contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
                 | Uint256 _ ->
                     let pointer = cursor * 64
-                    let acc = acc @ [(Uint256 $"{emitSubstringAsConvertedString pointer evmOutput}")]
+                    let acc = acc @ [(Uint256 $"{emitSubstringAsConvertedStringUnsigned pointer evmOutput}")]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
                 | Uint256ArraySz uArr ->
                     let mutable offset = (cursor * 64)
                     let contents = List.init uArr.Length (fun count ->
                         offset <- offset + (count * 64)
-                        $"{emitSubstringAsConvertedString offset evmOutput}")
+                        $"{emitSubstringAsConvertedStringUnsigned offset evmOutput}")
                     let acc = acc @ [Uint256ArraySz contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
@@ -501,7 +507,7 @@ module ABIFunctions =
                     offset <- offset + 64
                     let contents = List.init count (fun count ->
                         offset <- offset + (count * 64)
-                        $"{emitSubstringAsConvertedString offset evmOutput}")
+                        $"{emitSubstringAsConvertedStringUnsigned offset evmOutput}")
                     let acc = acc @ [Uint256Array contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
