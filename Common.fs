@@ -121,18 +121,16 @@ module Common =
 
 
     ///
-    /// Returns a string quantity of Eth, given a BigInteger representation of wei. To convert wei from an RPC response,
-    /// first run that string through hexToBigIntP.
-    /// 
-    let public convertWeiToEth wei =
-        let eth, frac = bigint.DivRem(wei, weiDiv)
-        let rem = frac.ToString().PadLeft(18, '0')
-        $"{eth.ToString()}.{rem.Remove(17)}"
+    /// Converts wei into larger denominations.
+    let private convertFromWei divisor padding quantity =
+        let eth, frac = bigint.DivRem(quantity, divisor)
+        let rem = frac.ToString().PadLeft(padding, '0')
+        $"{eth.ToString()}.{rem.Remove(padding)}"
 
     
     ///
-    /// Takes a quantity of Eth and returns a string representing the quantity in wei.
-    let public convertEthToWei (eth: string) =
+    /// Takes larger denominations of Ethereum value and returns wei.
+    let private convertToWei points (eth: string) =
         let _eth =
             match not (eth.Contains('.')) with
             | true -> eth + "."
@@ -141,9 +139,67 @@ module Common =
         let xa = _eth.Split('.')
         let x, xs = (xa[0], xa[1])
         let e = x.TrimStart('0')
-        let wei = xs.PadRight(18, '0').Remove(18)
+        let wei = xs.PadRight(points, '0').Remove(points)
         bigint.Parse(e + wei).ToString()
-
+    
+    
+    ///
+    /// Converts an `Ether` or `Gwei` into `Wei` terms. 
+    /// **This function does not fractional units of these quantities.**
+    /// 
+    let public asWei quantity =
+        match quantity with
+        | Gwei _gwei -> _gwei |> convertToWei 9
+        | Ether _eth -> _eth |> convertToWei 18
+        | _ -> "Input was Wei"
+        
+        
+    ///
+    /// Converts an `Ether` into `Gwei` terms. This function is really only for presentation
+    /// purposes. The EVM deals exclusively in `Wei`.
+    /// 
+    /// **This function does not provide guards around entering less than one unit of `Ether`.**
+    /// 
+    let public asGwei quantity =
+        match quantity with
+        | Ether _eth -> _eth |> convertToWei 9
+        | Wei _wei -> bigint.Parse(_wei) |> convertFromWei gweiFactor 9
+        | _ -> "Input was Wei or Gwei"
+        
+    
+    ///
+    /// Converts a `Gwei` or `Wei` into `Ether` terms. This function is really only for presentation
+    /// purposes. The EVM deals exclusively in `Wei`.
+    /// 
+    let public asEth quantity =
+        match quantity with
+        | Wei _wei ->
+            bigint.Parse(_wei) |> convertFromWei weiFactor 18
+        | Gwei _gwei ->
+            _gwei |> convertToWei 9 |> fun w -> bigint.Parse(w) |> convertFromWei weiFactor 18 |> fun s -> s.TrimEnd('0')
+        | _ -> "Input was Ether"
+    
+    
+    ///
+    /// Function for presenting `Wei` quantities expressed as hexadecimal strings from the EVM. This does not actually
+    /// check that the string is a hexadecimal string, beware.
+    /// 
+    let public hexAsWei quantity =
+        quantity |> hexToBigIntP |> fun i -> i.ToString()
+        
+        
+    ///
+    /// 
+    let public hexAsEth quantity =
+        quantity |> hexToBigIntP |> fun i -> i.ToString() |> Wei |> asEth 
+    
+    
+    ///
+    /// An alias for `hexAsWei` that maintains the 'look' of the other `as_` functions. This does not actually
+    /// check that the string is a hexadecimal string, beware.
+    /// 
+    let public asWeiHex quantity = hexAsWei quantity
+       
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Binders

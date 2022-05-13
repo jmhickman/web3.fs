@@ -10,7 +10,7 @@ module RPCConnector =
     open RPCParamFunctions
     
     GlobalConfig.defaults
-    |> Config.timeoutInSeconds 18.5
+    |> Config.timeoutInSeconds 28.5
     |> GlobalConfig.set
     
     

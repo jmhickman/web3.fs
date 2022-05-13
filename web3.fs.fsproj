@@ -3,6 +3,10 @@
     <TargetFramework>net6.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyVersion>0.2.0</AssemblyVersion>
+    <PackageId>Web3.fs</PackageId>
+    <Version>0.2.3</Version>
+    <Authors>jmhickman</Authors>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -29,4 +33,5 @@
     <PackageReference Include="FsHttp" Version="9.0.6" />
     <PackageReference Include="SHA3Core" Version="1.0.1" />
   </ItemGroup>
+  
 </Project>

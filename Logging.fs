@@ -13,6 +13,17 @@ module Logging =
 
     
     ///
+    /// Processes CallResponse data to remove quotes. Can't use `trimParameter` because that assumes simple strings
+    /// with no "words" like "byte" or whatever.
+    /// 
+    let private prepareCallResult callResult =
+        callResult
+        |> List.fold (fun acc s ->
+            let stripped = s.ToString().Replace(QUOTE, EMPTY)
+            $"{acc}{stripped}\n") ""
+    
+    
+    ///
     /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`. Intended to be
     /// placed in a transaction pipeline to provide realtime logging of transaction completion.
     /// 
@@ -32,7 +43,8 @@ module Logging =
         | TransactionHash _ -> () // Handled by the monitor
         | TransactionReceiptResult rpcTransactionResponse -> logger.Post (Info, $"Transaction receipt:\n{rpcTransactionResponse}")
         | Transaction mTransaction -> logger.Post (Info, $"Transaction:\n{mTransaction}")
-        | CallResult callResult -> logger.Post (Success, $"Call result: {callResult}")
+        | CallResult callResult ->
+            logger.Post (Success, $"Call result:\n{prepareCallResult callResult}")
         | Library s -> logger.Post (Info, s)
         | Empty -> () // Do nothing
         

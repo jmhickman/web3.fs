@@ -46,3 +46,22 @@ module Helpers =
     let public returnEVMBytestring evmDatatypes = createInputByteString evmDatatypes
         
 
+    ///
+    /// For use in the common case where only one contract is being loaded, and no errors are anticipated in the
+    /// parsing of the ABI.
+    /// 
+    let public optimisticallyBindDeployedContract (a: Result<DeployedContract, Web3Error>) = a |> bindDeployedContract |> List.head
+    
+    
+    ///
+    /// Combines the preparation, deployment, and loading steps of contract interaction. Mostly for convenience.
+    let public prepareDeployAndLoadContract env chainId bytecode abi (constructorArguments: EVMDatatype list option) value =
+        prepareUndeployedContract env bytecode constructorArguments chainId abi
+        |> Result.bind(deployEthContract env value)
+        |> env.log Emit
+        |> fun response ->
+            match response with
+            | TransactionReceiptResult transactionReceipt ->
+                loadDeployedContract env transactionReceipt.contractAddress.Value chainId abi |> Ok
+            | x -> x |> Error 
+                

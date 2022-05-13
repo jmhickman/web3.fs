@@ -14,9 +14,19 @@ module Types =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    /// Convenience value for integer division
-    let weiDiv = 1000000000000000000I
-
+    /// Quantity of value values
+    let weiFactor = 1000000000000000000I // one Ether as wei
+    let gweiFactor = 1000000000I // as wei 
+                     
+    type Wei = string
+    type Gwei = string
+    type Ether = string
+    
+    type WeiConversion =
+        | Wei of Wei
+        | Gwei of Gwei
+        | Ether of Ether
+        
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Logging types
@@ -99,6 +109,8 @@ module Types =
     let fakedOffset =  "0000000000000000000000000000000000000000000000000000000000000020"
     let zeroEVMValue = "0000000000000000000000000000000000000000000000000000000000000000"
     let nullAddress = "0000000000000000000000000000000000000000"
+    let QUOTE = '"' |> fun s -> s.ToString()
+    let EMPTY = ""
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -502,19 +514,19 @@ module Types =
         
         
     ///
-    /// Union of potential responses from the EVM through an RPC node. Null here is a 'valid' result, usually indicating
+    /// Union of potential responses from the EVM through an RPC node. `Empty` here is a 'valid' result, usually indicating
     /// that a transaction doesn't exist at a particular hash, or that a transaction hasn't been included in the chain
     /// yet.
     /// 
     type CallResponses =
-        | SimpleValue of string //
-        | Block of EthBlock //
-        | TransactionHash of EthTransactionHash // 
-        | TransactionReceiptResult of TransactionReceipt //
-        | Transaction of MinedTransaction //
-        | CallResult of EVMDatatype list //
+        | SimpleValue of string 
+        | Block of EthBlock 
+        | TransactionHash of EthTransactionHash 
+        | TransactionReceiptResult of TransactionReceipt 
+        | Transaction of MinedTransaction 
+        | CallResult of EVMDatatype list 
         | Library of string
-        | Empty //
+        | Empty 
     
     
     ///
