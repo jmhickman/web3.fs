@@ -468,7 +468,7 @@ module RPCFunctions =
     ///
     let public sendValue env chainId destination value =
         let _dest = handleENSName env chainId destination
-        printfn $"{_dest}"
+        
         {dummyTransaction with
             utoAddr = _dest
             ufrom =  env.constants.walletAddress
