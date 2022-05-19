@@ -293,7 +293,7 @@ module ContractFunctions =
                     let count = matchEVMInputSz "string\[([0-9]{1,2})\]$" (getInnerTypeText x)
                     [EVMDatatype.StringArraySz (List.init count (fun _ -> EVMDatatype.String "" ))] @ acc
                 | x -> 
-                    getInnerTypeText x |> typeLookup |> fun r ->  [r] @ acc 
+                    getInnerTypeText x |> typeLookup |> fun r -> [r] @ acc 
                 )
         | _ -> []
     
@@ -562,7 +562,7 @@ module ContractFunctions =
         |> convertJsonValueToArray
         |> getFunctionsEventsErrors env
         |> Result.bind (fun (address, functions, events, errors) ->
-            { address = address
+            { address = address 
               abi = abi
               functions = functions
               events = events

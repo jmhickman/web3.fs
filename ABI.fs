@@ -758,7 +758,7 @@ module ABIFunctions =
     /// Returns the underlying boolean contained in a wrapped Bool EVMDatatype. For obvious reasons, bools from `Bool`
     /// will return a singleton List.
     /// 
-    let internal unwrapEVMBool (evmBools: EVMDatatype) =
+    let public unwrapEVMBool (evmBools: EVMDatatype) =
         match evmBools with
         | Bool b -> [b]
         | BoolArraySz b -> b
@@ -780,5 +780,6 @@ module ABIFunctions =
     /// Returns a wrapped EthAddress that has been checked for validity 
     let internal wrapEthAddress (address: string) =
         match [address |> Address] |> checkEVMData with
-        | Ok _ -> address |> EthAddress |> Ok
+        | Ok _ -> address |> returnChecksumAddress |> Ok
         | Error _ -> EthAddressError |> Error
+        

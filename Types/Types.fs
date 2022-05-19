@@ -4,7 +4,8 @@ open SHA3Core.Keccak
 
 [<AutoOpen>]
 module Types =
-
+    open System
+    
     open FSharp.Data
     open FSharp.Json
 
@@ -27,6 +28,10 @@ module Types =
         | Gwei of Gwei
         | Ether of Ether
         
+    
+    type ChainId = string
+    
+    
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Logging types
@@ -111,7 +116,7 @@ module Types =
     let nullAddress = "0000000000000000000000000000000000000000"
     let QUOTE = '"' |> fun s -> s.ToString()
     let EMPTY = ""
-    
+    let ENSZero = Convert.FromHexString(zeroEVMValue)
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Chains
@@ -510,6 +515,7 @@ module Types =
         | InvalidValueArgumentError
         | ValueToNonPayableFunctionError
         | EthAddressError
+        | GenericPipelineError of string
         
         
         
@@ -758,6 +764,18 @@ module Types =
           chainId: string }
     
     
+    let dummyTransaction =
+        { utxnType = "0x2"
+          unonce = ""
+          utoAddr = ""
+          ufrom = ""
+          ugas = ""
+          uvalue = ""
+          udata = "0x"
+          umaxFeePerGas = "" 
+          umaxPriorityFeePerGas = "" 
+          uaccessList = []
+          uchainId = "" }
     ///
     /// Web3Environment is a convenience grouping of necessary functions and data to perform operations with web3.fs.  
     type Web3Environment =

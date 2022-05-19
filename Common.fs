@@ -17,6 +17,11 @@ module Common =
     
     
     ///
+    /// Returns a Keccak hasher properly configured for 256bit hashes.
+    let public newKeccakDigest = Keccak(KeccakBitType.K256)
+    
+    
+    ///
     /// The Json RPC type provider returns results that have their own strings wrapped in double quotes. This
     /// causes issue elsewhere, so this function is used here and there to remove extraneous quotes when the values
     /// must be used in the code. `TrimStart` and `TrimEnd` are specifically used because of potential knock-on effects
@@ -42,7 +47,6 @@ module Common =
         |> String.concat ""
 
 
-    
     ///
     /// Returns the bytecode of a compiled contract from a <contract>.json file, as in the output of the `solc` binary. 
     /// 
@@ -75,19 +79,35 @@ module Common =
     ///
     /// Prepends a hexadecimal specifier to a string if one is not already present.
     let public prepend0x (s: string) =
-        if not(s.StartsWith("0x")) then
-            $"0x{s}"
+        if not(s.StartsWith("0x")) then $"0x{s}"
         else s
 
 
     ///
     /// Removes a hexadecimal specifier from a string if one is present.
     let public strip0x (s: string) =
-        if s.StartsWith("0x") then
-            s.Remove(0, 2)
-        else
-            s
+        if s.StartsWith("0x") then s.Remove(0, 2)
+        else s
 
+    ///
+    /// Returns the checksummed version of a string as an EthAddress.
+    let public returnChecksumAddress  address =
+        let _addr = address |> strip0x
+        let digest = newKeccakDigest
+        digest.Hash(_addr).Remove(40)
+        |> String.mapi(fun iter char ->
+            if Int32.Parse(char.ToString(), NumberStyles.HexNumber) > 7 then
+                Char.ToUpper(_addr[iter])
+            else _addr[iter] )
+        |> prepend0x
+        |> EthAddress
+    
+    
+    ///
+    /// Returns the byte array representation of a hex string
+    let returnByteArray (input: string) =
+        Convert.FromHexString(input)
+    
     ///
     /// Returns a hexadecimal string with no leading 0's. Useful for QUANTITY values in the ABI.
     let public bigintToHex num =
@@ -444,14 +464,7 @@ module Common =
     // Miscellaneous
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    
     ///
-    /// Returns a Keccak hasher properly configured for 256bit hashes.
-    let public newKeccakDigest = Keccak(KeccakBitType.K256)
-
-    
-    
-        ///
     /// Unpacks Result from a RPCResponse.Root for logging
     let internal unpackRoot (r:RPCResponse.Root) =
         match r.Result with
@@ -470,18 +483,18 @@ module Common =
     let private returnTransactionReceiptRecord (result: RPCResponse.Result) =
         let toAddr =
             let a = result.To.JsonValue.ToString() |> trimParameter
-            if a = "null" then None else a  |> EthAddress |> Some
+            if a = "null" then None else a |> returnChecksumAddress |> Some
             
         let contractAddress =
             let b = result.ContractAddress.JsonValue.ToString() |> trimParameter
-            if b = "null" then None else b |> EthAddress |> Some
+            if b = "null" then None else b |> returnChecksumAddress |> Some
         
         { blockHash = result.BlockHash
           blockNumber = result.BlockNumber
           contractAddress = contractAddress
           cumulativeGasUsed = result.CumulativeGasUsed
           effectiveGasPrice = result.EffectiveGasPrice
-          from = result.From
+          from = result.From |> returnChecksumAddress
           gasUsed = result.GasUsed
           logs = result.Logs |> Array.map (fun l -> l.JsonValue.ToString()) |> Array.toList
           logsBloom = result.LogsBloom
@@ -502,7 +515,7 @@ module Common =
           MinedTransaction.blockHash = mined.BlockHash
           MinedTransaction.blockNumber = mined.BlockNumber
           MinedTransaction.chainId = mined.ChainId
-          MinedTransaction.from = mined.From |> EthAddress
+          MinedTransaction.from = mined.From |> returnChecksumAddress
           MinedTransaction.gas = mined.Gas
           MinedTransaction.gasPrice = mined.GasPrice
           MinedTransaction.hash = mined.Hash |> EthTransactionHash
@@ -513,7 +526,7 @@ module Common =
           MinedTransaction.r = mined.R
           MinedTransaction.s = mined.S
           MinedTransaction.v = mined.V
-          MinedTransaction.toAddr = mined.To |> EthAddress
+          MinedTransaction.toAddr = mined.To |> returnChecksumAddress
           MinedTransaction.transactionIndex = mined.TransactionIndex
           MinedTransaction.tType = mined.Type
           MinedTransaction.value = mined.Value }
@@ -607,3 +620,44 @@ module Common =
         match callResponse with
         | Block ethBlock -> ethBlock
         | _ -> nullEthBlock
+        
+        
+    ///
+    /// This function returns the 256bit hash of the input ENS name string.
+    /// The function also does this in a way that doesn't fit the documentation available for this process.
+    /// That documentation says to apply a normalization process to the string, converting it into a PunyCode.
+    /// When that process is used, names containing emoji, like `🦍frax-ape🦍.eth`, output the incorrect hash.
+    /// Through a lot of experimentation, converting the strings into byte array before processing got the
+    /// correct hashes to be emitted. So that's how it works.
+    ///  
+    let convertENSName (name: string) = 
+        let digest = newKeccakDigest
+        
+        let labels =
+            name.Split('.')
+            |> Array.toList
+            |> List.rev
+            |> List.append [""]
+            |> fun p -> printfn $"{p}"; p
+    
+        let rec hashName (labels: string list) acc =
+            match labels with
+            | head::tail ->
+                match head with
+                | "" ->
+                    hashName tail ENSZero
+                | x ->
+                    let acc =
+                        x
+                        |> UTF8Encoding.UTF8.GetBytes
+                        |> digest.Hash
+                        |> returnByteArray
+                        |> Array.append acc
+                        |> digest.Hash
+                        |> returnByteArray
+                    
+                    hashName tail acc
+            | [] ->
+                Convert.ToHexString(acc).ToLower() |> prepend0x
+        
+        hashName labels [||]

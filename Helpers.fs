@@ -53,15 +53,32 @@ module Helpers =
     let public optimisticallyBindDeployedContract (a: Result<DeployedContract, Web3Error>) = a |> bindDeployedContract |> List.head
     
     
+    
     ///
-    /// Combines the preparation, deployment, and loading steps of contract interaction. Mostly for convenience.
+    /// Combines the preparation and deployment of a contract. Automatically calls Log on environment logger. Mostly
+    /// for convenience.
+    /// 
+    let public prepareAndDeployContract env chainId bytecode abi (constructorArguments: EVMDatatype list option) value =
+        prepareUndeployedContract env bytecode constructorArguments chainId abi
+        |> Result.bind(deployEthContract env value)
+        |> env.log Log
+        |> fun _ -> ()
+    
+    
+    ///
+    /// Combines the preparation, deployment, and loading steps of contract interaction. Automatically calls Log on
+    /// environment logger. Mostly for convenience.
+    /// 
     let public prepareDeployAndLoadContract env chainId bytecode abi (constructorArguments: EVMDatatype list option) value =
         prepareUndeployedContract env bytecode constructorArguments chainId abi
         |> Result.bind(deployEthContract env value)
-        |> env.log Emit
-        |> fun response ->
-            match response with
+        |> fun tap ->
+            tap
+            |> env.log Log
+            |> fun _ -> tap
+        |> Result.bind(fun res -> 
+            match res with
             | TransactionReceiptResult transactionReceipt ->
-                loadDeployedContract env transactionReceipt.contractAddress.Value chainId abi |> Ok
-            | x -> x |> Error 
+                loadDeployedContract env transactionReceipt.contractAddress.Value chainId abi
+            | _ -> "Result of `deployEthContract` wasn't of the expected type" |> GenericPipelineError |> Error )
                 

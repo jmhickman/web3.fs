@@ -38,7 +38,7 @@ module ReceiptManager =
                           |> EthGenericRPC
                       blockHeight = LATEST }
                 
-                callLoop rpc call
+                callLoop rpc call 
                 |> Async.RunSynchronously
                 |> decomposeRPCResult EthMethod.GetTransactionReceipt 
                 |> reply.Reply

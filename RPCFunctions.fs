@@ -89,6 +89,38 @@ module RPCFunctions =
     
     
     ///
+    /// Detects if an ENS name was used and performs the lookup to resolve it to an address
+    let handleENSName env chainId (name: string) =
+        if name.Contains('.') then
+            let hash = convertENSName name
+            let bytes = [BytesSz hash] |> createInputByteString
+            let evmData = "02571be3" + bytes |> prepend0x
+            { utxnType = "0x2"
+              unonce = ""
+              utoAddr = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
+              ufrom = env.constants.walletAddress
+              ugas = ""
+              uvalue = ZERO
+              udata = evmData
+              umaxPriorityFeePerGas = ""
+              umaxFeePerGas = ""
+              uaccessList = []
+              uchainId = chainId}
+            |> validateRPCParams
+            |> Result.bind
+                (fun _params ->
+                    { method = EthMethod.Call 
+                      paramList = _params 
+                      blockHeight = LATEST }
+                    |> env.connection)
+           |> fun res ->
+               match res with
+               | Ok o -> o |> unpackRoot |> stringAndTrim |> fun s -> s.Remove(0, 26) |> prepend0x
+               | Error _ -> "failed to resolve address"
+        else name
+    
+    
+    ///
     /// Get constants values out of the ContractConstants
     let private unpackConstants (constants: ContractConstants) =
         constantsBind constants |> (fun a -> a |> Ok)
@@ -346,8 +378,12 @@ module RPCFunctions =
             unpackRoot r
             |> stringAndTrim
             |> EthTransactionHash
+            |> fun ethHash ->
+                env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )
+                |> fun _ -> ethHash
             |> Ok)
         |> monitorTransaction env.monitor
+        
     
     
     ///
@@ -402,8 +438,8 @@ module RPCFunctions =
             |> stringAndTrim
             |> EthTransactionHash
             |> fun ethHash ->
-                env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )|> ignore
-                ethHash
+                env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )
+                |> fun _ -> ethHash
             |> Ok)        
         |> monitorTransaction env.monitor
         
@@ -425,4 +461,32 @@ module RPCFunctions =
                 |> env.connection)
         |> decomposeRPCResult EthMethod.EstimateGas
         
-        
+
+    ///
+    /// This function is for the sending of Ether between EOAs. Use `makeEthTxn` with the `Receive` function indicator
+    /// to send to contracts. ENS names are supported for this function.
+    ///
+    let public sendValue env chainId destination value =
+        let _dest = handleENSName env chainId destination
+        printfn $"{_dest}"
+        {dummyTransaction with
+            utoAddr = _dest
+            ufrom =  env.constants.walletAddress
+            uvalue = value |> bigintToHex |> prepend0x
+            uchainId = chainId}
+        |> validateRPCParams
+        |> Result.bind
+            (fun _params ->
+                {method = EthMethod.SendTransaction
+                 paramList = _params
+                 blockHeight = LATEST}
+                |> env.connection)
+        |> Result.bind (fun r ->
+            unpackRoot r
+            |> stringAndTrim
+            |> EthTransactionHash
+            |> fun ethHash ->
+                env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )
+                |> fun _ -> ethHash
+            |> Ok)        
+        |> monitorTransaction env.monitor

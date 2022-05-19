@@ -29,8 +29,7 @@ module Logging =
     /// 
     let internal monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash, Web3Error>) =
         match r with
-        | Ok o ->
-            monitor o 
+        | Ok o -> monitor o 
         | Error e -> e |> Error 
         
     
@@ -79,7 +78,7 @@ module Logging =
         match signal with
         | Log ->
             logCallResponsesOrWeb3Errors logger pipeResult
-            Async.Sleep(100) |> Async.RunSynchronously
+            Async.Sleep(100) |> Async.RunSynchronously // I don't like this bodge
             Empty
         | Emit -> emitter pipeResult
         | LogAndEmit ->
