@@ -5,23 +5,12 @@ open web3.fs.Types
 [<AutoOpen>]    
 module Logging =
     
-    
+    open Logger
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Logging
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    
-    ///
-    /// Processes CallResponse data to remove quotes. Can't use `trimParameter` because that assumes simple strings
-    /// with no "words" like "byte" or whatever.
-    /// 
-    let private prepareCallResult callResult =
-        callResult
-        |> List.fold (fun acc s ->
-            let stripped = s.ToString().Replace(QUOTE, EMPTY)
-            $"{acc}{stripped}\n") ""
-    
     
     ///
     /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`. Intended to be
@@ -34,29 +23,14 @@ module Logging =
         
     
     ///
-    /// Handles the emission of information to the console
-    let private logCallResponse (logger: Logger) callResponse =
-        match callResponse with
-        | SimpleValue s -> logger.Post (Success, $"Value: {s}")
-        | Block ethBlock -> logger.Post (Info, $"Ethereum block:\n{ethBlock}")
-        | TransactionHash _ -> () // Handled by the monitor
-        | TransactionReceiptResult rpcTransactionResponse -> logger.Post (Info, $"Transaction receipt:\n{rpcTransactionResponse}")
-        | Transaction mTransaction -> logger.Post (Info, $"Transaction:\n{mTransaction}")
-        | CallResult callResult ->
-            logger.Post (Success, $"Call result:\n{prepareCallResult callResult}")
-        | Library s -> logger.Post (Info, s)
-        | Empty -> () // Do nothing
-        
-        
-    ///
     /// Forwards CallResponses, logs errors to the console
     let private logCallResponsesOrWeb3Errors (logger: Logger) (pipeResult: Result<CallResponses, Web3Error>) =
         match pipeResult with
-        | Ok o -> logCallResponse logger o
+        | Ok o -> logger.Post (Success, o)
         | Error e ->
             match e with
-            | PayableFunctionZeroValueWarning w -> logger.Post (Warn, w)
-            | e -> logger.Post (Failure, $"{e}")
+            | PayableFunctionZeroValueWarning w -> logger.Post (Warn, $"{w}" |> Library)
+            | e -> logger.Post (Failure, $"{e}" |> Library)
     
     
     ///

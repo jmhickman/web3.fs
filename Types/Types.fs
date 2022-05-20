@@ -32,36 +32,6 @@ module Types =
     type ChainId = string
     
     
-    
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //// Logging types
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
-    
-    /// Color bindings
-    type ConsoleColor =
-        | Blue
-        | Yellow
-        | Green
-        | Red
-    
-    
-    /// Signal to indicate logging behavior
-    type LogType =
-        | Info
-        | Warn
-        | Success
-        | Failure
-    
-
-    /// Simple logging message type for MailboxProcessor
-    type LogMessage = LogType * string
-    
-    
-    /// A MailboxProcessor-based logger
-    type Logger = MailboxProcessor<LogMessage>
-
-
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Type Provider parser setup
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -370,7 +340,7 @@ module Types =
           cumulativeGasUsed: string
           effectiveGasPrice: string
           from: EthAddress
-          gasUsed: string
+          gasUsed: string 
           logs: string list
           logsBloom: string
           status: string
@@ -401,15 +371,15 @@ module Types =
     /// Record representing a block on the Ethereum blockchain 
     type EthBlock =
         { author: string
-          baseFeePerGas: string
+          baseFeePerGas: string // gold
           difficulty: string
           extraData: string
-          gasLimit: string
-          gasUsed: string
-          hash: EthTransactionHash
+          gasLimit: string // gold
+          gasUsed: string // gold
+          hash: EthTransactionHash // blue
           logsBloom: string
-          miner: EthAddress
-          number: string
+          miner: EthAddress // blue
+          number: string //blue
           parentHash: string
           receiptsRoot: string
           sealFields: string list
@@ -418,7 +388,7 @@ module Types =
           stateRoot: string
           timestamp: string
           totalDifficulty: string
-          transactions: string list
+          transactions: string list // ??
           transactionsRoot: string
           uncles: string list }
         
@@ -456,17 +426,17 @@ module Types =
             blockHash: string
             blockNumber: string
             chainId: string
-            from: EthAddress
+            from: EthAddress 
             gas: string
             gasPrice: string
-            hash: EthTransactionHash
+            hash: EthTransactionHash 
             input: string
             maxFeePerGas: string
             maxPriorityFeePerGas: string
             nonce: string
             r: string
             s: string
-            toAddr: EthAddress
+            toAddr: EthAddress 
             transactionIndex: string
             tType: string
             v: string
@@ -508,6 +478,7 @@ module Types =
         | ContractABIContainsHashCollisionsError
         | EthCallIntoNonCallPipelineError
         | RPCNullResponse
+        | EmptyBytecodeError
         | ConstructorArgumentsToEmptyConstructorError
         | ConstructorArgumentsMissingError
         | ArgumentsToEmptyFunctionSignatureError
@@ -784,3 +755,33 @@ module Types =
           constants: ContractConstants
           digest: Keccak
           log : LogSignal -> Result<CallResponses, Web3Error> -> CallResponses }
+        
+        
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //// Logging types
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    /// Color bindings
+    type WConsoleColor =
+        | Blue
+        | DarkBlue
+        | Yellow
+        | Green
+        | Red
+        | Gold
+    
+    
+    /// Signal to indicate logging behavior
+    type LogType =
+        | Warn
+        | Success
+        | Failure
+    
+
+    /// Simple logging message type for MailboxProcessor
+    type LogMessage = LogType * CallResponses
+    
+    
+    /// A MailboxProcessor-based logger
+    type Logger = MailboxProcessor<LogMessage>

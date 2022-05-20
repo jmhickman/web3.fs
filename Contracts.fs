@@ -470,22 +470,33 @@ module ContractFunctions =
     
     
     ///
+    /// Basic check to ensure there is actually bytecode, in case the file used to provide it was malformed.
+    let checkForBytecode (bytecode: RawContractBytecode) (abi: ABI) =
+        let (RawContractBytecode s) = bytecode
+        match s.Length with
+        | x when x = 0 -> EmptyBytecodeError |> Error
+        | _ -> abi |> Ok
+    
+    
+    ///
     /// Generates Web3Error if the abi can't be parsed, implying interacting with the contract after deployment will
     /// fail. Otherwise, passes along the JsonValue.
     /// 
-    let private canABIBeParsed abi =
-        let (ABI _abi) = abi
-        match JsonValue.TryParse(_abi) with
-        | Some v -> v |> Ok
-        | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error
+    let private canABIBeParsed (pipe: Result<ABI, Web3Error>) =
+        pipe
+        |> Result.bind( fun abi ->
+            let (ABI _abi) = abi
+            match JsonValue.TryParse(_abi) with
+            | Some v -> v |> Ok
+            | None -> ContractParseFailure "Json was incorrectly formatted or otherwise failed to parse" |> Error )
     
     
     ///
     /// Adapted version of canABIBeParsed for different pipeline
-    let private pipeCanABIBeParsed abi (pipe: Result<EthAddress, Web3Error>) =
+    let private pipeCanABIBeParsed (abi: ABI) (pipe: Result<EthAddress, Web3Error>) =
         pipe
         |> Result.bind(fun p -> 
-            canABIBeParsed abi
+            canABIBeParsed (abi |> Ok)// this is kinda stupid but whatever
             |> Result.bind(fun b ->
                 (p, b) |> Ok ))
     
@@ -555,7 +566,7 @@ module ContractFunctions =
     /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
     /// * `abi`: An `ABI` associated with the deployed contract.
     ///
-    let public loadDeployedContract env address chainId abi =
+    let public loadDeployedContract env address chainId (abi: ABI) =
         address
         |> wrapEthAddress
         |> pipeCanABIBeParsed abi
@@ -584,6 +595,7 @@ module ContractFunctions =
     /// 
     let public prepareUndeployedContract env bytecode (constructorArguments: EVMDatatype list option) chainId abi =
         abi
+        |> checkForBytecode bytecode
         |> canABIBeParsed
         |> checkForHashCollisions env
         |> buildConstructorHash env

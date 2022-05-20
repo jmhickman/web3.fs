@@ -268,9 +268,9 @@ module RPCFunctions =
           |> env.log Emit
           |> unwrapSimpleValue
           |> fun chain ->
-                if not(chain = chainId ) then
-                    WrongChainInSignerError |> Error
-                else () |> Ok 
+                if chain = chainId then
+                    () |> Ok
+                else WrongChainInSignerError |> Error
     
     
     ///
@@ -379,7 +379,7 @@ module RPCFunctions =
             |> stringAndTrim
             |> EthTransactionHash
             |> fun ethHash ->
-                env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )
+                env.log Log (Library $"Monitoring transaction {ethHash}\n" |> Ok )
                 |> fun _ -> ethHash
             |> Ok)
         |> monitorTransaction env.monitor
@@ -444,6 +444,7 @@ module RPCFunctions =
         |> monitorTransaction env.monitor
         
         
+        
     ///
     /// Estimate the amount of gas units required for the given transaction to complete. Essentially the same as 
     /// `makeEthTxn` but with a different underlying call. A static value argument of "0" is supplied.
@@ -466,27 +467,27 @@ module RPCFunctions =
     /// This function is for the sending of Ether between EOAs. Use `makeEthTxn` with the `Receive` function indicator
     /// to send to contracts. ENS names are supported for this function.
     ///
-    let public sendValue env chainId destination value =
+    let public sendValue env chainId destination value = async {
         let _dest = handleENSName env chainId destination
-        
-        {dummyTransaction with
-            utoAddr = _dest
-            ufrom =  env.constants.walletAddress
-            uvalue = value |> bigintToHex |> prepend0x
-            uchainId = chainId}
-        |> validateRPCParams
-        |> Result.bind
-            (fun _params ->
-                {method = EthMethod.SendTransaction
-                 paramList = _params
-                 blockHeight = LATEST}
-                |> env.connection)
-        |> Result.bind (fun r ->
-            unpackRoot r
-            |> stringAndTrim
-            |> EthTransactionHash
-            |> fun ethHash ->
-                env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )
-                |> fun _ -> ethHash
-            |> Ok)        
-        |> monitorTransaction env.monitor
+        return
+            { dummyTransaction with
+                utoAddr = _dest
+                ufrom =  env.constants.walletAddress
+                uvalue = value |> bigintToHex |> prepend0x
+                uchainId = chainId}
+            |> validateRPCParams
+            |> Result.bind
+                (fun _params ->
+                    {method = EthMethod.SendTransaction
+                     paramList = _params
+                     blockHeight = LATEST}
+                    |> env.connection)
+            |> Result.bind (fun r ->
+                unpackRoot r
+                |> stringAndTrim
+                |> EthTransactionHash
+                |> fun ethHash ->
+                    env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )
+                    |> fun _ -> ethHash
+                |> Ok)        
+            |> monitorTransaction env.monitor }
