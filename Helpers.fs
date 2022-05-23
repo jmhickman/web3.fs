@@ -57,7 +57,7 @@ module Helpers =
     /// Combines the preparation and deployment of a contract. Automatically calls Log on environment logger. Mostly
     /// for convenience.
     /// 
-    let public prepareAndDeployContract chainId bytecode abi (constructorArguments: EVMDatatype list option) value env =
+    let public prepareAndDeployContract bytecode abi chainId (constructorArguments: EVMDatatype list) value env =
         prepareUndeployedContract bytecode abi chainId constructorArguments 
         |> Result.bind(fun contract -> deployEthContract contract value env )
         |> env.log Log
@@ -68,7 +68,7 @@ module Helpers =
     /// Combines the preparation, deployment, and loading steps of contract interaction. Automatically calls Log on
     /// environment logger. Mostly for convenience.
     /// 
-    let public prepareDeployAndLoadContract env chainId bytecode abi (constructorArguments: EVMDatatype list option) value =
+    let public prepareDeployAndLoadContract bytecode abi chainId (constructorArguments: EVMDatatype list) value env =
         prepareUndeployedContract bytecode abi chainId constructorArguments
         |> Result.bind(fun contract -> deployEthContract contract value env)
         |> fun tap ->

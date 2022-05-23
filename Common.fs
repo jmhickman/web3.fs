@@ -306,6 +306,8 @@ module Common =
             |> List.filter(fun p -> p.config = mutability)
             |> List.map (fun f -> f |> IndicatedFunction)
             |> returnSingularResult
+        | Receive -> FunctionIndicator.Receive |> Ok
+        | Fallback -> FunctionIndicator.Fallback |> Ok
         
     
     ///
@@ -317,14 +319,14 @@ module Common =
     let rec internal bindFunctionIndicator s =
         match s with
         | IndicatedFunction f -> f
-        | Receive ->
+        | FunctionIndicator.Receive ->
             { name = "receive"
               hash = "0x" |> EVMFunctionHash
               canonicalInputs = "()" |> EVMFunctionInputs
               internalOutputs = []
               canonicalOutputs = "()" |> EVMFunctionOutputs
               config = Payable }
-        | Fallback ->
+        | FunctionIndicator.Fallback ->
             { name = "fallback"
               hash = "0xd3adb33f" |> EVMFunctionHash
               canonicalInputs = "()" |> EVMFunctionInputs

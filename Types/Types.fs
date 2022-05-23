@@ -598,6 +598,8 @@ module Types =
         | ByNameAndInputs of (string * EVMFunctionInputs)
         | ByNameAndOutputs of (string * EVMFunctionOutputs)
         | ByNameAndMutability of (string * StateMutability)
+        | Receive
+        | Fallback
 
 
     ///
