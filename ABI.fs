@@ -343,17 +343,20 @@ module ABIFunctions =
         |> fun s ->
             match s with
             | x when x = zeroEVMValue -> nullAddress |> prepend0x
-            | x -> x.TrimStart('0') |> prepend0x
+            | x -> x.Remove(0,24) |> prepend0x
 
 
     ///
-    /// Returns the substring specifically for sized bytes, with a hex specifier prepended. 
+    /// Returns the substring specifically for sized bytes, with a hex specifier prepended. Until I get around to
+    /// implementing a 'proper' type system for this, I can't trim 0's, because a set of trailing 0's might be
+    /// intended, or unintended.
     let private emitSubstringPrepend0xBytes start blob =
         emitSubstring start blob
         |> fun s ->
             match s with
             | x when x = zeroEVMValue -> "0" |> prepend0x
-            | x -> x.TrimEnd('0') |> prepend0x
+            | x -> x
+        |> prepend0x 
         
         
     ///

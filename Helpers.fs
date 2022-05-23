@@ -80,4 +80,15 @@ module Helpers =
             | TransactionReceiptResult transactionReceipt ->
                 loadDeployedContract abi chainId transactionReceipt.contractAddress.Value
             | _ -> "Result of `deployEthContract` wasn't of the expected type" |> GenericPipelineError |> Error )
-                
+
+
+    ///
+    /// Public accessor for a bind function to get the simple string out of contract function wrapper type.
+    let public unwrapFunctionInputs evmInputs =
+        bindEVMFunctionInputs evmInputs
+        
+        
+    ///
+    /// Public accessor for a bind function to get the simple string out of a contract function wrapper type.
+    let public unwrapFunctionOutputs evmOutputs =
+        bindEVMFunctionOutputs evmOutputs

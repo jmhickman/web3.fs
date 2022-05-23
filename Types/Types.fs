@@ -784,10 +784,7 @@ module Types =
         | Success
         | Failure
     
-    
-  
-    
-    
+        
     /// Simple logging message type for MailboxProcessor
     type LogMessage = LogType * CallResponses
     
