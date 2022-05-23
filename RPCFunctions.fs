@@ -287,21 +287,13 @@ module RPCFunctions =
         pipe
         |> Result.bind (fun _ ->
             constantsBind constants |> (fun (a, b, c, _) -> (a, b, c) |> Ok))
-    
-    
-    ///
-    /// Injects de-Optioned contract arguments
-    let private unwrapContractArguments (args: EVMDatatype list option) (pipe: Result<string * string * string, Web3Error>) =
-        match args with
-        | Some d -> pipe |> Result.bind(fun (a, b, c) -> (a, b, c, d) |> Ok)
-        | None -> pipe |> Result.bind(fun (a, b, c) -> (a, b, c, []) |> Ok)
-        
+
 
     ///
     /// Check that we aren't supplying value to a non-Payable constructor, which will be accepted but the transaction
     /// will fail with a status 0x0.
     /// 
-    let private checkValueAndStateMutabilityDeploy value contract (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
+    let private checkValueAndStateMutabilityDeploy value contract (pipe: Result<string * string * string, Web3Error>) =
         match contract.stateMutability with
         | Payable -> pipe
         | _ -> if value = "0" then pipe else ValueToNonPayableFunctionError |> Error
@@ -309,12 +301,12 @@ module RPCFunctions =
     
     ///
     /// Creates the unvalidated call record specifically for deployment.
-    let private buildDeploymentCall env value contract (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
+    let private buildDeploymentCall env value contract args (pipe: Result<string * string * string, Web3Error>) =
         let (RawContractBytecode _rawBytecode) = contract.bytecode
         if contract.stateMutability = Payable && value = "0" then
             env.log Log (PayableFunctionZeroValueWarning "Zero value sent to payable function" |> Error) |> ignore
         pipe
-        |> Result.bind (fun (txn, maxfee, priority, args) ->
+        |> Result.bind (fun (txn, maxfee, priority) ->
             { utxnType = txn
               unonce = ""
               utoAddr = ""
@@ -426,9 +418,8 @@ module RPCFunctions =
         checkForChain env contract.chainId
         |> checkForEmptyValueString value
         |> unpackDeployConstants env.constants
-        |> unwrapContractArguments contract.constructorArguments
         |> checkValueAndStateMutabilityDeploy value contract
-        |> buildDeploymentCall env value contract
+        |> buildDeploymentCall env value contract contract.constructorArguments
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->

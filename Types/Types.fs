@@ -627,7 +627,7 @@ module Types =
         { abi: ABI
           bytecode: RawContractBytecode
           chainId: string
-          constructorArguments: EVMDatatype list option
+          constructorArguments: EVMDatatype list
           stateMutability: StateMutability}
 
 

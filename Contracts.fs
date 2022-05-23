@@ -505,19 +505,19 @@ module ContractFunctions =
     
     ///
     /// Generates a Web3Error if the user attempted to pass arguments to a `constructor()`
-    let private constructorEmptyButArgsGiven (args: 'a list option) (pipe: Result<string * StateMutability, Web3Error>) =
+    let private constructorEmptyButArgsGiven (args: 'a list ) (pipe: Result<string * StateMutability, Web3Error>) =
         pipe
         |> Result.bind (fun (b, s ) ->
-            if b = "90fa17bb" && args.IsSome then ConstructorArgumentsToEmptyConstructorError |> Error
+            if b = "90fa17bb" && args.Length > 0 then ConstructorArgumentsToEmptyConstructorError |> Error
             else (b, s ) |> Ok )
     
     
     ///
     /// Generates a Web3Error if the user failed to supply arguments to a constructor.
-    let private constructorRequireArgsAndNoneWereGiven (args: 'a list option) (pipe: Result<string * StateMutability, Web3Error>) =
+    let private constructorRequireArgsAndNoneWereGiven (args: 'a list ) (pipe: Result<string * StateMutability, Web3Error>) =
         pipe
         |> Result.bind (fun (b, s) ->
-            if not(b = "90fa17bb") && args.IsNone then ConstructorArgumentsMissingError |> Error
+            if not(b = "90fa17bb") && args.IsEmpty then ConstructorArgumentsMissingError |> Error
             else (b, s ) |> Ok )
     
     
@@ -559,7 +559,7 @@ module ContractFunctions =
     /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
     /// * `abi`: An `ABI` associated with the deployed contract.
     /// 
-    let public prepareUndeployedContract bytecode abi chainId (constructorArguments: EVMDatatype list option)  =
+    let public prepareUndeployedContract bytecode abi chainId (constructorArguments: EVMDatatype list)  =
         let digest = newKeccakDigest
         abi
         |> checkForBytecode bytecode
