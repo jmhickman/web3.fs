@@ -251,7 +251,17 @@ module Common =
 
         (txn, maxFeePerGas, maxPriorityFeePerGas, data)
 
-        
+    
+    ///
+    /// 
+    let returnSingularResult (results: FunctionIndicator list) =
+        match results.Length with
+        | x when x = 1 -> results.Head |> Ok
+        | x when x = 0 -> FunctionNotFoundError |> Error
+        | _ -> results |> AmbiguousFunctionError |> Error
+    
+    
+    
     ///
     /// Returns a list of FunctionIndicators that matched the input FunctionSearchTerm criteria. These 
     /// FunctionIndicators can be used directly in `makeEth_` calls instead of using `ByString "someFunction"`. This is 
@@ -263,26 +273,39 @@ module Common =
     /// 
     let public findFunction contract search =
         match search with
-        | Name s ->
+        | ByName s ->
             contract.functions
             |> List.filter(fun p -> p.name = s)
             |> List.map (fun f -> f |> IndicatedFunction)
-        | SearchFunctionHash evmSelector ->
+            |> returnSingularResult
+        | ByNameAndHash nameAndHash ->
+            let name, hash = nameAndHash
             contract.functions
-            |> List.filter(fun p -> p.hash = evmSelector)
+            |> List.filter(fun p -> p.name = name)
+            |> List.filter(fun p -> p.hash = hash)
             |> List.map (fun f -> f |> IndicatedFunction)
-        | SearchFunctionInputs evmFunctionInputs ->
+            |> returnSingularResult
+        | ByNameAndInputs nameAndInputs ->
+            let name, inputs = nameAndInputs
             contract.functions
-            |> List.filter(fun p -> p.canonicalInputs = evmFunctionInputs)
+            |> List.filter(fun p -> p.name = name)
+            |> List.filter(fun p -> p.canonicalInputs = inputs)
             |> List.map (fun f -> f |> IndicatedFunction)
-        | SearchFunctionOutputs evmFunctionOutputs ->
+            |> returnSingularResult
+        | ByNameAndOutputs nameAndOutputs ->
+            let name, outputs = nameAndOutputs
             contract.functions
-            |> List.filter(fun p -> p.canonicalOutputs = evmFunctionOutputs)
+            |> List.filter(fun p -> p.name = name)
+            |> List.filter(fun p -> p.canonicalOutputs = outputs)
             |> List.map (fun f -> f |> IndicatedFunction)
-        | SearchFunctionMutability stateMutability ->
+            |> returnSingularResult
+        | ByNameAndMutability nameAndMutability ->
+            let name, mutability = nameAndMutability
             contract.functions
-            |> List.filter(fun p -> p.config = stateMutability)
+            |> List.filter(fun p -> p.name = name)
+            |> List.filter(fun p -> p.config = mutability)
             |> List.map (fun f -> f |> IndicatedFunction)
+            |> returnSingularResult
         
     
     ///
@@ -291,13 +314,9 @@ module Common =
     /// contracts, and aren't normally used. Fallback also assumes Payable to keep implementation easy, and at worst a
     /// warning is emitted on sending 0 value that can be ignored.
     ///  
-    let rec internal bindFunctionIndicator contract s =
+    let rec internal bindFunctionIndicator s =
         match s with
         | IndicatedFunction f -> f
-        | ByString s ->
-            findFunction contract (s |> Name)
-            |> List.head
-            |> bindFunctionIndicator contract
         | Receive ->
             { name = "receive"
               hash = "0x" |> EVMFunctionHash

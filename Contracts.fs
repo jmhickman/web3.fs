@@ -26,20 +26,12 @@ module ContractFunctions =
         | CanonicalEventRepresentation r -> 
             digest.Hash(r) 
             |> prepend0x 
-            |> EVMEventSelector
+            |> EVMEventHash
         | CanonicalErrorRepresentation r ->
             digest.Hash(r).Remove(8)
             |> prepend0x
             |> EVMFunctionHash
-    
-    
-    ///
-    /// Unwraps a function hash and emits the raw hash value.
-    let internal bindEVMSelector a =
-        match a with
-        | EVMFunctionHash s -> s 
-        | EVMEventSelector s -> s 
-    
+
 
     ///
     ///Returns unwrapped canonical representation of a function, event or error.
@@ -58,33 +50,6 @@ module ContractFunctions =
     /// 
     /// Returns upwrapped EVMFunctionOutput string.
     let internal bindEVMFunctionOutputs = function EVMFunctionOutputs s -> s
-    
-    
-    /// 
-    /// Convenience function for taking search parameters and typing them for use in `findFunction`.
-    /// * `hashString`: The string containing the function hash you wish to search against. For example:
-    /// 
-    /// `"0xdef7b31c" |> wrapFunctionHash`
-    let public wrapFunctionHash hashString =
-        hashString |> EVMFunctionHash |> SearchFunctionHash
-        
-    
-    ///
-    /// Convenience function for taking search parameters and typing them for use in `findFunction`
-    /// * `inputString`: The string containing the input you wish to search against. For example:
-    /// 
-    /// `"(address)" |> wrapFunctionInputs`
-    let public wrapFunctionInputs inputString =
-        inputString |> EVMFunctionInputs |> SearchFunctionInputs
-    
-    
-    ///
-    /// Convenience function for taking search parameters and typing them for use in `findFunction`.
-    /// * `state`: The function's state mutability value you wish to search against. For example:
-    /// 
-    /// `Payable |> wrapFunctionMutability`
-    let public wrapFunctionMutability state =
-        state |> SearchFunctionMutability
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -509,18 +474,18 @@ module ContractFunctions =
     
     ///
     /// Gets the components from the ABI
-    let private getFunctionsEventsErrors env (pipe: Result<EthAddress * JsonValue[], Web3Error>) =
+    let private getFunctionsEventsErrors digest (pipe: Result<EthAddress * JsonValue[], Web3Error>) =
         pipe
         |> Result.bind(fun (a, b) ->
-            (a, parseABIForFunctions env.digest b, parseABIForEvents env.digest b, parseABIForErrors env.digest b ) |> Ok)
+            (a, parseABIForFunctions digest b, parseABIForEvents digest b, parseABIForErrors digest b ) |> Ok)
         
         
     ///
     /// Check that there aren't any function hash collisions in the contract ABI
-    let private checkForHashCollisions env (pipe: Result<JsonValue, Web3Error>) =
+    let private checkForHashCollisions digest (pipe: Result<JsonValue, Web3Error>) =
         pipe
         |> Result.bind(fun b ->
-            let hashList = b.AsArray() |> parseABIForFunctions env.digest 
+            let hashList = b.AsArray() |> parseABIForFunctions digest 
             hashList
             |> List.map( fun b' -> b'.hash)
             |> List.distinct
@@ -530,11 +495,11 @@ module ContractFunctions =
     
     ///
     /// Extracts the constructor hash for this contract, so that checks can be made. Doesn't generate Web3Errors.
-    let private buildConstructorHash env (pipe: Result<JsonValue, Web3Error>) =
+    let private buildConstructorHash digest (pipe: Result<JsonValue, Web3Error>) =
         pipe
         |> Result.bind(fun b ->
             b.AsArray()
-            |> parseABIForConstructor env.digest
+            |> parseABIForConstructor digest
             |> fun (hash, stateMut) -> (hash |>trimParameter, stateMut) |> Ok)
     
     
@@ -566,12 +531,13 @@ module ContractFunctions =
     /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
     /// * `abi`: An `ABI` associated with the deployed contract.
     ///
-    let public loadDeployedContract env address chainId (abi: ABI) =
+    let public loadDeployedContract (abi: ABI) chainId address   =
+        let digest = newKeccakDigest
         address
         |> wrapEthAddress
         |> pipeCanABIBeParsed abi
         |> convertJsonValueToArray
-        |> getFunctionsEventsErrors env
+        |> getFunctionsEventsErrors digest
         |> Result.bind (fun (address, functions, events, errors) ->
             { address = address 
               abi = abi
@@ -593,12 +559,13 @@ module ContractFunctions =
     /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
     /// * `abi`: An `ABI` associated with the deployed contract.
     /// 
-    let public prepareUndeployedContract env bytecode (constructorArguments: EVMDatatype list option) chainId abi =
+    let public prepareUndeployedContract bytecode abi chainId (constructorArguments: EVMDatatype list option)  =
+        let digest = newKeccakDigest
         abi
         |> checkForBytecode bytecode
         |> canABIBeParsed
-        |> checkForHashCollisions env
-        |> buildConstructorHash env
+        |> checkForHashCollisions digest
+        |> buildConstructorHash digest
         |> constructorRequireArgsAndNoneWereGiven constructorArguments
         |> constructorEmptyButArgsGiven constructorArguments
         |> Result.bind(fun (_, s) ->

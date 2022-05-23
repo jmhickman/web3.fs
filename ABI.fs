@@ -771,9 +771,14 @@ module ABIFunctions =
     /// using `makeEthCall` might return an address "0x00000000000000000000000022699e6AdD7159C3C385bf4d7e1C647ddB3a99ea".
     /// This will convert it to [Address "0x22699e6AdD7159C3C385bf4d7e1C647ddB3a99ea"]
     /// 
-    let public returnOutputAsEVMDatatypes contract evmFunction output =
-        bindFunctionIndicator contract evmFunction
-        |> fun s -> createOutputEvmTypes s.internalOutputs output
+    let public returnOutputAsEVMDatatypes contract functionIndicator output =
+        match findFunction contract functionIndicator with
+        | Ok result ->
+             bindFunctionIndicator result
+            |> fun s -> createOutputEvmTypes s.internalOutputs output
+        | _ -> []
+        
+       
 
         
     ///

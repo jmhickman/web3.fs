@@ -137,9 +137,9 @@ module RPCFunctions =
     
     ///
     /// Places the actual EVMFunction into the data for later use
-    let private pipeBindFunction contract evmFunction (pipe: Result<string * string * string * EVMDatatype list * string, Web3Error>) =
+    let private pipeBindFunction evmFunction (pipe: Result<string * string * string * EVMDatatype list * string, Web3Error>) =
         pipe
-        |> Result.bind(fun (a, b, c, d, e) -> (a, b, c, d, e, (bindFunctionIndicator contract evmFunction)) |> Ok)
+        |> Result.bind(fun (a, b, c, d, e) -> (a, b, c, d, e, (bindFunctionIndicator evmFunction)) |> Ok)
         
     
     ///
@@ -197,7 +197,7 @@ module RPCFunctions =
     let private createDataString (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
         |> Result.bind (fun (a, b, c, args, e, evmFunction) ->
-            let dataString = $"{evmFunction.hash |> bindEVMSelector}{createInputByteString args}"
+            let dataString = $"{evmFunction.hash}{createInputByteString args}"
             (a, b, c, e, dataString) |> Ok)
         
     
@@ -221,25 +221,19 @@ module RPCFunctions =
     
     ///
     /// Returns a Txn object for use in the validation function `ValidateRPCParams`
-    let private createUnvalidatedTxn constants contract evmFunction arguments value (pipe: Result<'a, Web3Error>) =
+    let private createUnvalidatedTxn constants contract arguments value (pipe: Result<FunctionIndicator, Web3Error>) =
         pipe
-        |> Result.bind (fun _ ->
-        constants
-        |> unpackConstants
-        |> convertValueToHex value
-        |> pipeBindFunction contract evmFunction
-        |> chooseDefaultOrSuppliedArguments arguments
-        |> checkArgsToFunction
-        |> checkArgumentData
-        |> checkValueAndStateMutability
-        |> createDataString
-        |> returnUnvalidatedRecord constants.walletAddress contract )
-
-    
-    ///
-    /// Alias for `createUnvalidatedTxn` with the value set to 0.
-    let private createUnvalidatedCall constants contract evmFunction arguments =
-        createUnvalidatedTxn constants contract evmFunction arguments "0"
+        |> Result.bind (fun functionIndicator ->
+            constants
+            |> unpackConstants
+            |> convertValueToHex value
+            |> pipeBindFunction functionIndicator
+            |> chooseDefaultOrSuppliedArguments arguments
+            |> checkArgsToFunction
+            |> checkArgumentData
+            |> checkValueAndStateMutability
+            |> createDataString
+            |> returnUnvalidatedRecord constants.walletAddress contract )
 
     
     ///
@@ -279,6 +273,13 @@ module RPCFunctions =
         let bool, _ = bigint.TryParse(value)
         if bool then pipe else InvalidValueArgumentError |> Error
     
+    
+    ///
+    /// Checks that the function we're attempting to call exists.
+    let private checkFunctionExists contract functionSelector (pipe: Result<unit, Web3Error>) =
+        pipe
+        |> Result.bind (fun _ -> findFunction contract functionSelector)
+        
     
     ///
     /// Unpacks constants from the ContractConstants record
@@ -343,7 +344,7 @@ module RPCFunctions =
     /// Note that some EthMethods have no arguments, while others have object arguments. Use `makeEthCall` or
     /// `makeEthTxn` in those cases.
     ///
-    let public makeEthRPCCall env chainId method (paramList: string list) =
+    let public makeEthRPCCall method (paramList: string list) chainId env =
         checkForChain env chainId
         |> Result.bind ( fun _ ->
         { method = method
@@ -363,10 +364,11 @@ module RPCFunctions =
     /// * `arguments`: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
     /// value: the wei-denominated amount of ETH to send along with a transaction to a `payable` function.
     ///
-    let public makeEthTxn env contract evmFunction arguments value =
+    let public makeEthTxn contract evmFunction arguments value env =
         checkForChain env contract.chainId
         |> checkForEmptyValueString value
-        |> createUnvalidatedTxn env.constants contract evmFunction arguments value
+        |> checkFunctionExists contract evmFunction 
+        |> createUnvalidatedTxn env.constants contract arguments value
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -395,10 +397,11 @@ module RPCFunctions =
     /// ByString) or a IndicatedFunction (returned by `findFunction`)
     /// * `arguments`: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
     ///
-    let public makeEthCall env contract evmFunction arguments =
+    let public makeEthCall contract evmFunction arguments env =
         let blockHeight' = blockHeight env.constants
         checkForChain env contract.chainId
-        |> createUnvalidatedCall env.constants contract evmFunction arguments
+        |> checkFunctionExists contract evmFunction
+        |> createUnvalidatedTxn env.constants contract arguments "0"  
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -419,7 +422,7 @@ module RPCFunctions =
     /// * `constants`: A ContractConstants record.
     /// * `contract`: A UndeployedContract that is being deployed
     ///
-    let public deployEthContract env value (contract: UndeployedContract) =
+    let public deployEthContract (contract: UndeployedContract) value env =
         checkForChain env contract.chainId
         |> checkForEmptyValueString value
         |> unpackDeployConstants env.constants
@@ -448,11 +451,12 @@ module RPCFunctions =
     ///
     /// Estimate the amount of gas units required for the given transaction to complete. Essentially the same as 
     /// `makeEthTxn` but with a different underlying call. A static value argument of "0" is supplied.
-    let public estimateGas env contract evmFunction arguments  =
+    let public estimateGas contract evmFunction arguments env =
         let blockHeight' = blockHeight env.constants
         
         checkForChain env contract.chainId
-        |> createUnvalidatedTxn env.constants contract evmFunction arguments "0"
+        |> checkFunctionExists contract evmFunction
+        |> createUnvalidatedTxn env.constants contract arguments "0"
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -467,27 +471,26 @@ module RPCFunctions =
     /// This function is for the sending of Ether between EOAs. Use `makeEthTxn` with the `Receive` function indicator
     /// to send to contracts. ENS names are supported for this function.
     ///
-    let public sendValue env chainId destination value = async {
+    let public sendValue chainId destination value env = 
         let _dest = handleENSName env chainId destination
-        return
-            { dummyTransaction with
-                utoAddr = _dest
-                ufrom =  env.constants.walletAddress
-                uvalue = value |> bigintToHex |> prepend0x
-                uchainId = chainId}
-            |> validateRPCParams
-            |> Result.bind
-                (fun _params ->
-                    {method = EthMethod.SendTransaction
-                     paramList = _params
-                     blockHeight = LATEST}
-                    |> env.connection)
-            |> Result.bind (fun r ->
-                unpackRoot r
-                |> stringAndTrim
-                |> EthTransactionHash
-                |> fun ethHash ->
-                    env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )
-                    |> fun _ -> ethHash
-                |> Ok)        
-            |> monitorTransaction env.monitor }
+        { dummyTransaction with
+            utoAddr = _dest
+            ufrom =  env.constants.walletAddress
+            uvalue = value |> bigintToHex |> prepend0x
+            uchainId = chainId}
+        |> validateRPCParams
+        |> Result.bind
+            (fun _params ->
+                {method = EthMethod.SendTransaction
+                 paramList = _params
+                 blockHeight = LATEST}
+                |> env.connection)
+        |> Result.bind (fun r ->
+            unpackRoot r
+            |> stringAndTrim
+            |> EthTransactionHash
+            |> fun ethHash ->
+                env.log Log (Library $"Monitoring transaction {ethHash}" |> Ok )
+                |> fun _ -> ethHash
+            |> Ok)        
+        |> monitorTransaction env.monitor

@@ -1,6 +1,5 @@
 namespace web3.fs
 
-open SHA3Core.Keccak
 
 [<AutoOpen>]
 module Types =
@@ -465,95 +464,6 @@ module Types =
             value = "wrong unwrap or upstream web3 error" }
           
     
-    ///
-    /// Overall type for errors in various places in the pipeline. Not final at all.
-    type Web3Error =
-        | ContractParseFailure of string
-        | ConnectionError of string
-        | DataValidatorError of string
-        | HttpClientError of string
-        | RPCResponseError of string
-        | PayableFunctionZeroValueWarning of string
-        | WrongChainInSignerError
-        | ContractABIContainsHashCollisionsError
-        | EthCallIntoNonCallPipelineError
-        | RPCNullResponse
-        | EmptyBytecodeError
-        | ConstructorArgumentsToEmptyConstructorError
-        | ConstructorArgumentsMissingError
-        | ArgumentsToEmptyFunctionSignatureError
-        | FunctionArgumentsMissingError
-        | InvalidValueArgumentError
-        | ValueToNonPayableFunctionError
-        | EthAddressError
-        | GenericPipelineError of string
-        
-        
-        
-    ///
-    /// Union of potential responses from the EVM through an RPC node. `Empty` here is a 'valid' result, usually indicating
-    /// that a transaction doesn't exist at a particular hash, or that a transaction hasn't been included in the chain
-    /// yet.
-    /// 
-    type CallResponses =
-        | SimpleValue of string 
-        | Block of EthBlock 
-        | TransactionHash of EthTransactionHash 
-        | TransactionReceiptResult of TransactionReceipt 
-        | Transaction of MinedTransaction 
-        | CallResult of EVMDatatype list 
-        | Library of string
-        | Empty 
-    
-    
-    ///
-    /// Provides signals for the logger. Log will print a message to the console. Emit will produce a record or other
-    /// output ready for unwrapping. LogAndEmit does both. Quiet does neither.
-    ///  
-    type LogSignal =
-        | Log
-        | Emit
-        | LogAndEmit
-        | Quiet
-    
-    
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //// Ethereum MailboxProcessor types
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    
-    ///
-    /// Convenience type
-    type Web3Connection = HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>
-
-    
-    ///
-    /// MailboxProcessor for sending and receiving the results of an RPC transmission
-    type MailboxTransaction =
-        TransactionMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, Web3Error>>
-    
-    
-    ///
-    /// Convenience type
-    type HttpRPCMailbox = MailboxProcessor<MailboxTransaction>
-
-    
-    ///
-    /// MailboxProcessor for monitoring pending transactions
-    type MailboxReceiptManager =
-        ReceiptMessageAndReply of EthTransactionHash * AsyncReplyChannel<Result<CallResponses, Web3Error>>
-    
-
-    ///
-    /// Convenience type
-    type ReceiptManagerMailbox = MailboxProcessor<MailboxReceiptManager>
-
-
-    ///
-    /// Convenience type
-    type Monitor = EthTransactionHash -> Result<CallResponses, Web3Error>
-    
-    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Contract types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -599,11 +509,10 @@ module Types =
 
     ///
     /// The first 4 bytes of the Keccak256 hash of the function's canonical representation.
-    type EVMSelector =
-        | EVMFunctionHash of string
-        | EVMEventSelector of string
+    type EVMFunctionHash = string
+    type EVMEventHash = string
 
-
+    
     ///
     /// Describes the mutability of the function.
     /// * Pure: No reads from blockchain state, no writes to blockchain state.
@@ -629,7 +538,7 @@ module Types =
     ///
     type EVMFunction =
         { name: string
-          hash: EVMSelector
+          hash: EVMFunctionHash
           canonicalInputs: EVMFunctionInputs
           internalOutputs: EVMDatatype list
           canonicalOutputs: EVMFunctionOutputs
@@ -644,7 +553,7 @@ module Types =
         { name: string
           anonymous: bool
           inputs: EVMFunctionInputs
-          hash: EVMSelector }
+          hash: EVMEventHash }
 
 
     ///
@@ -652,7 +561,7 @@ module Types =
     type EVMError =
         { name: string
           inputs: EVMFunctionInputs
-          hash: EVMSelector }
+          hash: EVMFunctionHash }
 
 
     ///
@@ -674,7 +583,6 @@ module Types =
     /// is also returned from the function search helper.
     type FunctionIndicator =
         | IndicatedFunction of EVMFunction
-        | ByString of string
         | Receive
         | Fallback
         
@@ -684,12 +592,12 @@ module Types =
     /// A type for allowing various types of criteria to be searched for in contract functions. The EVM allows function
     /// overloading, and thus some extra care may have to be taken by the user to ensure they are calling the function 
     /// they intend to. 
-    type FunctionSearchTerm =
-        | Name of string
-        | SearchFunctionHash of EVMSelector
-        | SearchFunctionInputs of EVMFunctionInputs
-        | SearchFunctionOutputs of EVMFunctionOutputs
-        | SearchFunctionMutability of StateMutability
+    type FunctionSelector =
+        | ByName of string
+        | ByNameAndHash of (string * EVMFunctionHash)
+        | ByNameAndInputs of (string * EVMFunctionInputs)
+        | ByNameAndOutputs of (string * EVMFunctionOutputs)
+        | ByNameAndMutability of (string * StateMutability)
 
 
     ///
@@ -747,13 +655,105 @@ module Types =
           umaxPriorityFeePerGas = "" 
           uaccessList = []
           uchainId = "" }
+    
+    
+    
+    ///
+    /// Overall type for errors in various places in the pipeline. Not final at all.
+    type Web3Error =
+        | ContractParseFailure of string
+        | ConnectionError of string
+        | DataValidatorError of string
+        | HttpClientError of string
+        | RPCResponseError of string
+        | PayableFunctionZeroValueWarning of string
+        | WrongChainInSignerError
+        | ContractABIContainsHashCollisionsError
+        | EthCallIntoNonCallPipelineError
+        | RPCNullResponse
+        | EmptyBytecodeError
+        | ConstructorArgumentsToEmptyConstructorError
+        | ConstructorArgumentsMissingError
+        | ArgumentsToEmptyFunctionSignatureError
+        | FunctionNotFoundError
+        | AmbiguousFunctionError of FunctionIndicator list
+        | FunctionArgumentsMissingError
+        | InvalidValueArgumentError
+        | ValueToNonPayableFunctionError
+        | EthAddressError
+        | GenericPipelineError of string
+        
+        
+        
+    ///
+    /// Union of potential responses from the EVM through an RPC node. `Empty` here is a 'valid' result, usually indicating
+    /// that a transaction doesn't exist at a particular hash, or that a transaction hasn't been included in the chain
+    /// yet.
+    /// 
+    type CallResponses =
+        | SimpleValue of string 
+        | Block of EthBlock 
+        | TransactionHash of EthTransactionHash 
+        | TransactionReceiptResult of TransactionReceipt 
+        | Transaction of MinedTransaction 
+        | CallResult of EVMDatatype list 
+        | Library of string
+        | Empty
+        
+        
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //// Ethereum MailboxProcessor types
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    ///
+    /// Provides signals for the logger. Log will print a message to the console. Emit will produce a record or other
+    /// output ready for unwrapping. LogAndEmit does both. Quiet does neither.
+    ///  
+    type LogSignal =
+        | Log
+        | Emit
+        | LogAndEmit
+        | Quiet 
+    
+    
+    ///
+    /// Convenience type
+    type Web3Connection = HttpRPCMessage -> Result<RPCResponse.Root, Web3Error>
+
+    
+    ///
+    /// MailboxProcessor for sending and receiving the results of an RPC transmission
+    type MailboxTransaction =
+        TransactionMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, Web3Error>>
+    
+    
+    ///
+    /// Convenience type
+    type HttpRPCMailbox = MailboxProcessor<MailboxTransaction>
+
+    
+    ///
+    /// MailboxProcessor for monitoring pending transactions
+    type MailboxReceiptManager =
+        ReceiptMessageAndReply of EthTransactionHash * AsyncReplyChannel<Result<CallResponses, Web3Error>>
+    
+
+    ///
+    /// Convenience type
+    type ReceiptManagerMailbox = MailboxProcessor<MailboxReceiptManager>
+
+
+    ///
+    /// Convenience type
+    type Monitor = EthTransactionHash -> Result<CallResponses, Web3Error>
+    
     ///
     /// Web3Environment is a convenience grouping of necessary functions and data to perform operations with web3.fs.  
     type Web3Environment =
         { connection: Web3Connection
           monitor: Monitor
           constants: ContractConstants
-          digest: Keccak
           log : LogSignal -> Result<CallResponses, Web3Error> -> CallResponses }
         
         
@@ -778,10 +778,14 @@ module Types =
         | Success
         | Failure
     
-
+    
+  
+    
+    
     /// Simple logging message type for MailboxProcessor
     type LogMessage = LogType * CallResponses
     
     
     /// A MailboxProcessor-based logger
     type Logger = MailboxProcessor<LogMessage>
+    

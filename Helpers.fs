@@ -35,7 +35,6 @@ module Helpers =
         {connection = rpc
          monitor = createReceiptMonitor rpc
          constants = createDefaultConstants address
-         digest = newKeccakDigest
          log = startLogger() |> log }
         
     
@@ -58,9 +57,9 @@ module Helpers =
     /// Combines the preparation and deployment of a contract. Automatically calls Log on environment logger. Mostly
     /// for convenience.
     /// 
-    let public prepareAndDeployContract env chainId bytecode abi (constructorArguments: EVMDatatype list option) value =
-        prepareUndeployedContract env bytecode constructorArguments chainId abi
-        |> Result.bind(deployEthContract env value)
+    let public prepareAndDeployContract chainId bytecode abi (constructorArguments: EVMDatatype list option) value env =
+        prepareUndeployedContract bytecode abi chainId constructorArguments 
+        |> Result.bind(fun contract -> deployEthContract contract value env )
         |> env.log Log
         |> fun _ -> ()
     
@@ -70,8 +69,8 @@ module Helpers =
     /// environment logger. Mostly for convenience.
     /// 
     let public prepareDeployAndLoadContract env chainId bytecode abi (constructorArguments: EVMDatatype list option) value =
-        prepareUndeployedContract env bytecode constructorArguments chainId abi
-        |> Result.bind(deployEthContract env value)
+        prepareUndeployedContract bytecode abi chainId constructorArguments
+        |> Result.bind(fun contract -> deployEthContract contract value env)
         |> fun tap ->
             tap
             |> env.log Log
@@ -79,6 +78,6 @@ module Helpers =
         |> Result.bind(fun res -> 
             match res with
             | TransactionReceiptResult transactionReceipt ->
-                loadDeployedContract env transactionReceipt.contractAddress.Value chainId abi
+                loadDeployedContract abi chainId transactionReceipt.contractAddress.Value
             | _ -> "Result of `deployEthContract` wasn't of the expected type" |> GenericPipelineError |> Error )
                 
