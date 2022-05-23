@@ -639,6 +639,8 @@ module Types =
           functions: EVMFunction list
           events: EVMEvent list
           errors: EVMError list
+          hasFallback: bool
+          hasReceive: bool
           //deployedConstructorArguments: string // todo maybe? probably involves some reasonable work to retrieve generically
           chainId: string }
     
@@ -675,6 +677,8 @@ module Types =
         | ConstructorArgumentsToEmptyConstructorError
         | ConstructorArgumentsMissingError
         | ArgumentsToEmptyFunctionSignatureError
+        | ContractLacksFallbackError
+        | ContractLacksReceiveError
         | FunctionNotFoundError
         | AmbiguousFunctionError of FunctionIndicator list
         | FunctionArgumentsMissingError

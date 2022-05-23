@@ -143,6 +143,17 @@ module RPCFunctions =
         
     
     ///
+    /// Checks that we aren't trying to call the fallback or receive function(s) on a contract that doesn't have them.
+    let checkForFallbackOrReceive contract (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
+        pipe
+        |> Result.bind(fun (_,_,_,_,_, requestedFunction) ->
+            if requestedFunction.name = "fallback" && contract.hasFallback = false then
+                ContractLacksFallbackError |> Error
+            else if requestedFunction.name = "receive" && contract.hasReceive = false then
+                ContractLacksReceiveError |> Error
+            else pipe)
+    
+    ///
     /// Selects the supplied arguments or ones defaulted in the ContractConstants.
     let private chooseDefaultOrSuppliedArguments suppliedArgs (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
@@ -228,6 +239,7 @@ module RPCFunctions =
             |> unpackConstants
             |> convertValueToHex value
             |> pipeBindFunction functionIndicator
+            |> checkForFallbackOrReceive contract 
             |> chooseDefaultOrSuppliedArguments arguments
             |> checkArgsToFunction
             |> checkArgumentData

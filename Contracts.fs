@@ -146,7 +146,8 @@ module ContractFunctions =
     let private tryGetReceive (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "receive")
-        |> Array.tryHead
+        |> Array.isEmpty
+        |> not
 
 
     ///
@@ -158,7 +159,8 @@ module ContractFunctions =
     let private tryGetFallback (jVals: JsonValue array) =
         jVals
         |> Array.filter (testPropertyInnerText "fallback")
-        |> Array.tryHead
+        |> Array.isEmpty
+        |> not
 
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -477,7 +479,13 @@ module ContractFunctions =
     let private getFunctionsEventsErrors digest (pipe: Result<EthAddress * JsonValue[], Web3Error>) =
         pipe
         |> Result.bind(fun (a, b) ->
-            (a, parseABIForFunctions digest b, parseABIForEvents digest b, parseABIForErrors digest b ) |> Ok)
+            ( a,
+              parseABIForFunctions digest b,
+              parseABIForEvents digest b,
+              parseABIForErrors digest b,
+              tryGetFallback b,
+              tryGetReceive b )
+            |> Ok)
         
         
     ///
@@ -538,12 +546,14 @@ module ContractFunctions =
         |> pipeCanABIBeParsed abi
         |> convertJsonValueToArray
         |> getFunctionsEventsErrors digest
-        |> Result.bind (fun (address, functions, events, errors) ->
+        |> Result.bind (fun (address, functions, events, errors, hasFallback, hasReceive) ->
             { address = address 
               abi = abi
               functions = functions
               events = events
               errors = errors
+              hasFallback = hasFallback
+              hasReceive = hasReceive
               chainId = chainId }
             |> Ok)
   
