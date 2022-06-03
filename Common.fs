@@ -1,6 +1,6 @@
 namespace web3.fs
 
-open web3.fs.Types
+open Types
 
 [<AutoOpen>]
 module Common =
@@ -28,8 +28,7 @@ module Common =
     /// of overzealous quote stripping.
     /// 
     let internal trimParameter (p: string) =
-        p
-        |> fun s -> s.TrimStart('"')
+        p.TrimStart('"')
         |> fun s -> s.TrimEnd('"')    
     
     
@@ -37,6 +36,15 @@ module Common =
     /// Common function of changing a RPC Result into a string and trimming " characters
     let internal stringAndTrim (r: RPCResponse.Result) =
         r.ToString() |> trimParameter
+    
+    
+    ///
+    /// Removes whitespace and linebreaks from the input text. Intended for importing the ABI
+    /// from a file.
+    let internal stripNewlinesAndWhitespace (input: string) =
+        input
+        |> fun s -> s.Replace("\r\n", String.Empty)
+        |> fun s -> s.Replace(" ", String.Empty)        
     
     
     ///
@@ -48,12 +56,12 @@ module Common =
 
 
     ///
-    /// Returns the bytecode of a compiled contract from a <contract>.json file, as in the output of the `solc` binary. 
+    ///  Returns the bytecode of a compiled contract from a <contract>.json file emitted from the `solc` binary.  
     /// 
     /// * `path`: A path string. Should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
     /// slashes, i.e. "c:/users/user/some/more/path/contract.json".
     /// 
-    let public returnBytecodeFromFile (path: string) =
+    let public returnBytecodeFromSolcJsonFile (path: string) =
         let file = new StreamReader(path)
         let obj = ContractBytecode.Parse(file.ReadToEnd()) |> fun r -> r.Bytecode
         file.Dispose()
@@ -61,14 +69,44 @@ module Common =
     
     
     ///
-    /// Returns the ABI string from the *.abi file emitted by the solc compiler. No checking is done on this, use
-    /// a literal string if you're unsure that the file contains anything else.
+    /// Returns the ABI and bytecode of a compiled contract from a <contract>.json file emitted from the `solc` binary. 
     /// 
+    /// * `path`: A path string. Should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
+    /// slashes, i.e. "c:/users/user/some/path/contract.json".
+    /// 
+    let public returnABIAndBytecodeFromSolcJsonFile (path: string) =
+        use file = new StreamReader(path)
+        let root = file.ReadToEnd() |> ContractBytecode.Parse
+        let abi =
+            // Convert parsed Root to a compatible representation for later consumption.
+            root.Abi
+            |> Array.map(fun i -> i.JsonValue)
+            |> Array.map(fun i -> i.ToString())
+            |> fun a -> String.Join(",", a)
+            |> stripNewlinesAndWhitespace
+            |> fun s -> "[" + s + "]"
+            
+        (abi |> ABI, root.Bytecode |> RawContractBytecode)
+
+
+    ///
+    /// Returns the ABI string from a file. This can be the .abi emitted by the solc compiler, or a remix output
+    /// copied into a file and saved.  
     let public returnABIFromFile (path:string) =
-        let file = new StreamReader(path)
-        let abiString = file.ReadToEnd()
-        file.Dispose()
-        abiString |> ABI
+        use file = new StreamReader(path)
+        file.ReadToEnd()
+        |> stripNewlinesAndWhitespace
+        |> ABI
+    
+    
+    ///
+    /// Returns the bytecode string from a file that contains the 'bytecode' output from Remix.
+    let public returnBytecodeFromRemix (path: string) =
+        use file = new StreamReader(path)
+        file.ReadToEnd()
+        |> RemixBytecode.Parse
+        |> fun root -> root.Object
+        |> RawContractBytecode
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +147,7 @@ module Common =
         Convert.FromHexString(input)
     
     ///
-    /// Returns a hexadecimal string with no leading 0's. Useful for QUANTITY values in the ABI.
+    /// Returns a hexadecimal string with no leading 0's.
     let public bigintToHex num =
         if num = "0" then "0x0" else num |> fun n -> bigint.Parse(n).ToString("X").TrimStart('0').ToLower()
 
@@ -131,7 +169,7 @@ module Common =
     /// so mind what strings are passed in. For use where leading 0's haven't been trimmed outside of
     /// Web3.fs.
     /// 
-    let public hexToBigInt (hexString: string) =
+    let public hexToBigInt hexString =
         hexString |> strip0x |> trimParameter |> fun h -> bigint.Parse(h, NumberStyles.AllowHexSpecifier)
 
 

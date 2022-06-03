@@ -1,6 +1,6 @@
 namespace web3.fs
 
-open web3.fs.Types
+open Types
 
 [<AutoOpen>]
 module ContractFunctions =

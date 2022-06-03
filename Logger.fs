@@ -1,6 +1,6 @@
 namespace web3.fs
 
-open web3.fs
+open Types
 
 module Logger =
     
@@ -32,9 +32,8 @@ module Logger =
     ///
     /// Formatted print of a simple response value, typically an RPC response
     let prettySimple (simple: string) =
-        printAndRevert Blue $"{simple}\n"
+        printAndRevert Blue $"{simple |> trimParameter}\n"
         
-    
     
     ///
     /// Formatted print of a TransactionReceipt
@@ -53,8 +52,9 @@ module Logger =
             else ""
         
         if receipt.status = "0x0" then
-            printAndRevert Red "Failed transaction"
-        else printAndRevert Green "Successful Transaction\n"
+            printAndRevert Red "Failed transaction\n"
+        else
+            printAndRevert Green "Successful Transaction\n"
         printAndRevert Blue $"Transaction hash: {receipt.transactionHash}\n"
         printAndRevert DarkBlue $"From: {receipt.from}\n"
         printAndRevert Blue toOrContract

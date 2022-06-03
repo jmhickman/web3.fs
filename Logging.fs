@@ -1,11 +1,10 @@
 namespace web3.fs
 
-open web3.fs.Types
+open Types
 
 [<AutoOpen>]    
 module Logging =
     
-    open Logger
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Logging
@@ -46,7 +45,7 @@ module Logging =
     /// 
     /// * `logger`: A `Logger`. Typically generated from `createWeb3Environment`.
     /// * `signal`: An indicator to tell the logger how to handle the Result. One of 'Log', 'Emit', 'LogAndEmit', or 'Quiet'
-    /// * `pipeResult`: Result flow. Provided by piping a ethereum call into this function.
+    /// * `pipeResult`: Result flow. Provided by piping an Ethereum call into this function.
     /// 
     let public log (logger: Logger) signal (pipeResult: Result<CallResponses, Web3Error>) =
         match signal with

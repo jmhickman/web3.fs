@@ -38,20 +38,20 @@ module Types =
 
     [<Literal>]
     let nullable =
-        """[{"id":1,"jsonrpc":"2.0","result":{"blockHash":"0xc3646d4d8e3c650b15ef7f8a4d6d16fa4c7e68eb08195361182d7aa2eb3a0d65","blockNumber":"0x9dc3fe","contractAddress":null,"cumulativeGasUsed":"0x1166efb","effectiveGasPrice":"0x650fe5cd5","from":"0x2268b96e204379ee8366505c344ebe5cc34d3a46","gasUsed":"0x2e707","logs":[],"logsBloom":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000","status":"0x1","to":null,"transactionHash":"0x0bd6acf13c1adf63c1f2b17ac1f9c4b98d94f2701728ffd5efe50aa77a6aa5aa","transactionIndex":"0x56","type":"0x2"}}, {"id":1,"jsonrpc":"2.0","result":null}, {"id":1,"jsonrpc":"2.0","error":{"message":"","code":-1}}]"""
+        """[{"id":1,"jsonrpc":"2.0","result":{"blockHash":"0x","blockNumber":"0x","contractAddress":null,"cumulativeGasUsed":"0x","effectiveGasPrice":"0x","from":"0x","gasUsed":"0x","logs":[],"logsBloom":"0x","status":"0x1","to":null,"transactionHash":"0x","transactionIndex":"0x56","type":"0x2"}}, {"id":1,"jsonrpc":"2.0","result":null}, {"id":1,"jsonrpc":"2.0","error":{"message":"","code":-1}}]"""
 
     type RPCResponse = JsonProvider<nullable, SampleIsList=true>
     
     
     [<Literal>]
     let minedTransaction =
-        """{"accessList":[],"blockHash":"0xc5430aaf3f85cb6b7d0400345d82bdd5ff3c16d230670827adefe024f2b84a19","blockNumber":"0x9ee268","chainId":"0x4","from":"0x2268b96e204379ee8366505c344ebe5cc34d3a46","gas":"0x5566","gasPrice":"0x700f2328","hash":"0xf7d92d8090c1a6f6f811c07ef2b98b044304545c65af57fb6424f33d59ecd1ce","input":"0x91fc651700000000000000000000000000000000000000000000000000000000000000ff","maxFeePerGas":"0x7f541fb5","maxPriorityFeePerGas":"0x41a53453","nonce":"0x32","r":"0x4f9f9a8f18b3756e647816d16e240588d2cc7f212d4fbdcc7871c37327dd300d","s":"0x91fd6da320a1a006aad57bce8e6f062a6caf68066966488039d791d7f8b1ae3","to":"0x894113aa49fe903be4c7b8fdddacf503fa88c1f7","transactionIndex":"0x11","type":"0x2","v":"0x0","value":"0x0"}"""
+        """{"accessList":[],"blockHash":"0x","blockNumber":"0x","chainId":"0x4","from":"0x","gas":"0x","gasPrice":"0x","hash":"0x","input":"0x","maxFeePerGas":"0x","maxPriorityFeePerGas":"0x","nonce":"0x","r":"0x","s":"0x","to":"0x","transactionIndex":"0x11","type":"0x2","v":"0x0","value":"0x0"}"""
     
     type RPCMinedTransaction = JsonProvider<minedTransaction>
     
     [<Literal>]
     let block =
-        """{"author":"0x0000000000000000000000000000000000000000","baseFeePerGas":"0xb","difficulty":"0x1","extraData":"0x696e667572612e6c601","gasLimit":"0x1c9c364","gasUsed":"0xd8ec3e","hash":"0x5fe3bc231d6b492665af141fd32aaffbf2691cb52a5d4eb9de7e340a48cb8071","logsBloom":"0x2c20c05c100002109041","miner":"0x0000000000000000000000000000000000000000","number":"0xa01b7b","parentHash":"0xf6b6bae73e27c3be6a96ed47bb092cb3c5152eec7f55c165d39ccd1a977bfef0","receiptsRoot":"0x6c2810d1e1356e480e000d967bd718bbd84bb74739b0ffe7dabafc592ef22589","sealFields":["0xa000000000000000000000000","0x880000000000000000"],"sha3Uncles":"0x1dcc4de8da142fd40d49347","size":"0xd435","stateRoot":"0x06ee90180a5a638bed","timestamp":"0x6255bd2e","totalDifficulty":"0x1097454","transactions":["0xca8148612","0x791f583b1e5ee","0xadc458105cf51","0x3b6940a81642e9d9","0x3cdf20aac"],"transactionsRoot":"0x981b9371a29263153b8","uncles":[]}"""
+        """{"author":"0x","baseFeePerGas":"0xb","difficulty":"0x1","extraData":"0x","gasLimit":"0x","gasUsed":"0x","hash":"0x","logsBloom":"0x","miner":"0x","number":"0x","parentHash":"0x","receiptsRoot":"0x","sealFields":["0x","0x"],"sha3Uncles":"0x","size":"0x","stateRoot":"0x","timestamp":"0x","totalDifficulty":"0x","transactions":["0x","0x"],"transactionsRoot":"0x","uncles":["0x","0x"]}"""
 
     type RPCBlock = JsonProvider<block>    
         
@@ -64,11 +64,18 @@ module Types =
     ///
     /// Derived from Solc output, remix output looks different
     [<Literal>]
-    let sampleBytecode =
-        """{"contractName":"UnitTestingContract","abi":[],"metadata":"","bytecode":"6080604052348015610010572083870101525b50601f01601f19169290920160200192915050565b6001600160a01b0391909116815260200190565b901515815260200190565b6001600160801b031991909116815260200190565b60006020825261181360208301846119fb565b90815260200190565b60009190910b815260200190565b60208082526025908201527f596f7520617265206e6f7420746865206f776e6572206f662074686520636f6e6040820152641d1c9858dd60da1b606082015260800190565b60ff91909116815260200190565b6000808335601e19843603018112611b0d578283fd5b83018035915067ffffffffffffffff821115611b27578283fd5b60200191503681900382131561179457600080fd5b6000808335601e19843603018112611b0d578182fd5b600281046001821680611b6657607f821691505b60208210811415611b8757634e487b7160e01b600052602260045260246000fd5b50919050565b6000600019821415611bad57634e487b7160e01b81526011600452602481fd5b506001019056fea2646970667358221220763f965497247c8646c2fd9ef88a4553d300863a6d99a00843155c1c7086d7ba64736f6c63430008000033","deployedBytecode":"6080604052600436106102cd5760003560e01c80638820238c11610175578063cc4dd74a116100dc578063e7a96f6d11610095578063f9cceccc1161006f578f91909116815260200190565b6000808335601e19843603018112611b0d578283fd5b83018035915067ffffffffffffffff821115611b27578283fd5b60200191503681900382131561179457600080fd5b6000808335601e19843603018112611b0d578182fd5b600281046001821680611b6657607f821691505b60208210811415611b8757634e487b7160e01b600052602260045260246000fd5b50919050565b6000600019821415611bad57634e487b7160e01b81526011600452602481fd5b506001019056fea2646970667358221220763f965497247c8646c2fd9ef88a4553d300863a6d99a00843155c1c7086d7ba64736f6c63430008000033","sourceMap":"65:4923:0:-:0;;;3:0;;;;;;","deployedSourceMap":"65:4923:0:-:0;;;;;;:::i;:::-;;;;;;;:::i;1110:99::-;;;;;;;;;;;;;:::i;190:26::-;;;;;;;;;;-1:-1:-1;190:26:0;;;;;:::i;:::-;;:::i;","sourcePath":"c:/Users/jon_h/source/repos/UnitTestingContract/UnitTestingContract.sol","compiler":{"name":"solc","version":"0.8.0+commit.c7dfd78e"},"ast":{},"functionHashes":{"aBool()":"350ca843"},"gasEstimates":{"creation":{"codeDepositCost":"1429200","executionCost":"infinite","totalCost":"infinite"},"external":{}}}"""
+    let sampleSolcBytecode =
+        """{"contractName":"","abi":[{"thing":"0x"}],"metadata":"","bytecode":"0x","deployedBytecode":"","sourceMap":"","deployedSourceMap":"","sourcePath":"","compiler":{"name":"","version":""},"ast":{},"functionHashes":{"func":"0x"},"gasEstimates":{"creation":{"codeDepositCost":"","executionCost":"","totalCost":"infinite"},"external":{}}}"""
    
-    type internal ContractBytecode = JsonProvider<sampleBytecode>
+    type internal ContractBytecode = JsonProvider<sampleSolcBytecode>
     
+    ///
+    /// Derived from Remix 'bytecode' output
+    [<Literal>]
+    let sampleRemixBytecode =
+        """{"functionDebugData":{"@_3063":{"entryPoint":null,"id":3063,"parameterSlots":2,"returnSlots":0}},"generatedSources":[{"ast":{"nodeType":"0x","src":"0x","statements":[{"body":{"nodeType":"","src":"","statements":[{"body":{"nodeType":"0x","src":"0x","statements":[{"expression":{"arguments":[{"kind":"","nodeType":"","src":"","type":"","value":""}],"functionName":{"name":"","nodeType":"","src":""},"nodeType":"","src":""},"nodeType":"","src":""}]},"condition":{"arguments":[{"arguments":[{"name":"","nodeType":"","src":""},{"arguments":[{"name":"","nodeType":"","src":""}],"functionName":{"name":"","nodeType":"","src":""},"nodeType":"","src":""}],"functionName":{"name":"","nodeType":"","src":""},"nodeType":"","src":""}],"functionName":{"name":"","nodeType":"","src":""},"nodeType":"","src":""},"nodeType":"","src":""}]},"name":"","nodeType":"","parameters":[{"name":"","nodeType":"","src":"","type":""}],"src":""}]},"contents":"{}","id":19,"language":"","name":""}],"linkReferences":{},"object":"0x60806040","opcodes":"PUSH01","sourceMap":"0x"}"""
+    
+    type internal RemixBytecode = JsonProvider<sampleRemixBytecode>
         
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constants
