@@ -91,7 +91,8 @@ module Common =
 
     ///
     /// Returns the ABI string from a file. This can be the .abi emitted by the solc compiler, or a remix output
-    /// copied into a file and saved.  
+    /// copied into a file and saved.
+    /// 
     let public returnABIFromFile (path:string) =
         use file = new StreamReader(path)
         file.ReadToEnd()
@@ -257,7 +258,7 @@ module Common =
     /// check that the string is a hexadecimal string, beware.
     /// 
     let public asWeiHex quantity = hexAsWei quantity
-       
+    
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Binders

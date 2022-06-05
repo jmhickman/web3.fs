@@ -93,14 +93,14 @@ module RPCFunctions =
     let handleENSName env chainId (name: string) =
         if name.Contains('.') then
             let hash = convertENSName name
-            let bytes = [BytesSz hash] |> createInputByteString
+            let bytes = [Bytes32 hash] |> createInputByteString
             let evmData = "02571be3" + bytes |> prepend0x
             { utxnType = "0x2"
               unonce = ""
               utoAddr = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
               ufrom = env.constants.walletAddress
               ugas = ""
-              uvalue = ZERO
+              uvalue = ZEROHEX
               udata = evmData
               umaxPriorityFeePerGas = ""
               umaxFeePerGas = ""
