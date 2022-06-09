@@ -696,7 +696,7 @@ module Types =
           bytecode: RawContractBytecode
           chainId: string
           constructorArguments: EVMDatatype list
-          stateMutability: StateMutability}
+          stateMutability: StateMutability }
 
 
     ///
@@ -704,13 +704,12 @@ module Types =
     type DeployedContract =
         { address: EthAddress
           abi: ABI
+          chainId: string 
           functions: EVMFunction list
           events: EVMEvent list
           errors: EVMError list
           hasFallback: bool
-          hasReceive: bool
-          //deployedConstructorArguments: string // todo maybe? probably involves some reasonable work to retrieve generically
-          chainId: string }
+          hasReceive: bool }
     
     
     let dummyTransaction =
@@ -821,7 +820,12 @@ module Types =
     /// Convenience type
     type Monitor = EthTransactionHash -> Result<CallResponses, Web3Error>
     
-    ///
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //// Web3Environment
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// 
     /// Web3Environment is a convenience grouping of necessary functions and data to perform operations with web3.fs.  
     type Web3Environment =
         { connection: Web3Connection
@@ -829,6 +833,7 @@ module Types =
           constants: ContractConstants
           log : LogSignal -> Result<CallResponses, Web3Error> -> CallResponses }
         
+             
         
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Logging types

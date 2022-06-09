@@ -62,7 +62,7 @@ module Helpers =
     /// 
     let public prepareAndDeployContract bytecode abi chainId (constructorArguments: EVMDatatype list) value env =
         prepareUndeployedContract bytecode abi chainId constructorArguments 
-        |> Result.bind(fun contract -> deployEthContract contract value env )
+        |> Result.bind(fun contract -> deployContract contract value env )
         |> env.log Log
         |> fun _ -> ()
     
@@ -73,7 +73,7 @@ module Helpers =
     /// 
     let public prepareDeployAndLoadContract bytecode abi chainId (constructorArguments: EVMDatatype list) value env =
         prepareUndeployedContract bytecode abi chainId constructorArguments
-        |> Result.bind(fun contract -> deployEthContract contract value env)
+        |> Result.bind(fun contract -> deployContract contract value env)
         |> fun tap ->
             tap
             |> env.log Log

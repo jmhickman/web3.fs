@@ -376,7 +376,7 @@ module RPCFunctions =
     /// * contract: A DeployedContract that is being called
     /// * evmFunction: FunctionSelector corresponding to the the function being called. Typically (ByName "SomeFunction")
     /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no arguments.
-    /// * value: the wei-denominated amount of ETH to send along with a transaction to a `payable` function.
+    /// * value: the wei-denominated amount of ETH to send along with a transaction to a payable function.
     /// * env: An Web3Environment. See createWeb3Environment.
     ///
     let public contractTransaction contract evmFunction arguments value env =
@@ -431,11 +431,11 @@ module RPCFunctions =
     ///
     /// Creates an Ethereum transaction (a call that changes the state of the blockchain) specifically for deploying
     /// a contract's bytecode.
-    /// * `rpcConnection`: An activated RPC connection from `createWeb3Connection`
-    /// * `constants`: A ContractConstants record.
-    /// * `contract`: A UndeployedContract that is being deployed
+    /// * contract: A UndeployedContract that is being deployed
+    /// * value: the wei-denominated amount of ETH to send along with a transaction to a payable constructor.
+    /// * env: An Web3Environment. See createWeb3Environment.
     ///
-    let public deployEthContract (contract: UndeployedContract) value env =
+    let public deployContract (contract: UndeployedContract) value env =
         checkForChain env contract.chainId
         |> checkForEmptyValueString value
         |> unpackDeployConstants env.constants
