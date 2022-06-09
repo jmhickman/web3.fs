@@ -117,6 +117,75 @@ module Types =
     // EVM data types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    
+    type Bitness =
+        | B8
+        | B16
+        | B24
+        | B32
+        | B40
+        | B48
+        | B56
+        | B64
+        | B72
+        | B80
+        | B88
+        | B96
+        | B104
+        | B112
+        | B120
+        | B128
+        | B136
+        | B144
+        | B152
+        | B160
+        | B168
+        | B176
+        | B184
+        | B192
+        | B200
+        | B208
+        | B216
+        | B224
+        | B232
+        | B240
+        | B248
+        | B256
+        
+    type ByteLength =
+        | L1
+        | L2
+        | L3
+        | L4
+        | L5
+        | L6
+        | L7
+        | L8
+        | L9
+        | L10
+        | L11
+        | L12
+        | L13
+        | L14
+        | L15
+        | L16
+        | L17
+        | L18
+        | L19
+        | L20
+        | L21
+        | L22
+        | L23
+        | L24
+        | L25
+        | L26
+        | L27
+        | L28
+        | L29
+        | L30
+        | L31
+        | L32     
+        
 
     /// Representations of EVM types in simplistic form. There is no effort made to check that provided values of these
     /// types conform to any limitation of said types.
@@ -135,310 +204,30 @@ module Types =
         | Address of string
         | AddressArraySz of string list
         | AddressArray of string list
-        | Uint256 of string
-        | Uint256ArraySz of string list
-        | Uint256Array of string list
-        | Int256 of string
-        | Int256ArraySz of string list 
-        | Int256Array of string list
         | Bool of bool
         | BoolArraySz of bool list
         | BoolArray of bool list
-//        | BytesSz of string
-//        | BytesSzArraySz of string list 
-//        | BytesSzArray of string list 
         | Bytes of string
         | BytesArraySz of EVMDatatype list
         | BytesArray of EVMDatatype list
-        | Function of string
-        | FunctionArray of string list
-        | FunctionArraySz of string list
+//        | Function of string
+//        | FunctionArray of string list
+//        | FunctionArraySz of string list
         | String of string
         | StringArraySz of EVMDatatype list
         | StringArray of EVMDatatype list
         | Blob of string
-        | Uint8 of string
-        | Uint16 of string
-        | Uint24 of string
-        | Uint32 of string
-        | Uint40 of string
-        | Uint48 of string
-        | Uint56 of string
-        | Uint64 of string
-        | Uint72 of string
-        | Uint80 of string
-        | Uint88 of string
-        | Uint96 of string
-        | Uint104 of string
-        | Uint112 of string
-        | Uint120 of string
-        | Uint128 of string
-        | Uint136 of string
-        | Uint144 of string
-        | Uint152 of string
-        | Uint160 of string
-        | Uint168 of string
-        | Uint176 of string
-        | Uint184 of string
-        | Uint192 of string
-        | Uint200 of string
-        | Uint208 of string
-        | Uint216 of string
-        | Uint224 of string
-        | Uint232 of string
-        | Uint240 of string
-        | Uint248 of string
-        | Uint8ArraySz of string list
-        | Uint16ArraySz of string list
-        | Uint24ArraySz of string list
-        | Uint32ArraySz of string list
-        | Uint40ArraySz of string list
-        | Uint48ArraySz of string list
-        | Uint56ArraySz of string list
-        | Uint64ArraySz of string list
-        | Uint72ArraySz of string list
-        | Uint80ArraySz of string list
-        | Uint88ArraySz of string list
-        | Uint96ArraySz of string list
-        | Uint104ArraySz of string list
-        | Uint112ArraySz of string list
-        | Uint120ArraySz of string list
-        | Uint128ArraySz of string list
-        | Uint136ArraySz of string list
-        | Uint144ArraySz of string list
-        | Uint152ArraySz of string list
-        | Uint160ArraySz of string list
-        | Uint168ArraySz of string list
-        | Uint176ArraySz of string list
-        | Uint184ArraySz of string list
-        | Uint192ArraySz of string list
-        | Uint200ArraySz of string list
-        | Uint208ArraySz of string list
-        | Uint216ArraySz of string list
-        | Uint224ArraySz of string list
-        | Uint232ArraySz of string list
-        | Uint240ArraySz of string list
-        | Uint248ArraySz of string list
-        | Uint8Array of string list
-        | Uint16Array of string list
-        | Uint24Array of string list
-        | Uint32Array of string list
-        | Uint40Array of string list
-        | Uint48Array of string list
-        | Uint56Array of string list
-        | Uint64Array of string list
-        | Uint72Array of string list
-        | Uint80Array of string list
-        | Uint88Array of string list
-        | Uint96Array of string list
-        | Uint104Array of string list
-        | Uint112Array of string list
-        | Uint120Array of string list
-        | Uint128Array of string list
-        | Uint136Array of string list
-        | Uint144Array of string list
-        | Uint152Array of string list
-        | Uint160Array of string list
-        | Uint168Array of string list
-        | Uint176Array of string list
-        | Uint184Array of string list
-        | Uint192Array of string list
-        | Uint200Array of string list
-        | Uint208Array of string list
-        | Uint216Array of string list
-        | Uint224Array of string list
-        | Uint232Array of string list
-        | Uint240Array of string list
-        | Uint248Array of string list
-        | Int8 of string
-        | Int16 of string
-        | Int24 of string
-        | Int32 of string
-        | Int40 of string
-        | Int48 of string
-        | Int56 of string
-        | Int64 of string
-        | Int72 of string
-        | Int80 of string
-        | Int88 of string
-        | Int96 of string
-        | Int104 of string
-        | Int112 of string
-        | Int120 of string
-        | Int128 of string
-        | Int136 of string
-        | Int144 of string
-        | Int152 of string
-        | Int160 of string
-        | Int168 of string
-        | Int176 of string
-        | Int184 of string
-        | Int192 of string
-        | Int200 of string
-        | Int208 of string
-        | Int216 of string
-        | Int224 of string
-        | Int232 of string
-        | Int240 of string
-        | Int248 of string
-        | Int8ArraySz of string list
-        | Int16ArraySz of string list
-        | Int24ArraySz of string list
-        | Int32ArraySz of string list
-        | Int40ArraySz of string list
-        | Int48ArraySz of string list
-        | Int56ArraySz of string list
-        | Int64ArraySz of string list
-        | Int72ArraySz of string list
-        | Int80ArraySz of string list
-        | Int88ArraySz of string list
-        | Int96ArraySz of string list
-        | Int104ArraySz of string list
-        | Int112ArraySz of string list
-        | Int120ArraySz of string list
-        | Int128ArraySz of string list
-        | Int136ArraySz of string list
-        | Int144ArraySz of string list
-        | Int152ArraySz of string list
-        | Int160ArraySz of string list
-        | Int168ArraySz of string list
-        | Int176ArraySz of string list
-        | Int184ArraySz of string list
-        | Int192ArraySz of string list
-        | Int200ArraySz of string list
-        | Int208ArraySz of string list
-        | Int216ArraySz of string list
-        | Int224ArraySz of string list
-        | Int232ArraySz of string list
-        | Int240ArraySz of string list
-        | Int248ArraySz of string list
-        | Int8Array of string list
-        | Int16Array of string list
-        | Int24Array of string list
-        | Int32Array of string list
-        | Int40Array of string list
-        | Int48Array of string list
-        | Int56Array of string list
-        | Int64Array of string list
-        | Int72Array of string list
-        | Int80Array of string list
-        | Int88Array of string list
-        | Int96Array of string list
-        | Int104Array of string list
-        | Int112Array of string list
-        | Int120Array of string list
-        | Int128Array of string list
-        | Int136Array of string list
-        | Int144Array of string list
-        | Int152Array of string list
-        | Int160Array of string list
-        | Int168Array of string list
-        | Int176Array of string list
-        | Int184Array of string list
-        | Int192Array of string list
-        | Int200Array of string list
-        | Int208Array of string list
-        | Int216Array of string list
-        | Int224Array of string list
-        | Int232Array of string list
-        | Int240Array of string list
-        | Int248Array of string list
-        | Bytes1 of string
-        | Bytes2 of string
-        | Bytes3 of string
-        | Bytes4 of string
-        | Bytes5 of string
-        | Bytes6 of string
-        | Bytes7 of string
-        | Bytes8 of string
-        | Bytes9 of string
-        | Bytes10 of string
-        | Bytes11 of string
-        | Bytes12 of string
-        | Bytes13 of string
-        | Bytes14 of string
-        | Bytes15 of string
-        | Bytes16 of string
-        | Bytes17 of string
-        | Bytes18 of string
-        | Bytes19 of string
-        | Bytes20 of string
-        | Bytes21 of string
-        | Bytes22 of string
-        | Bytes23 of string
-        | Bytes24 of string
-        | Bytes25 of string
-        | Bytes26 of string
-        | Bytes27 of string
-        | Bytes28 of string
-        | Bytes29 of string
-        | Bytes30 of string
-        | Bytes31 of string
-        | Bytes32 of string
-        | Bytes1ArraySz of string list
-        | Bytes2ArraySz of string list
-        | Bytes3ArraySz of string list
-        | Bytes4ArraySz of string list
-        | Bytes5ArraySz of string list
-        | Bytes6ArraySz of string list
-        | Bytes7ArraySz of string list
-        | Bytes8ArraySz of string list
-        | Bytes9ArraySz of string list
-        | Bytes10ArraySz of string list
-        | Bytes11ArraySz of string list
-        | Bytes12ArraySz of string list
-        | Bytes13ArraySz of string list
-        | Bytes14ArraySz of string list
-        | Bytes15ArraySz of string list
-        | Bytes16ArraySz of string list
-        | Bytes17ArraySz of string list
-        | Bytes18ArraySz of string list
-        | Bytes19ArraySz of string list
-        | Bytes20ArraySz of string list
-        | Bytes21ArraySz of string list
-        | Bytes22ArraySz of string list
-        | Bytes23ArraySz of string list
-        | Bytes24ArraySz of string list
-        | Bytes25ArraySz of string list
-        | Bytes26ArraySz of string list
-        | Bytes27ArraySz of string list
-        | Bytes28ArraySz of string list
-        | Bytes29ArraySz of string list
-        | Bytes30ArraySz of string list
-        | Bytes31ArraySz of string list
-        | Bytes32ArraySz of string list
-        | Bytes1Array of string list
-        | Bytes2Array of string list
-        | Bytes3Array of string list
-        | Bytes4Array of string list
-        | Bytes5Array of string list
-        | Bytes6Array of string list
-        | Bytes7Array of string list
-        | Bytes8Array of string list
-        | Bytes9Array of string list
-        | Bytes10Array of string list
-        | Bytes11Array of string list
-        | Bytes12Array of string list
-        | Bytes13Array of string list
-        | Bytes14Array of string list
-        | Bytes15Array of string list
-        | Bytes16Array of string list
-        | Bytes17Array of string list
-        | Bytes18Array of string list
-        | Bytes19Array of string list
-        | Bytes20Array of string list
-        | Bytes21Array of string list
-        | Bytes22Array of string list
-        | Bytes23Array of string list
-        | Bytes24Array of string list
-        | Bytes25Array of string list
-        | Bytes26Array of string list
-        | Bytes27Array of string list
-        | Bytes28Array of string list
-        | Bytes29Array of string list
-        | Bytes30Array of string list
-        | Bytes31Array of string list
-        | Bytes32Array of string list
+        | Int of Bitness * string
+        | IntArraySz of Bitness * string list
+        | IntArray of Bitness * string list
+        | Uint of Bitness * string
+        | UintArraySz of Bitness * string list
+        | UintArray of Bitness * string list
+        | BytesN of ByteLength * string
+        | BytesNArraySz of ByteLength * string list
+        | BytesNArray of ByteLength * string list
+
+        
 
         
     type CheckEVMData = CheckedSuccess
@@ -961,6 +750,7 @@ module Types =
         | FunctionNotFoundError
         | AmbiguousFunctionError of FunctionIndicator list
         | FunctionArgumentsMissingError
+        | FunctionArgumentsValidationError of string
         | InvalidValueArgumentError
         | ValueToNonPayableFunctionError
         | EthAddressError

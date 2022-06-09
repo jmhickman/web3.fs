@@ -104,6 +104,371 @@ module ABIFunctions =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     
+    let Uint8 value = (Bitness.B8, value) |> Uint
+    let Uint16 value = (Bitness.B16, value) |> Uint
+    let Uint24 value = (Bitness.B24, value) |> Uint
+    let Uint32 value = (Bitness.B32, value) |> Uint
+    let Uint40 value = (Bitness.B40, value) |> Uint
+    let Uint48 value = (Bitness.B48, value) |> Uint
+    let Uint56 value = (Bitness.B56, value) |> Uint
+    let Uint64 value = (Bitness.B64, value) |> Uint
+    let Uint72 value = (Bitness.B72, value) |> Uint
+    let Uint80 value = (Bitness.B80, value) |> Uint
+    let Uint88 value = (Bitness.B88, value) |> Uint
+    let Uint96 value = (Bitness.B96, value) |> Uint
+    let Uint104 value = (Bitness.B104, value) |> Uint
+    let Uint112 value = (Bitness.B112, value) |> Uint
+    let Uint120 value = (Bitness.B120, value) |> Uint
+    let Uint128 value = (Bitness.B128, value) |> Uint
+    let Uint136 value = (Bitness.B136, value) |> Uint
+    let Uint144 value = (Bitness.B144, value) |> Uint
+    let Uint152 value = (Bitness.B152, value) |> Uint
+    let Uint160 value = (Bitness.B160, value) |> Uint
+    let Uint168 value = (Bitness.B168, value) |> Uint
+    let Uint176 value = (Bitness.B176, value) |> Uint
+    let Uint184 value = (Bitness.B184, value) |> Uint
+    let Uint192 value = (Bitness.B192, value) |> Uint
+    let Uint200 value = (Bitness.B200, value) |> Uint
+    let Uint208 value = (Bitness.B208, value) |> Uint
+    let Uint216 value = (Bitness.B216, value) |> Uint
+    let Uint224 value = (Bitness.B224, value) |> Uint
+    let Uint232 value = (Bitness.B232, value) |> Uint
+    let Uint240 value = (Bitness.B240, value) |> Uint
+    let Uint248 value = (Bitness.B248, value) |> Uint
+    let Uint256 value = (Bitness.B256, value) |> Uint
+    let Uint8ArraySz value = (Bitness.B8, value) |> UintArraySz
+    let Uint16ArraySz value = (Bitness.B16, value) |> UintArraySz
+    let Uint24ArraySz value = (Bitness.B24, value) |> UintArraySz
+    let Uint32ArraySz value = (Bitness.B32, value) |> UintArraySz
+    let Uint40ArraySz value = (Bitness.B40, value) |> UintArraySz
+    let Uint48ArraySz value = (Bitness.B48, value) |> UintArraySz
+    let Uint56ArraySz value = (Bitness.B56, value) |> UintArraySz
+    let Uint64ArraySz value = (Bitness.B64, value) |> UintArraySz
+    let Uint72ArraySz value = (Bitness.B72, value) |> UintArraySz
+    let Uint80ArraySz value = (Bitness.B80, value) |> UintArraySz
+    let Uint88ArraySz value = (Bitness.B88, value) |> UintArraySz
+    let Uint96ArraySz value = (Bitness.B96, value) |> UintArraySz
+    let Uint104ArraySz value = (Bitness.B104, value) |> UintArraySz
+    let Uint112ArraySz value = (Bitness.B112, value) |> UintArraySz
+    let Uint120ArraySz value = (Bitness.B120, value) |> UintArraySz
+    let Uint128ArraySz value = (Bitness.B128, value) |> UintArraySz
+    let Uint136ArraySz value = (Bitness.B136, value) |> UintArraySz
+    let Uint144ArraySz value = (Bitness.B144, value) |> UintArraySz
+    let Uint152ArraySz value = (Bitness.B152, value) |> UintArraySz
+    let Uint160ArraySz value = (Bitness.B160, value) |> UintArraySz
+    let Uint168ArraySz value = (Bitness.B168, value) |> UintArraySz
+    let Uint176ArraySz value = (Bitness.B176, value) |> UintArraySz
+    let Uint184ArraySz value = (Bitness.B184, value) |> UintArraySz
+    let Uint192ArraySz value = (Bitness.B192, value) |> UintArraySz
+    let Uint200ArraySz value = (Bitness.B200, value) |> UintArraySz
+    let Uint208ArraySz value = (Bitness.B208, value) |> UintArraySz
+    let Uint216ArraySz value = (Bitness.B216, value) |> UintArraySz
+    let Uint224ArraySz value = (Bitness.B224, value) |> UintArraySz
+    let Uint232ArraySz value = (Bitness.B232, value) |> UintArraySz
+    let Uint240ArraySz value = (Bitness.B240, value) |> UintArraySz
+    let Uint248ArraySz value = (Bitness.B248, value) |> UintArraySz
+    let Uint256ArraySz value = (Bitness.B256, value) |> UintArraySz
+    let Uint8Array value = (Bitness.B8, value) |> UintArray
+    let Uint16Array value = (Bitness.B16, value) |> UintArray
+    let Uint24Array value = (Bitness.B24, value) |> UintArray
+    let Uint32Array value = (Bitness.B32, value) |> UintArray
+    let Uint40Array value = (Bitness.B40, value) |> UintArray
+    let Uint48Array value = (Bitness.B48, value) |> UintArray
+    let Uint56Array value = (Bitness.B56, value) |> UintArray
+    let Uint64Array value = (Bitness.B64, value) |> UintArray
+    let Uint72Array value = (Bitness.B72, value) |> UintArray
+    let Uint80Array value = (Bitness.B80, value) |> UintArray
+    let Uint88Array value = (Bitness.B88, value) |> UintArray
+    let Uint96Array value = (Bitness.B96, value) |> UintArray
+    let Uint104Array value = (Bitness.B104, value) |> UintArray
+    let Uint112Array value = (Bitness.B112, value) |> UintArray
+    let Uint120Array value = (Bitness.B120, value) |> UintArray
+    let Uint128Array value = (Bitness.B128, value) |> UintArray
+    let Uint136Array value = (Bitness.B136, value) |> UintArray
+    let Uint144Array value = (Bitness.B144, value) |> UintArray
+    let Uint152Array value = (Bitness.B152, value) |> UintArray
+    let Uint160Array value = (Bitness.B160, value) |> UintArray
+    let Uint168Array value = (Bitness.B168, value) |> UintArray
+    let Uint176Array value = (Bitness.B176, value) |> UintArray
+    let Uint184Array value = (Bitness.B184, value) |> UintArray
+    let Uint192Array value = (Bitness.B192, value) |> UintArray
+    let Uint200Array value = (Bitness.B200, value) |> UintArray
+    let Uint208Array value = (Bitness.B208, value) |> UintArray
+    let Uint216Array value = (Bitness.B216, value) |> UintArray
+    let Uint224Array value = (Bitness.B224, value) |> UintArray
+    let Uint232Array value = (Bitness.B232, value) |> UintArray
+    let Uint240Array value = (Bitness.B240, value) |> UintArray
+    let Uint248Array value = (Bitness.B248, value) |> UintArray
+    let Uint256Array value = (Bitness.B256, value) |> UintArray
+    
+    let Int8 value = (Bitness.B8, value) |> Int
+    let Int16 value = (Bitness.B16, value) |> Int
+    let Int24 value = (Bitness.B24, value) |> Int
+    let Int32 value = (Bitness.B32, value) |> Int
+    let Int40 value = (Bitness.B40, value) |> Int
+    let Int48 value = (Bitness.B48, value) |> Int
+    let Int56 value = (Bitness.B56, value) |> Int
+    let Int64 value = (Bitness.B64, value) |> Int
+    let Int72 value = (Bitness.B72, value) |> Int
+    let Int80 value = (Bitness.B80, value) |> Int
+    let Int88 value = (Bitness.B88, value) |> Int
+    let Int96 value = (Bitness.B96, value) |> Int
+    let Int104 value = (Bitness.B104, value) |> Int
+    let Int112 value = (Bitness.B112, value) |> Int
+    let Int120 value = (Bitness.B120, value) |> Int
+    let Int128 value = (Bitness.B128, value) |> Int
+    let Int136 value = (Bitness.B136, value) |> Int
+    let Int144 value = (Bitness.B144, value) |> Int
+    let Int152 value = (Bitness.B152, value) |> Int
+    let Int160 value = (Bitness.B160, value) |> Int
+    let Int168 value = (Bitness.B168, value) |> Int
+    let Int176 value = (Bitness.B176, value) |> Int
+    let Int184 value = (Bitness.B184, value) |> Int
+    let Int192 value = (Bitness.B192, value) |> Int
+    let Int200 value = (Bitness.B200, value) |> Int
+    let Int208 value = (Bitness.B208, value) |> Int
+    let Int216 value = (Bitness.B216, value) |> Int
+    let Int224 value = (Bitness.B224, value) |> Int
+    let Int232 value = (Bitness.B232, value) |> Int
+    let Int240 value = (Bitness.B240, value) |> Int
+    let Int248 value = (Bitness.B248, value) |> Int
+    let Int256 value = (Bitness.B256, value) |> Int
+    let Int8ArraySz value = (Bitness.B8, value) |> IntArraySz
+    let Int16ArraySz value = (Bitness.B16, value) |> IntArraySz
+    let Int24ArraySz value = (Bitness.B24, value) |> IntArraySz
+    let Int32ArraySz value = (Bitness.B32, value) |> IntArraySz
+    let Int40ArraySz value = (Bitness.B40, value) |> IntArraySz
+    let Int48ArraySz value = (Bitness.B48, value) |> IntArraySz
+    let Int56ArraySz value = (Bitness.B56, value) |> IntArraySz
+    let Int64ArraySz value = (Bitness.B64, value) |> IntArraySz
+    let Int72ArraySz value = (Bitness.B72, value) |> IntArraySz
+    let Int80ArraySz value = (Bitness.B80, value) |> IntArraySz
+    let Int88ArraySz value = (Bitness.B88, value) |> IntArraySz
+    let Int96ArraySz value = (Bitness.B96, value) |> IntArraySz
+    let Int104ArraySz value = (Bitness.B104, value) |> IntArraySz
+    let Int112ArraySz value = (Bitness.B112, value) |> IntArraySz
+    let Int120ArraySz value = (Bitness.B120, value) |> IntArraySz
+    let Int128ArraySz value = (Bitness.B128, value) |> IntArraySz
+    let Int136ArraySz value = (Bitness.B136, value) |> IntArraySz
+    let Int144ArraySz value = (Bitness.B144, value) |> IntArraySz
+    let Int152ArraySz value = (Bitness.B152, value) |> IntArraySz
+    let Int160ArraySz value = (Bitness.B160, value) |> IntArraySz
+    let Int168ArraySz value = (Bitness.B168, value) |> IntArraySz
+    let Int176ArraySz value = (Bitness.B176, value) |> IntArraySz
+    let Int184ArraySz value = (Bitness.B184, value) |> IntArraySz
+    let Int192ArraySz value = (Bitness.B192, value) |> IntArraySz
+    let Int200ArraySz value = (Bitness.B200, value) |> IntArraySz
+    let Int208ArraySz value = (Bitness.B208, value) |> IntArraySz
+    let Int216ArraySz value = (Bitness.B216, value) |> IntArraySz
+    let Int224ArraySz value = (Bitness.B224, value) |> IntArraySz
+    let Int232ArraySz value = (Bitness.B232, value) |> IntArraySz
+    let Int240ArraySz value = (Bitness.B240, value) |> IntArraySz
+    let Int248ArraySz value = (Bitness.B248, value) |> IntArraySz
+    let Int256ArraySz value = (Bitness.B256, value) |> IntArraySz
+    let Int8Array value = (Bitness.B8, value) |> IntArray
+    let Int16Array value = (Bitness.B16, value) |> IntArray
+    let Int24Array value = (Bitness.B24, value) |> IntArray
+    let Int32Array value = (Bitness.B32, value) |> IntArray
+    let Int40Array value = (Bitness.B40, value) |> IntArray
+    let Int48Array value = (Bitness.B48, value) |> IntArray
+    let Int56Array value = (Bitness.B56, value) |> IntArray
+    let Int64Array value = (Bitness.B64, value) |> IntArray
+    let Int72Array value = (Bitness.B72, value) |> IntArray
+    let Int80Array value = (Bitness.B80, value) |> IntArray
+    let Int88Array value = (Bitness.B88, value) |> IntArray
+    let Int96Array value = (Bitness.B96, value) |> IntArray
+    let Int104Array value = (Bitness.B104, value) |> IntArray
+    let Int112Array value = (Bitness.B112, value) |> IntArray
+    let Int120Array value = (Bitness.B120, value) |> IntArray
+    let Int128Array value = (Bitness.B128, value) |> IntArray
+    let Int136Array value = (Bitness.B136, value) |> IntArray
+    let Int144Array value = (Bitness.B144, value) |> IntArray
+    let Int152Array value = (Bitness.B152, value) |> IntArray
+    let Int160Array value = (Bitness.B160, value) |> IntArray
+    let Int168Array value = (Bitness.B168, value) |> IntArray
+    let Int176Array value = (Bitness.B176, value) |> IntArray
+    let Int184Array value = (Bitness.B184, value) |> IntArray
+    let Int192Array value = (Bitness.B192, value) |> IntArray
+    let Int200Array value = (Bitness.B200, value) |> IntArray
+    let Int208Array value = (Bitness.B208, value) |> IntArray
+    let Int216Array value = (Bitness.B216, value) |> IntArray
+    let Int224Array value = (Bitness.B224, value) |> IntArray
+    let Int232Array value = (Bitness.B232, value) |> IntArray
+    let Int240Array value = (Bitness.B240, value) |> IntArray
+    let Int248Array value = (Bitness.B248, value) |> IntArray
+    let Int256Array value = (Bitness.B256, value) |> IntArray
+    
+    let Byte1 value = (L1, value) |> BytesN
+    let Byte2 value = (L2, value) |> BytesN
+    let Byte3 value = (L3, value) |> BytesN
+    let Byte4 value = (L4, value) |> BytesN
+    let Byte5 value = (L5, value) |> BytesN
+    let Byte6 value = (L6, value) |> BytesN
+    let Byte7 value = (L7, value) |> BytesN
+    let Byte8 value = (L8, value) |> BytesN
+    let Byte9 value = (L9, value) |> BytesN
+    let Byte10 value = (L10, value) |> BytesN
+    let Byte11 value = (L11, value) |> BytesN
+    let Byte12 value = (L12, value) |> BytesN
+    let Byte13 value = (L13, value) |> BytesN
+    let Byte14 value = (L14, value) |> BytesN
+    let Byte15 value = (L15, value) |> BytesN
+    let Byte16 value = (L16, value) |> BytesN
+    let Byte17 value = (L17, value) |> BytesN
+    let Byte18 value = (L18, value) |> BytesN
+    let Byte19 value = (L19, value) |> BytesN
+    let Byte20 value = (L20, value) |> BytesN
+    let Byte21 value = (L21, value) |> BytesN
+    let Byte22 value = (L22, value) |> BytesN
+    let Byte23 value = (L23, value) |> BytesN
+    let Byte24 value = (L24, value) |> BytesN
+    let Byte25 value = (L25, value) |> BytesN
+    let Byte26 value = (L26, value) |> BytesN
+    let Byte27 value = (L27, value) |> BytesN
+    let Byte28 value = (L28, value) |> BytesN
+    let Byte29 value = (L29, value) |> BytesN
+    let Byte30 value = (L30, value) |> BytesN
+    let Byte31 value = (L31, value) |> BytesN
+    let Byte32 value = (L32, value) |> BytesN
+
+    let Byte1ArraySz value = (L1, value) |> BytesNArraySz
+    let Byte2ArraySz value = (L2, value) |> BytesNArraySz
+    let Byte3ArraySz value = (L3, value) |> BytesNArraySz
+    let Byte4ArraySz value = (L4, value) |> BytesNArraySz
+    let Byte5ArraySz value = (L5, value) |> BytesNArraySz
+    let Byte6ArraySz value = (L6, value) |> BytesNArraySz
+    let Byte7ArraySz value = (L7, value) |> BytesNArraySz
+    let Byte8ArraySz value = (L8, value) |> BytesNArraySz
+    let Byte9ArraySz value = (L9, value) |> BytesNArraySz
+    let Byte10ArraySz value = (L10, value) |> BytesNArraySz
+    let Byte11ArraySz value = (L11, value) |> BytesNArraySz
+    let Byte12ArraySz value = (L12, value) |> BytesNArraySz
+    let Byte13ArraySz value = (L13, value) |> BytesNArraySz
+    let Byte14ArraySz value = (L14, value) |> BytesNArraySz
+    let Byte15ArraySz value = (L15, value) |> BytesNArraySz
+    let Byte16ArraySz value = (L16, value) |> BytesNArraySz
+    let Byte17ArraySz value = (L17, value) |> BytesNArraySz
+    let Byte18ArraySz value = (L18, value) |> BytesNArraySz
+    let Byte19ArraySz value = (L19, value) |> BytesNArraySz
+    let Byte20ArraySz value = (L20, value) |> BytesNArraySz
+    let Byte21ArraySz value = (L21, value) |> BytesNArraySz
+    let Byte22ArraySz value = (L22, value) |> BytesNArraySz
+    let Byte23ArraySz value = (L23, value) |> BytesNArraySz
+    let Byte24ArraySz value = (L24, value) |> BytesNArraySz
+    let Byte25ArraySz value = (L25, value) |> BytesNArraySz
+    let Byte26ArraySz value = (L26, value) |> BytesNArraySz
+    let Byte27ArraySz value = (L27, value) |> BytesNArraySz
+    let Byte28ArraySz value = (L28, value) |> BytesNArraySz
+    let Byte29ArraySz value = (L29, value) |> BytesNArraySz
+    let Byte30ArraySz value = (L30, value) |> BytesNArraySz
+    let Byte31ArraySz value = (L31, value) |> BytesNArraySz
+    let Byte32ArraySz value = (L32, value) |> BytesNArraySz
+    
+    let Byte1Array value = (L1, value) |> BytesNArray
+    let Byte2Array value = (L2, value) |> BytesNArray
+    let Byte3Array value = (L3, value) |> BytesNArray
+    let Byte4Array value = (L4, value) |> BytesNArray
+    let Byte5Array value = (L5, value) |> BytesNArray
+    let Byte6Array value = (L6, value) |> BytesNArray
+    let Byte7Array value = (L7, value) |> BytesNArray
+    let Byte8Array value = (L8, value) |> BytesNArray
+    let Byte9Array value = (L9, value) |> BytesNArray
+    let Byte10Array value = (L10, value) |> BytesNArray
+    let Byte11Array value = (L11, value) |> BytesNArray
+    let Byte12Array value = (L12, value) |> BytesNArray
+    let Byte13Array value = (L13, value) |> BytesNArray
+    let Byte14Array value = (L14, value) |> BytesNArray
+    let Byte15Array value = (L15, value) |> BytesNArray
+    let Byte16Array value = (L16, value) |> BytesNArray
+    let Byte17Array value = (L17, value) |> BytesNArray
+    let Byte18Array value = (L18, value) |> BytesNArray
+    let Byte19Array value = (L19, value) |> BytesNArray
+    let Byte20Array value = (L20, value) |> BytesNArray
+    let Byte21Array value = (L21, value) |> BytesNArray
+    let Byte22Array value = (L22, value) |> BytesNArray
+    let Byte23Array value = (L23, value) |> BytesNArray
+    let Byte24Array value = (L24, value) |> BytesNArray
+    let Byte25Array value = (L25, value) |> BytesNArray
+    let Byte26Array value = (L26, value) |> BytesNArray
+    let Byte27Array value = (L27, value) |> BytesNArray
+    let Byte28Array value = (L28, value) |> BytesNArray
+    let Byte29Array value = (L29, value) |> BytesNArray
+    let Byte30Array value = (L30, value) |> BytesNArray
+    let Byte31Array value = (L31, value) |> BytesNArray
+    let Byte32Array value = (L32, value) |> BytesNArray
+    
+        
+    let bitnessToInt bitness =
+        match bitness with
+        | B8 -> 8
+        | B16 -> 16
+        | B24 -> 24  
+        | B32 -> 32
+        | B40 -> 40
+        | B48 -> 48
+        | B56 -> 56
+        | B64 -> 64
+        | B72 -> 72
+        | B80 -> 80
+        | B88 -> 88
+        | B96 -> 96
+        | B104 -> 104
+        | B112 -> 112 
+        | B120 -> 120
+        | B128 -> 128
+        | B136 -> 136
+        | B144 -> 144
+        | B152 -> 152
+        | B160 -> 160
+        | B168 -> 168
+        | B176 -> 176
+        | B184 -> 184
+        | B192 -> 192
+        | B200 -> 200
+        | B208 -> 208
+        | B216 -> 216
+        | B224 -> 224
+        | B232 -> 232
+        | B240 -> 240
+        | B248 -> 248
+        | B256 -> 256
+        
+    let byteLengthToInt length =
+        match length with
+        | L1 -> 1
+        | L2 -> 2
+        | L3 -> 3
+        | L4 -> 4
+        | L5 -> 5
+        | L6 -> 6
+        | L7 -> 7
+        | L8 -> 8
+        | L9 -> 9
+        | L10 -> 10 
+        | L11 -> 11
+        | L12 -> 12
+        | L13 -> 13
+        | L14 -> 14
+        | L15 -> 15
+        | L16 -> 16
+        | L17 -> 17
+        | L18 -> 18
+        | L19 -> 19
+        | L20 -> 20
+        | L21 -> 21
+        | L22 -> 22
+        | L23 -> 23
+        | L24 -> 24
+        | L25 -> 25
+        | L26 -> 26
+        | L27 -> 27
+        | L28 -> 28
+        | L29 -> 29
+        | L30 -> 30 
+        | L31 -> 31
+        | L32 -> 32
+        
+    
     ///
     /// Returns the proper count of items in a tuple, taking into account the contents of sized arrays, which consume
     /// several 'slots' directly without offset or counter. Strings and Bytes need special compensation in the
@@ -114,10 +479,10 @@ module ABIFunctions =
             match evmDatatypeList with
             | head :: tail ->
                 match head with
-                | Bytes32ArraySz bArr -> countLoop tail (acc + bArr.Length)
+                | BytesNArraySz (_, bArr) -> countLoop tail (acc + bArr.Length)
                 | AddressArraySz arr -> countLoop tail (acc + arr.Length)
-                | Uint256ArraySz uArr -> countLoop tail (acc + uArr.Length)
-                | Int256ArraySz iArr -> countLoop tail (acc + iArr.Length)
+                | UintArraySz (_, uArr) -> countLoop tail (acc + uArr.Length)
+                | IntArraySz (_, iArr) ->  countLoop tail (acc + iArr.Length)
                 | BoolArraySz bArr -> countLoop tail (acc + bArr.Length)
                 | _ -> countLoop tail (acc + 1)
             | [] -> acc
@@ -200,705 +565,145 @@ module ABIFunctions =
     
         let cursor = countOfArguments evmDatatypeList
         
-        let unsignedBoundsCheck value power =
+        let unsignedBoundsCheck power value=
             bigint.Parse(value) |> fun i -> not(i >= bigint.Pow(2, power)) && not(i < 0I)
             
         
         // Inverts the sense of the test because we action on true down in the recursive
-        let arrayUnsignedFalseCheck values power  =
-            match values |> List.map(fun u -> unsignedBoundsCheck u power) |> List.contains false with
+        let arrayUnsignedFalseCheck values power =
+            match values |> List.map (unsignedBoundsCheck power) |> List.contains false with
             | true -> false
             | false -> true
             
             
-        let signedBoundsCheck value power =
+        let signedBoundsCheck power value =
             bigint.Parse(value) |> fun i -> not(i >= bigint.Pow(2, power)) && not(i < -(bigint.Pow(2, power)))
             
-            
-        let arraySignedFalseCheck values power  =
-            match values |> List.map(fun u -> unsignedBoundsCheck u power) |> List.contains false with
+        
+        let arraySignedFalseCheck values power =
+            match values |> List.map (signedBoundsCheck power) |> List.contains false with
             | true -> false
             | false -> true
             
            
-//        let bytesBoundsCheck value size =
-//            value |> strip0x |> fun s -> s.Length <= size
+        let bytesBoundsCheck size value =
+            value |> strip0x |> fun s -> s.Length <= size * 2
+            
+            
+        let arrayBytesBoundsCheck (values: string list) size =
+            match values |> List.map (bytesBoundsCheck size) |> List.contains false with
+            | true -> false
+            | false -> true
 
                 
         let rec unpackInputAndProcess list acc cursor =
             match list with
             | head :: tail ->
                 match head with
-                | Address a -> unpackInputAndProcess tail (acc + $"{a |> strip0x |> padTo32BytesLeft }") cursor
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////
+                //// Address Types
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////                
                 
+                
+                | Address a -> unpackInputAndProcess tail (acc + $"{a |> strip0x |> padTo32BytesLeft }") cursor
                 | AddressArraySz arr -> 
                     unpackInputAndProcess tail (acc + (arr |> List.map(strip0x >> fun p -> $"{padTo32BytesLeft p}") |> String.concat "")) cursor
-                
                 | AddressArray arr ->
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ arr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesLeft}") (returnCountOfItems arr) |> Blob ]
                     unpackInputAndProcess tail acc (cursor + arr.Length + 1)
+                
+                
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////
                 //// Unsigned Integer Types
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-                | Uint8 u ->
-                    if unsignedBoundsCheck u 8 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 8 bit integer allows"
-                | Uint16 u ->
-                    if unsignedBoundsCheck u 16 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 16 bit integer allows"
-                | Uint24 u ->
-                    if unsignedBoundsCheck u 24 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 24 bit integer allows"
-                | Uint32 u ->
-                    if unsignedBoundsCheck u 32 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 32 bit integer allows"
-                | Uint40 u ->
-                    if unsignedBoundsCheck u 40 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 40 bit integer allows"
-                | Uint48 u ->
-                    if unsignedBoundsCheck u 48 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 48 bit integer allows"
-                | Uint56 u ->
-                    if unsignedBoundsCheck u 56 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 56 bit integer allows"
-                | Uint64 u ->
-                    if unsignedBoundsCheck u 64 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 64 bit integer allows"
-                | Uint72 u ->
-                    if unsignedBoundsCheck u 72 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 72 bit integer allows"
-                | Uint80 u ->
-                    if unsignedBoundsCheck u 80 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 80 bit integer allows"
-                | Uint96 u ->
-                    if unsignedBoundsCheck u 96 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 88 bit integer allows"
-                | Uint104 u ->
-                    if unsignedBoundsCheck u 104 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 96 bit integer allows"
-                | Uint112 u ->
-                    if unsignedBoundsCheck u 112 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 112 bit integer allows"
-                | Uint120 u ->
-                    if unsignedBoundsCheck u 120 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 120 bit integer allows"
-                | Uint128 u ->
-                    if unsignedBoundsCheck u 128 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 128 bit integer allows"
-                | Uint136 u ->
-                    if unsignedBoundsCheck u 136 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 136 bit integer allows"
-                | Uint144 u ->
-                    if unsignedBoundsCheck u 144 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 144 bit integer allows"
-                | Uint152 u ->
-                    if unsignedBoundsCheck u 152 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 152 bit integer allows"
-                | Uint160 u ->
-                    if unsignedBoundsCheck u 160 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 160 bit integer allows"
-                | Uint168 u ->
-                    if unsignedBoundsCheck u 168 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 168 bit integer allows"
-                | Uint176 u ->
-                    if unsignedBoundsCheck u 176 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 176 bit integer allows"
-                | Uint184 u ->
-                    if unsignedBoundsCheck u 184 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 184 bit integer allows"
-                | Uint192 u ->
-                    if unsignedBoundsCheck u 192 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 192 bit integer allows"
-                | Uint200 u ->
-                    if unsignedBoundsCheck u 200 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 200 bit integer allows"
-                | Uint208 u ->
-                    if unsignedBoundsCheck u 208 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 208 bit integer allows"
-                | Uint216 u ->
-                    if unsignedBoundsCheck u 216 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 216 bit integer allows"
-                | Uint224 u ->
-                    if unsignedBoundsCheck u 224 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 224 bit integer allows"
-                | Uint232 u ->
-                    if unsignedBoundsCheck u 232 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 232 bit integer allows"
-                | Uint240 u ->
-                    if unsignedBoundsCheck u 240 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 240 bit integer allows"
-                | Uint248 u ->
-                    if unsignedBoundsCheck u 248 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256 u] String.Empty 0}") cursor
-                    else $"#Value {u} was larger than unsigned 248 bit integer allows"
+
                 
-                
-                //// ⬇️ Real Work ⬇️ //////////////////////////////////////////////////////////////////////////////////
-                | Uint256 u ->
-                    if unsignedBoundsCheck u 256 then
+                | Uint (bitness, u) ->
+                    let bits = bitnessToInt bitness
+                    if unsignedBoundsCheck bits u then
                         unpackInputAndProcess tail (acc + $"{formatTypesInt u}") cursor
-                    else $"#Value {u} was larger than unsigned 256 bit integer allows"
-                ///////////////////////////////////////////////////////////////////////////////////////////////////////
-                
-                
-                | Uint8ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 8 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 8 bit integer allows"
-                | Uint16ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 16 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 16 bit integer allows"
-                | Uint24ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 24 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 24 bit integer allows"
-                | Uint32ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 32 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 32 bit integer allows"
-                | Uint40ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 40 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 40 bit integer allows"
-                | Uint48ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 48 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 48 bit integer allows"
-                | Uint56ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 56 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 56 bit integer allows"
-                | Uint64ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 64 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 64 bit integer allows"
-                | Uint72ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 72 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 72 bit integer allows"
-                | Uint80ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 80 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 80 bit integer allows"
-                | Uint88ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 88 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 88 bit integer allows"
-                | Uint96ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 96 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 96 bit integer allows"
-                | Uint104ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 104 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 104 bit integer allows"
-                | Uint112ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 112 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 112 bit integer allows"
-                | Uint120ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 120 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 120 bit integer allows"
-                | Uint128ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 128 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 128 bit integer allows"
-                | Uint136ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 136 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 136 bit integer allows"
-                | Uint144ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 144 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 144 bit integer allows"
-                | Uint152ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 152 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 152 bit integer allows"
-                | Uint160ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 160 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 160 bit integer allows"
-                | Uint168ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 168 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 168 bit integer allows"
-                | Uint176ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 176 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 176 bit integer allows"
-                | Uint184ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 184 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 184 bit integer allows"
-                | Uint192ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 192 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 192 bit integer allows"
-                | Uint200ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 200 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 200 bit integer allows"
-                | Uint208ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 208 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 208 bit integer allows"
-                | Uint216ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 216 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 216 bit integer allows"
-                | Uint224ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 224 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 224 bit integer allows"
-                | Uint232ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 232 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 232 bit integer allows"
-                | Uint240ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 240 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 240 bit integer allows"
-                | Uint248ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 248 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Uint256ArraySz uArr] String.Empty 0}") cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 248 bit integer allows"
-                    
-                    
-                //// ⬇️ Real Work ⬇️ //////////////////////////////////////////////////////////////////////////////////
-                | Uint256ArraySz uArr ->
-                    if arraySignedFalseCheck uArr 256 then
+                    else $"#Value {u} was larger than unsigned {bits} bit integer allows#"
+                | UintArraySz (bitness, uArr) ->
+                    let bits = bitnessToInt bitness
+                    if arrayUnsignedFalseCheck uArr bits then
                         unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypesInt}") |> String.concat "")) cursor
-                    else $"#Array {uArr} contained a value larger than unsigned 256 bit integer allows"
-                ///////////////////////////////////////////////////////////////////////////////////////////////////////
+                    else $"#Array {uArr} contained a value larger than unsigned {bits} bit integer allows#"
+                | UintArray (bitness, uArr) ->
+                    let bits = bitnessToInt bitness
+                    if arrayUnsignedFalseCheck uArr bits then
+                        let acc = acc + returnCurrentOffset cursor
+                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
+                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
+                    else $"#Array {uArr} contained a value larger than unsigned {bits} bit integer allows#"
                 
-                
-                | Uint8Array uArr ->
-                    if arraySignedFalseCheck uArr 8 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 8 bit integer allows"
-                | Uint16Array uArr ->
-                    if arraySignedFalseCheck uArr 16 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 16 bit integer allows"
-                | Uint24Array uArr ->
-                    if arraySignedFalseCheck uArr 24 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 24 bit integer allows"
-                | Uint32Array uArr ->
-                    if arraySignedFalseCheck uArr 32 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 32 bit integer allows"
-                | Uint40Array uArr ->
-                    if arraySignedFalseCheck uArr 40 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 40 bit integer allows"
-                | Uint48Array uArr ->
-                    if arraySignedFalseCheck uArr 48 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 48 bit integer allows"
-                | Uint56Array uArr ->
-                    if arraySignedFalseCheck uArr 56 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 56 bit integer allows"
-                | Uint64Array uArr ->
-                    if arraySignedFalseCheck uArr 64 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 64 bit integer allows"
-                | Uint72Array uArr ->
-                    if arraySignedFalseCheck uArr 72 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 72 bit integer allows"
-                | Uint80Array uArr ->
-                    if arraySignedFalseCheck uArr 80 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 80 bit integer allows"
-                | Uint88Array uArr ->
-                    if arraySignedFalseCheck uArr 88 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 88 bit integer allows"
-                | Uint96Array uArr ->
-                    if arraySignedFalseCheck uArr 96 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 96 bit integer allows"
-                | Uint104Array uArr ->
-                    if arraySignedFalseCheck uArr 104 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 104 bit integer allows"
-                | Uint112Array uArr ->
-                    if arraySignedFalseCheck uArr 112 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 112 bit integer allows"
-                | Uint120Array uArr ->
-                    if arraySignedFalseCheck uArr 120 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 120 bit integer allows"
-                | Uint128Array uArr ->
-                    if arraySignedFalseCheck uArr 128 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 128 bit integer allows"
-                | Uint136Array uArr ->
-                    if arraySignedFalseCheck uArr 136 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 136 bit integer allows"
-                | Uint144Array uArr ->
-                    if arraySignedFalseCheck uArr 144 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 144 bit integer allows"
-                | Uint152Array uArr ->
-                    if arraySignedFalseCheck uArr 152 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 152 bit integer allows"
-                | Uint160Array uArr ->
-                    if arraySignedFalseCheck uArr 160 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 160 bit integer allows"
-                | Uint168Array uArr ->
-                    if arraySignedFalseCheck uArr 168 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 168 bit integer allows"
-                | Uint176Array uArr ->
-                    if arraySignedFalseCheck uArr 176 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 176 bit integer allows"
-                | Uint184Array uArr ->
-                    if arraySignedFalseCheck uArr 184 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 184 bit integer allows"
-                | Uint192Array uArr ->
-                    if arraySignedFalseCheck uArr 192 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 192 bit integer allows"
-                | Uint200Array uArr ->
-                    if arraySignedFalseCheck uArr 200 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 200 bit integer allows"
-                | Uint208Array uArr ->
-                    if arraySignedFalseCheck uArr 208 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 208 bit integer allows"
-                | Uint216Array uArr ->
-                    if arraySignedFalseCheck uArr 216 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 216 bit integer allows"
-                | Uint224Array uArr ->
-                    if arraySignedFalseCheck uArr 224 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 224 bit integer allows"
-                | Uint232Array uArr ->
-                    if arraySignedFalseCheck uArr 232 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 232 bit integer allows"
-                | Uint240Array uArr ->
-                    if arraySignedFalseCheck uArr 240 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 240 bit integer allows"
-                | Uint248Array uArr ->
-                    if arraySignedFalseCheck uArr 248 then
-                        let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                        unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else
-                        $"#Array {uArr} contained a value larger than unsigned 248 bit integer allows"
 
-                
-                //// ⬇️ Real Work ⬇️ //////////////////////////////////////////////////////////////////////////////////
-                | Uint256Array uArr ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                                
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////
                 //// Signed Integer Types
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////
                 
                 
-                | Int8 i -> 
-                    if signedBoundsCheck i 7 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 8 bit integer allows"
-                | Int16 i -> 
-                    if signedBoundsCheck i 15 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 16 bit integer allows"
-                | Int24 i -> 
-                    if signedBoundsCheck i 23 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 24 bit integer allows"
-                | Int32 i -> 
-                    if signedBoundsCheck i 31 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 32 bit integer allows"
-                | Int40 i -> 
-                    if signedBoundsCheck i 39 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 40 bit integer allows"
-                | Int48 i -> 
-                    if signedBoundsCheck i 47 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 48 bit integer allows"
-                | Int56 i -> 
-                    if signedBoundsCheck i 55 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 56 bit integer allows"
-                | Int64 i -> 
-                    if signedBoundsCheck i 63 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 64 bit integer allows"
-                | Int72 i -> 
-                    if signedBoundsCheck i 71 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 72 bit integer allows"
-                | Int80 i -> 
-                    if signedBoundsCheck i 79 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 80 bit integer allows"
-                | Int88 i -> 
-                    if signedBoundsCheck i 87 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 88 bit integer allows"
-                | Int96 i -> 
-                    if signedBoundsCheck i 95 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 96 bit integer allows"
-                | Int104 i -> 
-                    if signedBoundsCheck i 103 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 104 bit integer allows"
-                | Int112 i -> 
-                    if signedBoundsCheck i 111 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 112 bit integer allows"
-                | Int120 i -> 
-                    if signedBoundsCheck i 119 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 120 bit integer allows"
-                | Int128 i -> 
-                    if signedBoundsCheck i 127 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 128 bit integer allows"
-                | Int136 i -> 
-                    if signedBoundsCheck i 135 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 136 bit integer allows"
-                | Int144 i -> 
-                    if signedBoundsCheck i 143 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 144 bit integer allows"
-                | Int152 i -> 
-                    if signedBoundsCheck i 151 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 152 bit integer allows"
-                | Int160 i -> 
-                    if signedBoundsCheck i 159 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 160 bit integer allows"
-                | Int168 i -> 
-                    if signedBoundsCheck i 167 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 168 bit integer allows"
-                | Int176 i -> 
-                    if signedBoundsCheck i 175 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 176 bit integer allows"
-                | Int184 i -> 
-                    if signedBoundsCheck i 183 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 184 bit integer allows"
-                | Int192 i -> 
-                    if signedBoundsCheck i 191 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 192 bit integer allows"
-                | Int200 i -> 
-                    if signedBoundsCheck i 199 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 200 bit integer allows"
-                | Int208 i -> 
-                    if signedBoundsCheck i 207 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 208 bit integer allows"
-                | Int216 i -> 
-                    if signedBoundsCheck i 215 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 216 bit integer allows"
-                | Int224 i -> 
-                    if signedBoundsCheck i 223 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 224 bit integer allows"
-                | Int232 i -> 
-                    if signedBoundsCheck i 231 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 232 bit integer allows"
-                | Int240 i -> 
-                    if signedBoundsCheck i 239 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 240 bit integer allows"
-                | Int248 i -> 
-                    if signedBoundsCheck i 247 then
-                        unpackInputAndProcess tail (acc + $"{unpackInputAndProcess [Int256 i] String.Empty 0}") cursor
-                    else $"#Value {i} was larger than signed 248 bit integer allows"
-
-                //// ⬇️ Real Work ⬇️ //////////////////////////////////////////////////////////////////////////////////
-                | Int256 i ->
-                    if signedBoundsCheck i 255 then    
+                | Int (bitness, i) ->
+                    let bits = bitnessToInt bitness
+                    if signedBoundsCheck (bits - 1) i then    
                         unpackInputAndProcess tail (acc + $"{formatTypesInt i}") cursor
-                    else $"#Value {i} was larger than signed 256 bit integer allows"
+                    else $"#Value {i} was larger than signed 256 bit integer allows#"
+                | IntArraySz (bitness, iArr) ->
+                    let bits = bitnessToInt bitness
+                    if arraySignedFalseCheck iArr bits then                        
+                        unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
+                    else $"#Array {iArr} contained a value larger than unsigned {bits} bit integer allows#"
+                | IntArray (bitness, iArr) ->
+                    let bits = bitnessToInt bitness
+                    if arraySignedFalseCheck iArr bits then
+                        let acc = acc + returnCurrentOffset cursor
+                        let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
+                        unpackInputAndProcess tail acc (cursor + iArr.Length + 1)
+                    else $"#Array {iArr} contained a value larger than unsigned {bits} bit integer allows#"
+
+                
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-                
-                
-                | Int256ArraySz iArr ->
-                    unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor 
-                
-                | Int256Array iArr ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + iArr.Length + 1)
-                
+                //// Bool Types
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////                
                 
                 
                 | Bool b -> unpackInputAndProcess tail (acc + convertBoolToInt b) cursor
-                
                 | BoolArraySz bArr -> unpackInputAndProcess tail (acc + (bArr |> List.map convertBoolToInt |> String.concat "")) cursor
-                
                 | BoolArray bArr -> 
                     let acc = acc + returnCurrentOffset cursor
                     let tail = tail @ [ bArr |> List.fold (fun acc s -> $"{acc}{convertBoolToInt s}") (returnCountOfItems bArr) |> Blob ]
                     unpackInputAndProcess tail acc (cursor + bArr.Length + 1)
+
+
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////
+                //// Sized Byte Types
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////                                                
                 
-                | Bytes32 b -> 
-                    unpackInputAndProcess tail (acc + $"{b |> strip0x |> padTo32BytesRight}") cursor
                 
-                | Bytes32ArraySz bs -> 
-                    unpackInputAndProcess tail (acc + (bs |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
+                | BytesN (length, b) ->
+                    let _len = byteLengthToInt length
+                    if bytesBoundsCheck _len b then
+                        unpackInputAndProcess tail (acc + $"{b |> strip0x |> padTo32BytesRight}") cursor
+                    else $"#Byte value {b} is larger than indicated size {_len}#"
+                | BytesNArraySz (length, bs) ->
+                    let _len = byteLengthToInt length
+                    if arrayBytesBoundsCheck bs _len then
+                        unpackInputAndProcess tail (acc + (bs |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
+                    else $"#Byte value in {bs} is larger than indicated size {_len}#"
+                | BytesNArray (length, bs) ->
+                    let _len = byteLengthToInt length
+                    if arrayBytesBoundsCheck bs _len then
+                        let _len = byteLengthToInt length
+                        let acc = acc + returnCurrentOffset cursor
+                        let tail = tail @ [ bs |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems bs) |> Blob ]
+                        unpackInputAndProcess tail acc (cursor + bs.Length + 1 )
+                    else $"#Byte value in {bs} is larger than indicated size {_len}#"
                 
-                | Bytes32Array bs -> 
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ bs |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems bs) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + bs.Length + 1 )
+                
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////
+                //// Dynamic Byte Types
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////                
+                
                 
                 | Bytes bs ->
                     let acc = acc + returnCurrentOffset cursor
@@ -906,19 +711,16 @@ module ABIFunctions =
                     let contents = bs.Length |> byteDivide2 |> formatTypes padTo32BytesLeft |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
                     let tail = tail @ [ contents |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
-                
                 | BytesArraySz bsArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = (unpackInputAndProcess bsArr "" (countOfArguments bsArr))
                     let tail = tail @ [ contents |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64 ))
-                
                 | BytesArray bsArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = returnCountOfItems bsArr |> fun s -> s  + (unpackInputAndProcess bsArr "" bsArr.Length)
                     let tail = tail @ [ contents |> Blob ] 
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
-                
                 | String st -> 
                     let acc = acc + returnCurrentOffset cursor
                     let bs = st |> formatToBytes
@@ -930,52 +732,60 @@ module ABIFunctions =
                     
                     let tail = tail @ [contents |> Blob ] 
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
-                
                 | StringArraySz sArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = (unpackInputAndProcess sArr "" (countOfArguments sArr))
                     let tail = tail @ [contents |> Blob]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
-                
                 | StringArray sArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = returnCountOfItems sArr |> fun s -> s + (unpackInputAndProcess sArr "" sArr.Length)
                     let tail = tail @ [ contents |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64) )
                 
+                
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////
+                //// Tuple Types
+                ///////////////////////////////////////////////////////////////////////////////////////////////////////                
+                
+                
                 | Tuple t ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = unpackInputAndProcess t "" (countOfArguments t) 
                     let tail = tail @ [ contents |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64)) 
-                
                 | TupleArraySz tArr ->
                     let acc = acc + returnCurrentOffset cursor 
                     let contents = unpackInputAndProcess tArr "" (countOfArguments tArr) 
                     let tail = tail @ [ contents |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64)) 
-                
                 | TupleArray tArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = returnCountOfItems tArr |> fun s -> s + (unpackInputAndProcess tArr "" (countOfArguments tArr))
                     let tail = tail @ [ contents |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64)) 
                 
-                | Function f -> unpackInputAndProcess tail (acc + $"{f |> strip0x |> padTo32BytesRight }") cursor
-                
-                | FunctionArraySz fArr ->
-                    unpackInputAndProcess tail (acc + (fArr |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
-                
-                | FunctionArray fArr -> 
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ fArr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems fArr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + fArr.Length + 1)
-                
                 | Blob blob -> unpackInputAndProcess tail (acc + blob) cursor
-                | _ -> "OOF"
+//                | Function f -> unpackInputAndProcess tail (acc + $"{f |> strip0x |> padTo32BytesRight }") cursor
+//                
+//                | FunctionArraySz fArr ->
+//                    unpackInputAndProcess tail (acc + (fArr |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
+//                
+//                | FunctionArray fArr -> 
+//                    let acc = acc + returnCurrentOffset cursor
+//                    let tail = tail @ [ fArr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems fArr) |> Blob ]
+//                    unpackInputAndProcess tail acc (cursor + fArr.Length + 1)
             | [] -> acc
 
-        unpackInputAndProcess evmDatatypeList "" cursor
+        let bytestring = unpackInputAndProcess evmDatatypeList "" cursor
+        
+        if bytestring.Contains('#') then
+            let matcher = RegularExpressions.Regex("(#.*?)#")
+            let reason = matcher.Match bytestring |> fun s -> s.Value.Replace("#", String.Empty)
+            $"Arguments to EVM function failed validation: {reason}"
+            |> FunctionArgumentsValidationError
+            |> Error
+        else bytestring |> Ok
 
 
     ///
@@ -1116,12 +926,12 @@ module ABIFunctions =
                     let acc = acc @ [AddressArray contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
-                | Int256 _ ->
+                | Int _ ->
                     let pointer = cursor * 64
                     let acc = acc @ [(Int256 $"{emitSubstringAsConvertedStringSigned pointer evmOutput}")]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
-                | Int256ArraySz iArr ->
+                | IntArraySz (_, iArr) ->
                     let mutable offset = (cursor * 64)
                     let contents = List.init iArr.Length (fun count ->
                         offset <- offset + (count * 64)
@@ -1129,7 +939,7 @@ module ABIFunctions =
                     let acc = acc @ [Int256ArraySz contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + iArr.Length)
                 
-                | Int256Array _ ->
+                | IntArray _ ->
                     let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
                     let count = emitSubstringAsInt offset evmOutput
                     offset <- offset + 64
@@ -1139,12 +949,12 @@ module ABIFunctions =
                     let acc = acc @ [Int256Array contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
-                | Uint256 _ ->
+                | Uint _ ->
                     let pointer = cursor * 64
                     let acc = acc @ [(Uint256 $"{emitSubstringAsConvertedStringUnsigned pointer evmOutput}")]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
-                | Uint256ArraySz uArr ->
+                | UintArraySz (_, uArr) ->
                     let mutable offset = (cursor * 64)
                     let contents = List.init uArr.Length (fun count ->
                         offset <- offset + (count * 64)
@@ -1152,7 +962,7 @@ module ABIFunctions =
                     let acc = acc @ [Uint256ArraySz contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
-                | Uint256Array _ ->
+                | UintArray _ ->
                     let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
                     let count = emitSubstringAsInt offset evmOutput
                     offset <- offset + 64
@@ -1185,27 +995,27 @@ module ABIFunctions =
                     let acc = acc @ [BoolArray contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
-                | Bytes32 _ ->
+                | BytesN _ ->
                     let pointer = cursor * 64
-                    let acc = acc @ [Bytes32 $"{emitSubstringPrepend0xBytes pointer evmOutput}"]
+                    let acc = acc @ [BytesN (L32, $"{emitSubstringPrepend0xBytes pointer evmOutput}")]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
-                | Bytes32ArraySz bArr -> 
+                | BytesNArraySz (_, bArr) -> 
                     let mutable offset = (cursor * 64)
                     let contents = List.init bArr.Length (fun count ->
                         offset <- offset + (count * 64)
                         $"{emitSubstringPrepend0xBytes offset evmOutput}")
-                    let acc = acc @ [Bytes32ArraySz contents]
+                    let acc = acc @ [BytesNArraySz (L32, contents)]
                     unpackOutputAndProcess tail evmOutput acc (cursor + bArr.Length)
                 
-                | Bytes32Array _ ->
+                | BytesNArray _ ->
                     let mutable offset = (cursor * 64) |> emitSubstringAsOffset evmOutput
                     let count = (emitSubstringAsInt (cursor * 64) evmOutput)
                     offset <- offset + 64
                     let contents = List.init count (fun count ->
                         offset <- offset + (count * 64)
                         $"{emitSubstringPrepend0xBytes offset evmOutput}")
-                    let acc = acc @ [Bytes32Array contents]
+                    let acc = acc @ [BytesNArray (L32, contents)]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
                 | Bytes _ ->
@@ -1302,21 +1112,6 @@ module ABIFunctions =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    
-//    let public boundsCheck (value: EVMDatatype) =
-//        match value with
-//        | Uint8 s -> s |> hexToBigInt |> fun i -> not(i > 255I) && not(i < 0I) 
-//        | Uint16 s -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 16)) && not(i < 0I) 
-//        | Uint32 s -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 32)) && not(i < 0I) 
-//        | Uint64 s -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 64)) && not(i < 0I) 
-//        | Uint128 s -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 128)) && not(i < 0I) 
-//        | Int8 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 7) - 1I) && not(i < - (bigint.Pow(2, 7)))
-//        | Int16 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 15) - 1I) && not(i < - (bigint.Pow(2, 15))) 
-//        | Int32 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 15) - 1I) && not(i < - (bigint.Pow(2, 15))) 
-//        | Int64 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 31) - 1I) && not(i < - (bigint.Pow(2, 31))) 
-//        | Int128 -> s |> hexToBigInt |> fun i -> not(i > bigint.Pow(2, 63) - 1I) && not(i < - (bigint.Pow(2, 63))) 
-         
-        
     ///
     /// Returns the input EVMDatatype list if the inputs conform to some basic checks, otherwise an error string that
     /// will bubble up later in the pipeline. 
@@ -1327,16 +1122,6 @@ module ABIFunctions =
             match evmDataList with
             | head :: tail ->
                 match head with 
-                | Uint256 u ->
-                    if (bigint.Parse(u) |> fun i -> not(i > bigint.Pow(2, 256)) && not(i < 0I)) then checkEVMDataConforming tail
-                    else "Specified unsigned integer exceeded the maximum value or was less than 0"
-                        |> DataValidatorError
-                        |> Error
-                | Int256 i ->
-                    if (bigint.Parse(i) |> fun i -> not(i > bigint.Pow(2, 127) - 1I) && not(i < - (bigint.Pow(2, 127)))) then checkEVMDataConforming tail
-                    else "Specified signed integer exceeded the maximum values"
-                         |> DataValidatorError
-                         |> Error
                 | Address a ->
                     a
                     |> strip0x
@@ -1351,14 +1136,6 @@ module ABIFunctions =
                     |> fun s ->
                         if s.Length % 2 = 0 then checkEVMDataConforming tail
                         else "Bytes length must be even, i.e. the specified bytes must be in pairs."
-                             |> DataValidatorError
-                             |> Error
-                | Bytes32 b ->
-                    b
-                    |> strip0x
-                    |> fun s ->
-                        if s.Length <= 64 && s.Length % 2 = 0 then checkEVMDataConforming tail
-                        else "Sized bytes must be less than or equal to 32 bytes (64 characters) and in pairs."
                              |> DataValidatorError
                              |> Error
                 | _ -> checkEVMDataConforming tail
@@ -1381,21 +1158,21 @@ module ABIFunctions =
         | Address a -> a |> trimParameter
         | AddressArraySz a -> a |> String.concat(",") |> trimParameter
         | AddressArray a -> a |> String.concat(",") |> trimParameter
-        | Uint256 u -> u |> trimParameter
-        | Uint256ArraySz a -> a |> String.concat(",") |> trimParameter
-        | Uint256Array a -> a |> String.concat(",") |> trimParameter
-        | Int256 u -> u |> trimParameter 
-        | Int256ArraySz a -> a |> String.concat(",") |> trimParameter
-        | Int256Array a -> a |> String.concat(",") |> trimParameter
-        | Bytes32 b -> b |> trimParameter
-        | Bytes32ArraySz a -> a |> String.concat(",") |> trimParameter
-        | Bytes32Array a -> a |> String.concat(",") |> trimParameter
+        | Uint (_,u) -> u |> trimParameter
+        | UintArraySz (_, a) -> a |> String.concat(",") |> trimParameter
+        | UintArray (_, a) -> a |> String.concat(",") |> trimParameter
+        | Int (_, u) -> u |> trimParameter 
+        | IntArraySz (_, a) -> a |> String.concat(",") |> trimParameter
+        | IntArray (_, a) -> a |> String.concat(",") |> trimParameter
+        | BytesN (_, b) -> b |> trimParameter
+        | BytesNArraySz (_, a) -> a |> String.concat(",") |> trimParameter
+        | BytesNArray (_, a) -> a |> String.concat(",") |> trimParameter
         | Bytes b -> b |> trimParameter
         | BytesArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
         | BytesArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
-        | Function f -> f |> trimParameter
-        | FunctionArraySz l -> l |> String.concat(",") |> trimParameter
-        | FunctionArray l -> l |> String.concat(",") |> trimParameter
+//        | Function f -> f |> trimParameter
+//        | FunctionArraySz l -> l |> String.concat(",") |> trimParameter
+//        | FunctionArray l -> l |> String.concat(",") |> trimParameter
         | String s -> s |> trimParameter
         | StringArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
         | StringArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
@@ -1427,8 +1204,6 @@ module ABIFunctions =
         | _ -> []
         
        
-
-        
     ///
     /// Returns a wrapped EthAddress that has been checked for validity 
     let internal wrapEthAddress (address: string) =

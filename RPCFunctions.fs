@@ -93,7 +93,7 @@ module RPCFunctions =
     let handleENSName env chainId (name: string) =
         if name.Contains('.') then
             let hash = convertENSName name
-            let bytes = [Bytes32 hash] |> createInputByteString
+            let bytes = [Byte32 hash] |> createInputByteString |> function Ok o -> o | Error _ -> "" 
             let evmData = "02571be3" + bytes |> prepend0x
             { utxnType = "0x2"
               unonce = ""
@@ -208,8 +208,10 @@ module RPCFunctions =
     let private createDataString (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
         |> Result.bind (fun (a, b, c, args, e, evmFunction) ->
-            let dataString = $"{evmFunction.hash}{createInputByteString args}"
-            (a, b, c, e, dataString) |> Ok)
+            createInputByteString args
+            |> Result.bind (fun r -> (a, b, c, e, $"{evmFunction.hash}{r}") |> Ok)) 
+            
+            
         
     
     ///
@@ -312,13 +314,24 @@ module RPCFunctions =
     
     
     ///
+    ///
+    let private createDeployData args (pipe: Result<string * string * string,Web3Error>) =
+        pipe
+        |> Result.bind (fun (a, b, c) ->
+            match createInputByteString args with
+            | Ok data -> (a, b, c, data) |> Ok
+            | Error e -> e |> Error)
+            
+    
+    ///
     /// Creates the unvalidated call record specifically for deployment.
-    let private buildDeploymentCall env value contract args (pipe: Result<string * string * string, Web3Error>) =
+    let private buildDeploymentCall env value contract (pipe: Result<string * string * string * string, Web3Error>) =
         let (RawContractBytecode _rawBytecode) = contract.bytecode
         if contract.stateMutability = Payable && value = "0" then
             env.log Log (PayableFunctionZeroValueWarning "Zero value sent to payable function" |> Error) |> ignore
+        
         pipe
-        |> Result.bind (fun (txn, maxfee, priority) ->
+        |> Result.bind (fun (txn, maxfee, priority, data) ->
             { utxnType = txn
               unonce = ""
               utoAddr = ""
@@ -326,7 +339,7 @@ module RPCFunctions =
               ugas = "0x4C4B40"
               uvalue = value |> bigintToHex |> prepend0x
               udata =
-                  $"{_rawBytecode}{createInputByteString args}" |> prepend0x              
+                  $"{_rawBytecode}{data}" |> prepend0x           
               umaxFeePerGas = maxfee
               umaxPriorityFeePerGas = priority
               uaccessList = []
@@ -342,13 +355,13 @@ module RPCFunctions =
     /// Creates an Ethereum RPC request whose purpose is typically to query the RPC node for chain-based or network-
     /// based data. Examples are retrieving the contents of a block, checking a transaction receipt, or getting an
     /// account balance.
-    /// * rpcConnection: An activated RPC connection from `createWeb3Connection`
     /// * method: An EthMethod selector, like `EthMethod.GetBalance`
     /// * paramList: An EthParam, such as `["0x3872353821064f55df53ad1e2d7255e969f6eac0", "0x9dc3fe"]`
-    /// Note that some EthMethods have no arguments, while others have object arguments. Use `makeEthCall` or
-    /// `makeEthTxn` in those cases.
+    /// * chainId: The hexadecimal representation of the chain ID.
+    /// * env: A Web3Environment. See createWeb3Environment.
+    /// Note that some EthMethods have no arguments. Use an empty list in those cases.
     ///
-    let public makeEthRPCCall method (paramList: string list) chainId env =
+    let public rpcCall method (paramList: string list) chainId env =
         checkForChain env chainId
         |> Result.bind ( fun _ ->
         { method = method
@@ -360,15 +373,13 @@ module RPCFunctions =
 
     ///
     /// Creates an Ethereum transaction (a call that changes the state of the blockchain).
-    /// * `rpcConnection`: An activated RPC connection from `createWeb3Connection`
-    /// * `constants`: A ContractConstants record.
-    /// * `contract`: A DeployedContract that is being called
-    /// * `evmFunction`: FunctionIndicator corresponding to the the function being called. May be a string (cast to a
-    /// ByString) or a IndicatedFunction (returned by `findFunction`)
-    /// * `arguments`: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
-    /// value: the wei-denominated amount of ETH to send along with a transaction to a `payable` function.
+    /// * contract: A DeployedContract that is being called
+    /// * evmFunction: FunctionSelector corresponding to the the function being called. Typically (ByName "SomeFunction")
+    /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no arguments.
+    /// * value: the wei-denominated amount of ETH to send along with a transaction to a `payable` function.
+    /// * env: An Web3Environment. See createWeb3Environment.
     ///
-    let public makeEthTxn contract evmFunction arguments value env =
+    let public contractTransaction contract evmFunction arguments value env =
         checkForChain env contract.chainId
         |> checkForEmptyValueString value
         |> checkFunctionExists contract evmFunction 
@@ -394,14 +405,12 @@ module RPCFunctions =
     
     ///
     /// Creates an Ethereum call that does NOT change the state of the blockchain.
-    /// * `rpcConnection`: An activated RPC connection from `createWeb3Connection`
-    /// * `constants`: A ContractConstants record.
-    /// * `contract`: A DeployedContract that is being called
-    /// * `evmFunction`: FunctionIndicator corresponding to the the function being called. May be a string (cast to a
-    /// ByString) or a IndicatedFunction (returned by `findFunction`)
-    /// * `arguments`: a list of EVMDatatypes. Use an empty list to indicate no arguments. 
+    /// * contract: A DeployedContract that is being called
+    /// * evmFunction: FunctionSelector corresponding to the the function being called. Typically (ByName "SomeFunction")
+    /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no arguments.
+    /// * env: An Web3Environment. See createWeb3Environment.
     ///
-    let public makeEthCall contract evmFunction arguments env =
+    let public contractCall contract evmFunction arguments env =
         let blockHeight' = blockHeight env.constants
         checkForChain env contract.chainId
         |> checkFunctionExists contract evmFunction
@@ -431,7 +440,8 @@ module RPCFunctions =
         |> checkForEmptyValueString value
         |> unpackDeployConstants env.constants
         |> checkValueAndStateMutabilityDeploy value contract
-        |> buildDeploymentCall env value contract contract.constructorArguments
+        |> createDeployData contract.constructorArguments 
+        |> buildDeploymentCall env value contract
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
