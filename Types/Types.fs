@@ -826,7 +826,9 @@ module Types =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// 
-    /// Web3Environment is a convenience grouping of necessary functions and data to perform operations with web3.fs.  
+    /// Web3Environment is a convenience grouping of necessary functions and
+    /// data to perform operations with web3.fs.
+    ///  
     type Web3Environment =
         { connection: Web3Connection
           monitor: Monitor

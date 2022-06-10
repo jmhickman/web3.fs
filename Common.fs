@@ -17,15 +17,16 @@ module Common =
     
     
     ///
-    /// Returns a Keccak hasher properly configured for 256bit hashes.
+    /// Returns a Keccak hasher configured for 256bit hashes.
     let public newKeccakDigest = Keccak(KeccakBitType.K256)
     
     
     ///
-    /// The Json RPC type provider returns results that have their own strings wrapped in double quotes. This
-    /// causes issue elsewhere, so this function is used here and there to remove extraneous quotes when the values
-    /// must be used in the code. `TrimStart` and `TrimEnd` are specifically used because of potential knock-on effects
-    /// of overzealous quote stripping.
+    /// The Json RPC type provider returns results as strings wrapped in double
+    /// quotes. This causes issue elsewhere, so this function is used to remove
+    /// the extraneous quotes when the values must be used in code. `TrimStart`
+    /// and `TrimEnd` are specifically used because of potential knock-on
+    /// effects of overzealous quote stripping.
     /// 
     let internal trimParameter (p: string) =
         p.TrimStart('"')
@@ -33,14 +34,17 @@ module Common =
     
     
     ///
-    /// Common function of changing a RPC Result into a string and trimming " characters
+    /// Common function of changing a RPC Result into a string and trimming "
+    /// characters
+    /// 
     let internal stringAndTrim (r: RPCResponse.Result) =
         r.ToString() |> trimParameter
     
     
     ///
-    /// Removes whitespace and linebreaks from the input text. Intended for importing the ABI
-    /// from a file.
+    /// Removes whitespace and linebreaks from the input text. Intended for
+    /// importing the ABI from a file.
+    /// 
     let internal stripNewlinesAndWhitespace (input: string) =
         input
         |> fun s -> s.Replace("\r\n", String.Empty)
@@ -48,7 +52,9 @@ module Common =
     
     
     ///
-    /// Returns a string formatted into a hexadecimal representation of its UTF-8 bytes.
+    /// Returns a string formatted into a hexadecimal representation of its
+    /// UTF-8 bytes.
+    /// 
     let internal formatToBytes (s: string) =
         Encoding.UTF8.GetBytes(s)
         |> Array.map (fun (x: byte) -> String.Format("{0:X2}", x))
@@ -56,10 +62,11 @@ module Common =
 
 
     ///
-    ///  Returns the bytecode of a compiled contract from a <contract>.json file emitted from the `solc` binary.  
-    /// 
-    /// * `path`: A path string. Should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
-    /// slashes, i.e. "c:/users/user/some/more/path/contract.json".
+    /// Returns the bytecode of a compiled contract from a
+    /// <contract>.json file emitted from the `solc` binary. 
+    /// * `path`: A path string. Should be triple quoted if you want to use
+    /// Windows file path specifiers. Otherwise, use forward slashes, i.e.
+    /// "c:/users/user/some/more/path/contract.json".
     /// 
     let public returnBytecodeFromSolcJsonFile (path: string) =
         let file = new StreamReader(path)
@@ -69,16 +76,16 @@ module Common =
     
     
     ///
-    /// Returns the ABI and bytecode of a compiled contract from a <contract>.json file emitted from the `solc` binary. 
-    /// 
-    /// * `path`: A path string. Should be triple quoted if you want to use Windows file path specifiers. Otherwise, use forward
-    /// slashes, i.e. "c:/users/user/some/path/contract.json".
+    /// Returns the ABI and bytecode of a compiled contract from a
+    /// <contract>.json file emitted from the `solc` binary. 
+    /// * `path`: A path string. Should be triple quoted if you want to use
+    /// Windows file path specifiers. Otherwise, use forward slashes, i.e.
+    /// "c:/users/user/some/path/contract.json".
     /// 
     let public returnABIAndBytecodeFromSolcJsonFile (path: string) =
         use file = new StreamReader(path)
         let root = file.ReadToEnd() |> ContractBytecode.Parse
         let abi =
-            // Convert parsed Root to a compatible representation for later consumption.
             root.Abi
             |> Array.map(fun i -> i.JsonValue)
             |> Array.map(fun i -> i.ToString())
@@ -90,8 +97,8 @@ module Common =
 
 
     ///
-    /// Returns the ABI string from a file. This can be the .abi emitted by the solc compiler, or a remix output
-    /// copied into a file and saved.
+    /// Returns the ABI string from a file. This can be the .abi emitted by the
+    /// solc compiler, or Remix output copied into a file and saved.
     /// 
     let public returnABIFromFile (path:string) =
         use file = new StreamReader(path)
@@ -101,7 +108,9 @@ module Common =
     
     
     ///
-    /// Returns the bytecode string from a file that contains the 'bytecode' output from Remix.
+    /// Returns the bytecode string from a file that contains the 'bytecode'
+    /// output from Remix.
+    /// 
     let public returnBytecodeFromRemix (path: string) =
         use file = new StreamReader(path)
         file.ReadToEnd()
@@ -116,7 +125,9 @@ module Common =
 
 
     ///
-    /// Prepends a hexadecimal specifier to a string if one is not already present.
+    /// Prepends a hexadecimal specifier to a string if one is not already
+    /// present.
+    /// 
     let public prepend0x (s: string) =
         if not(s.StartsWith("0x")) then $"0x{s}"
         else s
@@ -128,9 +139,10 @@ module Common =
         if s.StartsWith("0x") then s.Remove(0, 2)
         else s
 
+
     ///
     /// Returns the checksummed version of a string as an EthAddress.
-    let public returnChecksumAddress  address =
+    let public returnChecksumAddress address =
         let _addr = address |> strip0x
         let digest = newKeccakDigest
         digest.Hash(_addr).Remove(40)
@@ -144,7 +156,7 @@ module Common =
     
     ///
     /// Returns the byte array representation of a hex string
-    let returnByteArray (input: string) =
+    let internal returnByteArray (input: string) =
         Convert.FromHexString(input)
     
     ///
@@ -154,11 +166,12 @@ module Common =
 
 
     ///
-    /// Converts a hexadecimal string to a BigInt. Use this when the string being supplied was originally a
-    /// QUANTITY in EVM/RPC terms. BigInteger will emit negative numbers when there is no leading 0 and the 
-    /// sign is ambiguous.
+    /// Converts a hexadecimal string to a BigInt. Use this when the string
+    /// being supplied was originally a QUANTITY in EVM/RPC terms. BigInteger
+    /// will emit negative numbers when there is no leading 0 and the sign is
+    /// ambiguous.
     /// 
-    let public hexToBigIntP (hexString: string) =
+    let public hexToBigintUnsigned (hexString: string) =
         hexString |> strip0x |> fun s ->
             if not(s.StartsWith('0')) then
                 bigint.Parse($"0{s}", NumberStyles.AllowHexSpecifier)
@@ -166,11 +179,11 @@ module Common =
                 s |> trimParameter |> fun h -> bigint.Parse(h, NumberStyles.AllowHexSpecifier)
     
     ///
-    /// Converts a hexadecimal string to a BigInt. ABI specifies two's compliment storage
-    /// so mind what strings are passed in. For use where leading 0's haven't been trimmed outside of
-    /// Web3.fs.
+    /// Converts a hexadecimal string to a BigInt. Does not attempt to strip
+    /// leading 0's, so that BigInteger.Parse() can correctly emit negative
+    /// integers.
     /// 
-    let public hexToBigInt hexString =
+    let internal hexToBigInt hexString =
         hexString |> strip0x |> trimParameter |> fun h -> bigint.Parse(h, NumberStyles.AllowHexSpecifier)
 
 
@@ -214,10 +227,11 @@ module Common =
         
         
     ///
-    /// Converts an `Ether` into `Gwei` terms. This function is really only for presentation
-    /// purposes. The EVM deals exclusively in `Wei`.
+    /// Converts an `Ether` into `Gwei` terms. This function is really
+    /// only for presentation purposes. The EVM deals exclusively in `Wei`.
     /// 
-    /// **This function does not provide guards around entering less than one unit of `Ether`.**
+    /// **This function does not provide guards around entering less than
+    /// one unit of `Ether`.**
     /// 
     let public asGwei quantity =
         match quantity with
@@ -227,8 +241,8 @@ module Common =
         
     
     ///
-    /// Converts a `Gwei` or `Wei` into `Ether` terms. This function is really only for presentation
-    /// purposes. The EVM deals exclusively in `Wei`.
+    /// Converts a `Gwei` or `Wei` into `Ether` terms. This function is really
+    /// only for presentation purposes. The EVM deals exclusively in `Wei`.
     /// 
     let public asEth quantity =
         match quantity with
@@ -240,22 +254,26 @@ module Common =
     
     
     ///
-    /// Function for presenting `Wei` quantities expressed as hexadecimal strings from the EVM. This does not actually
-    /// check that the string is a hexadecimal string, beware.
+    /// Function for presenting `Wei` quantities expressed as hexadecimal
+    /// strings from the EVM. This does not actually check that the string is a
+    /// hexadecimal string, beware.
     /// 
     let public hexAsWei quantity =
-        quantity |> hexToBigIntP |> fun i -> i.ToString()
+        quantity |> hexToBigintUnsigned |> fun i -> i.ToString()
         
         
     ///
-    /// 
+    /// Function for presenting an 'Ether' quantity expressed from hexadecimal
+    /// strings from the EVM. This does not actually check that the string is a
+    /// hexadecimal string.
     let public hexAsEth quantity =
-        quantity |> hexToBigIntP |> fun i -> i.ToString() |> Wei |> asEth 
+        quantity |> hexToBigintUnsigned |> fun i -> i.ToString() |> Wei |> asEth 
     
     
     ///
-    /// An alias for `hexAsWei` that maintains the 'look' of the other `as_` functions. This does not actually
-    /// check that the string is a hexadecimal string, beware.
+    /// An alias for `hexAsWei` that maintains the 'look' of the other `as_`
+    /// functions. This does not actually check that the string is a
+    /// hexadecimal string, beware.
     /// 
     let public asWeiHex quantity = hexAsWei quantity
     
@@ -292,8 +310,10 @@ module Common =
 
     
     ///
-    /// 
-    let returnSingularResult (results: FunctionIndicator list) =
+    /// Intended to return either a singular EVMFunction, or error in the
+    /// ambiguous or no-results cases.
+    ///  
+    let internal returnSingularResult (results: FunctionIndicator list) =
         match results.Length with
         | x when x = 1 -> results.Head |> Ok
         | x when x = 0 -> FunctionNotFoundError |> Error
@@ -302,15 +322,8 @@ module Common =
     
     
     ///
-    /// Returns a list of FunctionIndicators that matched the input FunctionSearchTerm criteria. These 
-    /// FunctionIndicators can be used directly in `makeEth_` calls instead of using `ByString "someFunction"`. This is 
-    /// also a way to find the right function if a contract uses overloads, by filtering for the outputs or inputs.
-    /// 
-    /// * `contract`: The contract to be searched
-    /// * `search`: The FunctionSearchTerm, created by using one of the wrappers (`wrapFunctionHash`, `wrapFunctionInputs`,
-    ///  `wrapFunctionMutability`) functions on an applicable term.
-    /// 
-    let public findFunction contract search =
+    /// Returns a single FunctionSelector.
+    let internal findFunction contract search =
         match search with
         | ByName s ->
             contract.functions
@@ -350,9 +363,10 @@ module Common =
         
     
     ///
-    /// Used by the `makeEth_` functions to handle users specifying functions by name (string) or by directly supplying
-    /// the function. Receive and Fallback are special cases to support directly calling these functions against
-    /// contracts, and aren't normally used. Fallback also assumes Payable to keep implementation easy, and at worst a
+    /// Used by the `contract__` functions to retrieve specific EVMFunctions
+    /// for calls. Receive and Fallback are special cases to support directly
+    /// calling these functions on contracts, and aren't typically used.
+    /// Fallback also assumes Payable to keep implementation easy. At worst a
     /// warning is emitted on sending 0 value that can be ignored.
     ///  
     let rec internal bindFunctionIndicator s =
@@ -375,9 +389,7 @@ module Common =
 
        
     ///
-    /// Returns a list containing contracts whose import succeeded. Typically piped from `loadDeployedContract`, and 
-    /// terminated with a `List.head`.
-    /// 
+    /// Returns a list containing contracts whose import succeeded.  
     let public bindDeployedContract result =
         match result with
         | Ok o -> [ o ]
@@ -390,7 +402,9 @@ module Common =
 
     
     ///
-    /// Returns a string option after evaluating an input with a regex provided to the function.
+    /// Function returns a string option when evaluating an input with the
+    /// provided regex string.
+    /// 
     let internal validateInputs (reg: string) t =
         let reg = Regex(reg)
 
@@ -423,14 +437,14 @@ module Common =
 
     
     ///
-    /// Generic matcher for EVM types expressed in canonical form to internal types.
+    /// Generic function for checking an input string for a given match.
     let internal matchEVMInput (reg: string) t =
         let reg = Regex(reg)
         reg.Match(t).Success
         
     
     ///
-    /// Special case for sized arrays of `matchEVMInput`
+    /// Special case for sized arrays of `matchEVMInput`.
     let internal matchEVMInputSz (reg: string) t =
         let reg = Regex(reg)
         let num = reg.Match(t).Groups.Item(1)
@@ -438,10 +452,11 @@ module Common =
         
         
     ///
-    /// When supplied with an UnvalidatedEthParam1559Call, returns a Result. The purpose
-    /// is to ensure that the data supplied in each field is consistent with requirements
-    /// for each type. Note that the resulting EthParam1559Call is not guaranteed to
-    /// succeed or be syntactically valid EVM bytecode.
+    /// When supplied with an UnvalidatedEthParam1559Call, returns a Result.
+    /// The purpose is to ensure that the data supplied in each field is
+    /// consistent with requirements for each type. Note that the resulting
+    /// EthParam1559Call is not guaranteed to succeed or be syntactically
+    /// valid EVM bytecode.
     ///
     let internal validateRPCParams (unvalidatedRpcParam: UnvalidatedEthParam1559Call) =
         match validateData unvalidatedRpcParam.udata with
@@ -489,7 +504,7 @@ module Common =
     
     
     ///
-    ///
+    /// Wraps the C-ism try method in FSharp clothing.
     let private tryGetFloat (s: string) =
         let res, flt = Single.TryParse(s)
         match res with
@@ -498,6 +513,8 @@ module Common =
      
     
     ///
+    /// Makes calls to determine if the return value should be treated as a
+    /// boolean or a float.
     /// 
     let private testValueForBoolFloat (s: string) =
         let tryB = tryGetBool s
@@ -507,6 +524,7 @@ module Common =
                 $"\"{s}\""
             else $"{s}"
         else $"{s}"
+    
     
     ///
     /// Creates a parameter list for RPC calls that take such a flat list format.
@@ -518,14 +536,14 @@ module Common =
         |> fun s -> s.TrimEnd(',', ' ')
 
 
-    
-    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Miscellaneous
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ///
-    /// Unpacks Result from a RPCResponse.Root for logging
+    /// Unpacks Result from a RPCResponse.Root for logging. None case shouldn't
+    /// be reached in normal circumstances.
+    /// 
     let internal unpackRoot (r:RPCResponse.Root) =
         match r.Result with
         | Some r' -> r'
@@ -533,13 +551,13 @@ module Common =
         
         
     ///
-    /// Returns the current block, meaning the last block at was included in the chain.
+    /// Returns the RPCResponse.Result as a simple string value.
     let private returnSimpleValue (result: RPCResponse.Result) =
         result |> stringAndTrim
     
     
     ///
-    /// Creates a TransactionReceiptResult from an incoming RPCResponse.
+    /// Returns a TransactionReceipt for use in `decomposeResult`.
     let private returnTransactionReceiptRecord (result: RPCResponse.Result) =
         let toAddr =
             let a = result.To.JsonValue.ToString() |> trimParameter
@@ -566,7 +584,7 @@ module Common =
            
     
     ///
-    /// Returns a record of a mined transaction for use in decomposeResult 
+    /// Returns a record of a mined transaction for use in `decomposeResult`. 
     let private returnMinedTransactionRecord (result: RPCResponse.Result) =
         let mined = RPCMinedTransaction.Parse(result.JsonValue.ToString()) 
         let access = mined.AccessList |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
@@ -593,7 +611,7 @@ module Common =
         
     
     ///
-    /// Returns a record of an Ethereum block for use in `decomposeResult` 
+    /// Returns a record of an Ethereum block for use in `decomposeResult`.
     let private returnEthBlock (result: RPCResponse.Result) =
         let ethBlock = RPCBlock.Parse(result.JsonValue.ToString())
         let uncles = ethBlock.Uncles |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
@@ -621,7 +639,9 @@ module Common =
     
     
     ///
-    /// Returns a decomposed RPC response record matching the output of the given EthMethod
+    /// Returns a decomposed RPC response record matching the output of the
+    /// given EthMethod
+    /// 
     let internal decomposeRPCResult method result =
         result
         |> Result.bind (
@@ -651,15 +671,17 @@ module Common =
         
 
     ///
-    /// Unwraps CallResponses to a SimpleValue
-    let public unwrapSimpleValue callResponse =
+    /// Unwraps CallResponses to a SimpleValue. Use with most `rpcCall` output.
+    let public unwrapRPCCallResponse callResponse =
         match callResponse with
         | SimpleValue s -> s
         | _ -> "wrong unwrap or upstream web3 error"
 
 
-    ///
-    /// Unwraps CallResponses to a transaction receipt.
+    /// 
+    /// Unwraps CallResponses to a transaction receipt. For use with `rpcCall`
+    /// and EthMethod.GetTransactionReceipt
+    /// 
     let public unwrapTransactionReceipt callResponse =
         match callResponse with
         | TransactionReceiptResult rpcTransactionResponse -> rpcTransactionResponse
@@ -667,7 +689,9 @@ module Common =
     
     
     ///
-    /// Unwraps CallResponses to a Transaction
+    /// Unwraps CallResponses to a Transaction. For use with `rpcCall` and
+    /// EthMethod.GetTransactionAt__
+    ///  
     let public unwrapTransaction callResponse =
         match callResponse with
         | Transaction transaction -> transaction
@@ -675,7 +699,9 @@ module Common =
         
     
     ///
-    /// Unwraps CallResponse to a EthBlock
+    /// Unwraps CallResponse to a EthBlock. For use with `rpcCall` and
+    /// EthMethod.GetBlockBy__
+    /// 
     let public unwrapBlock callResponse =
         match callResponse with
         | Block ethBlock -> ethBlock
@@ -684,13 +710,16 @@ module Common =
         
     ///
     /// This function returns the 256bit hash of the input ENS name string.
-    /// The function also does this in a way that doesn't fit the documentation available for this process.
-    /// That documentation says to apply a normalization process to the string, converting it into a PunyCode.
-    /// When that process is used, names containing emoji, like `🦍frax-ape🦍.eth`, output the incorrect hash.
-    /// Through a lot of experimentation, converting the strings into byte array before processing got the
-    /// correct hashes to be emitted. So that's how it works.
+    /// The function also does this in a way that doesn't fit the documentation
+    /// available for this process. That documentation says to apply a
+    /// normalization process to the string, converting it into a PunyCode.
+    /// When that process is used, names containing emoji, like
+    /// `🦍frax-ape🦍.eth`, output the incorrect hash. Through a lot of
+    /// experimentation, converting the strings into byte array before
+    /// processing got the correct hashes to be emitted. So that's how it
+    /// works.
     ///  
-    let convertENSName (name: string) = 
+    let internal convertENSName (name: string) = 
         let digest = newKeccakDigest
         
         let labels =

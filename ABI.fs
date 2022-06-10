@@ -50,7 +50,8 @@ module ABIFunctions =
 
 
     ///
-    /// Returns the properly padded hexadecimal representation numeric value.
+    /// Returns the properly padded hexadecimal representation numeric value
+    /// for all integer types.
     let private formatTypesInt s = 
         let int' = bigint.Parse(s)
         match int' with
@@ -846,7 +847,7 @@ module ABIFunctions =
     ///
     /// Returns a bigint that has been converted to a string, based upon the value contained in a substring.
     let private emitSubstringAsConvertedStringUnsigned start blob =
-        emitSubstring start blob |> hexToBigIntP |> fun s -> s.ToString()
+        emitSubstring start blob |> hexToBigintUnsigned |> fun s -> s.ToString()
         
         
     ///

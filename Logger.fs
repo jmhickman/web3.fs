@@ -7,7 +7,7 @@ module Logger =
     open System
     
     ///
-    /// Just color bindings.
+    /// Color bindings.
     let internal setColor color = 
         match color with
         | Blue -> Console.ForegroundColor <- ConsoleColor.Blue
@@ -23,6 +23,8 @@ module Logger =
     let internal revertColor () = Console.ResetColor()
     
     
+    ///
+    /// Prints the message, reverts the color.
     let printAndRevert (color: WConsoleColor) message =
         setColor color
         printf $"{message}"
@@ -58,9 +60,9 @@ module Logger =
         printAndRevert Blue $"Transaction hash: {receipt.transactionHash}\n"
         printAndRevert DarkBlue $"From: {receipt.from}\n"
         printAndRevert Blue toOrContract
-        printAndRevert Gold $"Gas used: {receipt.gasUsed |> hexToBigIntP}\n"
-        printAndRevert Gold $"Effective gas price: {receipt.effectiveGasPrice |> hexToBigIntP}\n"
-        printAndRevert Gold $"Cumulative gas used: {receipt.cumulativeGasUsed |> hexToBigIntP}\n"
+        printAndRevert Gold $"Gas used: {receipt.gasUsed |> hexToBigintUnsigned}\n"
+        printAndRevert Gold $"Effective gas price: {receipt.effectiveGasPrice |> hexToBigintUnsigned}\n"
+        printAndRevert Gold $"Cumulative gas used: {receipt.cumulativeGasUsed |> hexToBigintUnsigned}\n"
         printfn $"Block hash: {receipt.blockHash}"
         printfn $"Block number: {receipt.blockNumber}"
         printfn $"Index of transaction in block: {receipt.transactionIndex}"
@@ -87,19 +89,19 @@ module Logger =
         printfn $"{txn.nonce}"
         printAndRevert Blue "Input: "
         printfn $"{txn.input}"
-        printAndRevert Gold $"Value: {txn.value |> hexToBigIntP}\n"
+        printAndRevert Gold $"Value: {txn.value |> hexToBigintUnsigned}\n"
         printAndRevert Gold "Gas: "
-        printfn $"{txn.gas |> hexToBigIntP}"
+        printfn $"{txn.gas |> hexToBigintUnsigned}"
         printAndRevert Gold "Gas price: "
-        printfn $"{txn.gasPrice |> hexToBigIntP}"
+        printfn $"{txn.gasPrice |> hexToBigintUnsigned}"
         printAndRevert Gold "Max fee per gas: "
-        printfn $"{txn.maxFeePerGas |> hexToBigIntP}"
+        printfn $"{txn.maxFeePerGas |> hexToBigintUnsigned}"
         printAndRevert Gold "Max priority fee per gas: "
-        printfn $"{txn.maxPriorityFeePerGas |> hexToBigIntP}"
+        printfn $"{txn.maxPriorityFeePerGas |> hexToBigintUnsigned}"
         printfn "Access list: "
         printfn $"{accessList}"
         printfn $"Block hash: {txn.blockHash}"
-        printfn $"Block number: {txn.blockNumber |> hexToBigIntP}"
+        printfn $"Block number: {txn.blockNumber |> hexToBigintUnsigned}"
         printfn $"Chain ID: {txn.chainId}"
         printfn $"R: {txn.r}"
         printfn $"S: {txn.s}"
@@ -141,11 +143,11 @@ module Logger =
         printAndRevert Blue "Miner: "
         printfn $"{block.miner}"
         printAndRevert Gold "Base fee per gas: "
-        printfn $"{block.baseFeePerGas |> hexToBigIntP}"
+        printfn $"{block.baseFeePerGas |> hexToBigintUnsigned}"
         printAndRevert Gold "Gas limit: "
-        printfn $"{block.gasLimit |> hexToBigIntP}"
+        printfn $"{block.gasLimit |> hexToBigintUnsigned}"
         printAndRevert Gold "Gas used: "
-        printfn $"{block.gasUsed |> hexToBigIntP}"
+        printfn $"{block.gasUsed |> hexToBigintUnsigned}"
         printfn $"Difficulty: {block.difficulty}"
         printfn $"Extra data: {block.extraData}"
         printfn $"Parent hash: {block.parentHash}"
@@ -163,7 +165,9 @@ module Logger =
         printAndRevert Blue "Transactions:\n"
         printfn $"{transactions}"
         
-        
+    
+    ///
+    /// Formatted print of a call result 
     let prettyCallResult (callResult: EVMDatatype list) =
         callResult
         |> List.fold (fun acc s ->
@@ -175,7 +179,8 @@ module Logger =
         
     ///
     /// Emits console messages with color and glyphs based on the incoming message. I'm not certain these locks
-    /// are required, but better safe than sorry I suppose.
+    /// are required, but better safe than sorry.
+    /// 
     let private loggerMailbox (mbox: Logger) =
         let locker = Object
         let rec receiver () =
@@ -193,6 +198,12 @@ module Logger =
                     printfn $"{message}")
                 | Success ->
                     lock locker (fun _ ->
+                    match message with
+                    | Library s ->
+                        printAndRevert DarkBlue "[@] "
+                        prettySimple s
+                    | _ -> ()
+                    
                     printAndRevert Green "[+]  Success\n"
                     match message with
                     | Block ethBlock -> prettyBlock ethBlock
@@ -200,9 +211,7 @@ module Logger =
                     | TransactionReceiptResult receipt -> prettyTransactionReceipt receipt
                     | CallResult evmDatatypes -> prettyCallResult evmDatatypes
                     | SimpleValue s -> prettySimple s
-                    | Library s -> prettySimple s
-                    | Empty -> ()
-                    | TransactionHash _ -> () )                
+                    | _ -> () )
                 
                 do! receiver () 
             }
