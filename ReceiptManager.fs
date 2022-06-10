@@ -24,7 +24,7 @@ module ReceiptManager =
 
 
     ///
-    /// Mailbox processor leveraging the RPCConnector to monitor the status of a transaction.
+    /// Mailbox processor to monitor the status of a transaction.
     let private receiptManager rpc (mbox: ReceiptManagerMailbox) =
         let rec msgLoop () =
             async {
@@ -50,19 +50,20 @@ module ReceiptManager =
 
     
     ///
-    /// Returns the MailboxProcessor that oversees monitoring of Ethereum pending transactions.
+    /// Returns the MailboxProcessor that monitors pending transactions.
     let private startReceiptManager rpc =
         MailboxProcessor.Start(receiptManager rpc)
 
 
     ///
-    /// Function allowing easier pipelining of RPC connection and the two-way communication channel.
+    /// Function allowing easier pipelining of RPC connection.
     let private receiptMessage (mbox: ReceiptManagerMailbox) (receipt: EthTransactionHash) =
         mbox.PostAndReply(fun c -> ReceiptMessageAndReply(receipt, c))
 
 
     ///
-    /// Returns a partially applied function ready to take an RPC connection and a previous RPC result in order to
-    /// monitor an Ethereum transaction's status. Automatically called in `createWeb3Environment`.
+    /// Returns a partially applied function ready to take an RPC connection and
+    /// a previous RPC result in order to monitor an Ethereum transaction's
+    /// status. Automatically called in 'createWeb3Environment'.
     let public createReceiptMonitor rpc =
         rpc |> startReceiptManager |> receiptMessage 

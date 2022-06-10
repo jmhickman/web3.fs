@@ -390,7 +390,7 @@ module Common =
        
     ///
     /// Returns a list containing contracts whose import succeeded.  
-    let public bindDeployedContract result =
+    let public bindDeployedContract (result: Result<DeployedContract, Web3Error>) =
         match result with
         | Ok o -> [ o ]
         | Error _ -> []

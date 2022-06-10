@@ -16,7 +16,9 @@ module ABIFunctions =
 
     
     ///
-    /// Convenience function for mapping boolean values to 32 byte integer equivalents.
+    /// Convenience function for mapping boolean values to 32 byte integer
+    /// equivalents.
+    /// 
     let private convertBoolToInt b = 
         match b with
         | true -> "0000000000000000000000000000000000000000000000000000000000000001"
@@ -41,7 +43,7 @@ module ABIFunctions =
 
     
     ///
-    /// Returns a formatted and padded string representing a EVM 'word' of 32 bytes.
+    /// Returns a formatted string representing a EVM 'word' (32 bytes).
     /// Intended to be used with `padTo32BytesRight` or `padTo32BytesLeft` on 
     /// `bytes` types, numeric types and `string` types. 
     /// 
@@ -79,16 +81,17 @@ module ABIFunctions =
 
 
     ///
-    /// Convenience function to compensate for two string characters being one byte
-    /// of representation in the `bytes` type.
+    /// Convenience function to compensate for two string characters being one
+    /// byte of representation in the `bytes` type.
     /// 
     let private byteDivide2 i = (i / 2).ToString()
 
 
     ///
-    /// Returns a 'wrapped' formatted bytestring, given a `bytes` EVM datatype. These
-    /// `bytes` types are dynamically sized, and cross over every 32 bytes to a new 
-    /// 'word', with right padding for bytes less than one word (32 bytes long).
+    /// Returns a 'wrapped' formatted bytestring, given a `bytes` EVM datatype.
+    /// These `bytes` types are dynamically sized, and cross over every 32 bytes
+    /// to a new word, with right padding for bytes less than one word
+    /// (32 bytes long).
     /// 
     let rec private wrapBytesAcrossWords (s: string) (acc: string list) =
         match s with
@@ -471,8 +474,9 @@ module ABIFunctions =
         
     
     ///
-    /// Returns the proper count of items in a tuple, taking into account the contents of sized arrays, which consume
-    /// several 'slots' directly without offset or counter. Strings and Bytes need special compensation in the
+    /// Returns the proper count of items in a tuple, taking into account the
+    /// contents of sized arrays, which consume several 'slots' directly without
+    /// offset or counter. Strings and Bytes need special compensation in the
     /// calculation, as their space requirements are variable.
     /// 
     let private countOfArguments (evmDatatypeList: EVMDatatype list) =
@@ -491,21 +495,13 @@ module ABIFunctions =
     
     
     ///
-    /// Returns a formatted bytecode string for the 'data' argument in a EthParam1559Call, or other related transaction
-    /// functions. The EVMDatatype list contains typed arguments for processing recursively, formatted in a nested way
-    /// similar to how it is specified in Remix or other EVM development environments. 
+    /// Returns a formatted bytecode string for the 'data' argument in a
+    /// EthParam1559Call, or other related transaction functions. The
+    /// EVMDatatype list contains typed arguments for processing recursively,
+    /// formatted in a nested way similar to how it is specified in Remix or
+    /// other EVM development environments. 
     /// 
-    /// **Warning** Currently, there is NO checking if the type specified and its data are conforming; these types are
-    /// only present in order to determine how they should be formatted and processed into the argument bytecode.
-    ///
     /// **Warning** Double arrays `[][]` are not supported.
-    /// 
-    /// **Warning** The `function` types are correct according to the docs (treated as a `bytes24`) but I have no way
-    /// of confirming their correctness in Remix, as no one will tell me how to format `function` inputs into the Remix
-    /// deployed contracts functionality. As such, they should be avoided until such time as it can be checked.
-    ///
-    /// **Warning** Integer types are all treated as the widest type. As already noted, there is no bounds-checking
-    /// occuring here.
     ///
     let internal createInputByteString (evmDatatypeList: EVMDatatype list) =
         
@@ -524,48 +520,52 @@ module ABIFunctions =
         // certain order. Most simple types are placed directly in sequence
         // based on their order in the function signature. However, dynamic 
         // types require extra work. They leave an offset to their location 
-        // in the argument string, and the contents are only appended after all other
-        // simple values in the current tuple are exhausted. The EVM will look for
-        // the dynamic contents at the offset value, where it expects to 
-        // find a count of the members of the dynamic type (a true count in most 
-        // cases except `bytes`, which are a count of the hex bytes instead).
+        // in the argument string, and the contents are only appended after all
+        // other simple values in the current tuple are exhausted. The EVM will
+        // look for the dynamic contents at the offset value, where it expects
+        // to find a count of the members of the dynamic type (a true count in
+        // most cases except `bytes`, which are a count of the hex bytes
+        // instead).
         //
         // In the simple case, this code will format the datatype according
         // to the rules, and place it in order as it was encountered. In sized 
-        // array cases, the logic is much the same, repeated for all members of the
-        // array. 
+        // array cases, the logic is much the same, repeated for all members of
+        // the array. 
         //
-        // Due to their extra complication, dynamic types carry the notion of the 
-        // 'cursor.' This is a simple abstraction that tracks the next available 
-        // 'slot' that a blob of data may be placed. The cursor is initialized
-        // beyond the end of the array, which looks strange but is the desired 
-        // behavior, as this is the first 'slot' to place a dynamic type's contents.
+        // Due to their extra complication, dynamic types carry the notion of
+        // the 'cursor.' This is a simple abstraction that tracks the next
+        // available 'slot' that a blob of data may be placed. The cursor is
+        // initialized beyond the end of the array, which looks strange but is
+        // the desired behavior, as this is the first 'slot' to place a dynamic
+        // type's contents.
         //
-        // The code then proceeds to grab the current cursor's value and place it
-        // into a EVM word, and then it goes about building the 'blob' that contains
-        // the real values. This is appended as more work on the current `tail`. 
-        // The cursor value is then updated to reflect the size of the blob. Only
-        // types that insert content at an offset location need to manipulate the
-        // cursor value, usually by an accounting of their size, plus 1 for their
-        // own internal count representation.
+        // The code then proceeds to grab the current cursor's value and place
+        // it into a EVM word, and then it goes about building the 'blob' that
+        // contains the real values. This is appended as more work on the
+        // current `tail`. The cursor value is then updated to reflect the size
+        // of the blob. Only types that insert content at an offset location
+        // need to manipulate the cursor value, usually by an accounting of
+        // their size, plus 1 for their own internal count representation.
         //
         // Blob values are finally appended to the accumulator at the end of the 
-        // current tuple. This is important; the computed offsets to a given dynamic
-        // type are relative to the beginning of the current tuple!
+        // current tuple. This is important; the computed offsets to a given
+        // dynamic type are relative to the beginning of the current tuple!
         //
-        // Overall, this is your standard FSharp recursive function, bent into an 
-        // awkward shape due to the requirements of the output. 
+        // Overall, this is your standard FSharp recursive function, bent into
+        // an awkward shape due to the requirements of the output. 
         //
         // An initial version of this code incorrectly initialized the cursor to
         // the length of the input list, which corresponded to the count of top-
         // level items. This was incorrect, as it failed to account for sized
-        // array types (which consume as many words as they have members) as well
-        // as `Bytes` and `String`, which are variable based on how many words
-        // they consume when wrapping is factored in. The top level (implied)
-        // tuple, as well as all nested `Tuple` types use this calculation.
+        // array types (which consume as many words as they have members) as
+        // well as `Bytes` and `String`, which are variable based on how many
+        // words they consume when wrapping is factored in. The top level
+        // (implied) tuple, as well as all nested `Tuple` types use this
+        // calculation.
     
-        let cursor = countOfArguments evmDatatypeList
-        
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //// Set of internal functions
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
         let unsignedBoundsCheck power value=
             bigint.Parse(value) |> fun i -> not(i >= bigint.Pow(2, power)) && not(i < 0I)
             
@@ -596,6 +596,23 @@ module ABIFunctions =
             | true -> false
             | false -> true
 
+
+        let addressLengthCheck (value: string) =
+            value.Length = 40
+            
+            
+        let arrayAddressLengthCheck (values: string list) =
+            match values |> List.map addressLengthCheck |> List.contains false with
+            | true -> false
+            | false -> true
+        
+        
+        let bytesTwosCheck (value: string) =
+            value.Length % 2 = 0
+            
+            
+        let cursor = countOfArguments evmDatatypeList
+        
                 
         let rec unpackInputAndProcess list acc cursor =
             match list with
@@ -606,13 +623,28 @@ module ABIFunctions =
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////                
                 
                 
-                | Address a -> unpackInputAndProcess tail (acc + $"{a |> strip0x |> padTo32BytesLeft }") cursor
-                | AddressArraySz arr -> 
-                    unpackInputAndProcess tail (acc + (arr |> List.map(strip0x >> fun p -> $"{padTo32BytesLeft p}") |> String.concat "")) cursor
+                | Address a ->
+                    if addressLengthCheck a then
+                        unpackInputAndProcess tail (acc + $"{a |> strip0x |> padTo32BytesLeft }") cursor
+                    else $"#Specified Address {a} length incorrect#"
+                | AddressArraySz arr ->
+                    if arrayAddressLengthCheck arr then        
+                        let payload =
+                            arr
+                            |> List.map(strip0x >> fun p -> $"{padTo32BytesLeft p}")
+                            |> String.concat ""
+                        unpackInputAndProcess tail (acc + payload) cursor
+                    else $"#Specified Address array contains address with incorrect length: \n{arr}#"                        
                 | AddressArray arr ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ arr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesLeft}") (returnCountOfItems arr) |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + arr.Length + 1)
+                    if arrayAddressLengthCheck arr then    
+                        let acc = acc + returnCurrentOffset cursor
+                        let payload =
+                            arr
+                            |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesLeft}") (returnCountOfItems arr)
+                            |> Blob
+                        let tail = tail @ [payload]
+                        unpackInputAndProcess tail acc (cursor + arr.Length + 1)
+                    else $"#Specified Address array contains address with incorrect length: \n{arr}#"
                 
                 
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -628,15 +660,23 @@ module ABIFunctions =
                 | UintArraySz (bitness, uArr) ->
                     let bits = bitnessToInt bitness
                     if arrayUnsignedFalseCheck uArr bits then
-                        unpackInputAndProcess tail (acc + (uArr |> List.map(fun p -> $"{p |> formatTypesInt}") |> String.concat "")) cursor
-                    else $"#Array {uArr} contained a value larger than unsigned {bits} bit integer allows#"
+                        let payload =
+                            uArr
+                            |> List.map(fun p -> $"{p |> formatTypesInt}")
+                            |> String.concat ""
+                        unpackInputAndProcess tail (acc + payload) cursor
+                    else $"#Array contained a value larger than unsigned {bits} bit integer allows:\n{uArr}#"
                 | UintArray (bitness, uArr) ->
                     let bits = bitnessToInt bitness
                     if arrayUnsignedFalseCheck uArr bits then
                         let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ uArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr) |> Blob ]
+                        let payload =
+                            uArr
+                            |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt}") (returnCountOfItems uArr)
+                            |> Blob
+                        let tail = tail @ [payload]
                         unpackInputAndProcess tail acc (cursor + uArr.Length + 1)
-                    else $"#Array {uArr} contained a value larger than unsigned {bits} bit integer allows#"
+                    else $"#Array contained a value larger than unsigned {bits} bit integer allows:\n{uArr}#"
                 
 
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -651,14 +691,22 @@ module ABIFunctions =
                     else $"#Value {i} was larger than signed 256 bit integer allows#"
                 | IntArraySz (bitness, iArr) ->
                     let bits = bitnessToInt bitness
-                    if arraySignedFalseCheck iArr bits then                        
-                        unpackInputAndProcess tail (acc + (iArr |> List.map(fun p -> $"{p |> formatTypesInt }") |> String.concat "")) cursor
+                    if arraySignedFalseCheck iArr bits then
+                        let payload =
+                            iArr
+                            |> List.map(fun p -> $"{p |> formatTypesInt }")
+                            |> String.concat ""
+                        unpackInputAndProcess tail (acc + payload) cursor
                     else $"#Array {iArr} contained a value larger than unsigned {bits} bit integer allows#"
                 | IntArray (bitness, iArr) ->
                     let bits = bitnessToInt bitness
                     if arraySignedFalseCheck iArr bits then
                         let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ iArr |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr) |> Blob ]
+                        let payload =
+                            iArr
+                            |> List.fold (fun acc s -> $"{acc}{s |> formatTypesInt }") (returnCountOfItems iArr)
+                            |> Blob 
+                        let tail = tail @ [payload]
                         unpackInputAndProcess tail acc (cursor + iArr.Length + 1)
                     else $"#Array {iArr} contained a value larger than unsigned {bits} bit integer allows#"
 
@@ -669,10 +717,16 @@ module ABIFunctions =
                 
                 
                 | Bool b -> unpackInputAndProcess tail (acc + convertBoolToInt b) cursor
-                | BoolArraySz bArr -> unpackInputAndProcess tail (acc + (bArr |> List.map convertBoolToInt |> String.concat "")) cursor
+                | BoolArraySz bArr ->
+                    let payload = bArr |> List.map convertBoolToInt |> String.concat ""
+                    unpackInputAndProcess tail (acc + payload) cursor
                 | BoolArray bArr -> 
                     let acc = acc + returnCurrentOffset cursor
-                    let tail = tail @ [ bArr |> List.fold (fun acc s -> $"{acc}{convertBoolToInt s}") (returnCountOfItems bArr) |> Blob ]
+                    let payload =
+                        bArr
+                        |> List.fold (fun acc s -> $"{acc}{convertBoolToInt s}") (returnCountOfItems bArr)
+                        |> Blob 
+                    let tail = tail @ [payload]
                     unpackInputAndProcess tail acc (cursor + bArr.Length + 1)
 
 
@@ -689,14 +743,22 @@ module ABIFunctions =
                 | BytesNArraySz (length, bs) ->
                     let _len = byteLengthToInt length
                     if arrayBytesBoundsCheck bs _len then
-                        unpackInputAndProcess tail (acc + (bs |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
+                        let payload =
+                            bs
+                            |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}")
+                            |> String.concat ""
+                        unpackInputAndProcess tail (acc + payload) cursor
                     else $"#Byte value in {bs} is larger than indicated size {_len}#"
                 | BytesNArray (length, bs) ->
                     let _len = byteLengthToInt length
                     if arrayBytesBoundsCheck bs _len then
                         let _len = byteLengthToInt length
                         let acc = acc + returnCurrentOffset cursor
-                        let tail = tail @ [ bs |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems bs) |> Blob ]
+                        let payload =
+                            bs
+                            |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems bs)
+                            |> Blob 
+                        let tail = tail @ [payload]
                         unpackInputAndProcess tail acc (cursor + bs.Length + 1 )
                     else $"#Byte value in {bs} is larger than indicated size {_len}#"
                 
@@ -707,11 +769,17 @@ module ABIFunctions =
                 
                 
                 | Bytes bs ->
-                    let acc = acc + returnCurrentOffset cursor
-                    let bs = bs |> strip0x
-                    let contents = bs.Length |> byteDivide2 |> formatTypes padTo32BytesLeft |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
-                    let tail = tail @ [ contents |> Blob ]
-                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
+                    if bytesTwosCheck bs then    
+                        let acc = acc + returnCurrentOffset cursor
+                        let bs = bs |> strip0x
+                        let contents =
+                            bs.Length
+                            |> byteDivide2
+                            |> formatTypes padTo32BytesLeft
+                            |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
+                        let tail = tail @ [ contents |> Blob ]
+                        unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
+                    else $"#Byte string {bs} must be composed of pairs of characters. Length uneven.#"
                 | BytesArraySz bsArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = (unpackInputAndProcess bsArr "" (countOfArguments bsArr))
@@ -719,20 +787,24 @@ module ABIFunctions =
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64 ))
                 | BytesArray bsArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let contents = returnCountOfItems bsArr |> fun s -> s  + (unpackInputAndProcess bsArr "" bsArr.Length)
+                    let contents =
+                        returnCountOfItems bsArr
+                        |> fun s -> s  + (unpackInputAndProcess bsArr "" bsArr.Length)
                     let tail = tail @ [ contents |> Blob ] 
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
                 | String st -> 
-                    let acc = acc + returnCurrentOffset cursor
-                    let bs = st |> formatToBytes
-                    let contents =
-                        bs.Length
-                        |> byteDivide2
-                        |> formatTypes padTo32BytesLeft
-                        |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
-                    
-                    let tail = tail @ [contents |> Blob ] 
-                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
+                    if bytesTwosCheck st then  
+                        let acc = acc + returnCurrentOffset cursor
+                        let bs = st |> formatToBytes
+                        let contents =
+                            bs.Length
+                            |> byteDivide2
+                            |> formatTypes padTo32BytesLeft
+                            |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
+                        
+                        let tail = tail @ [contents |> Blob ] 
+                        unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
+                    else $"#Byte string {st} must be composed of pairs of characters. Length uneven.#"    
                 | StringArraySz sArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = (unpackInputAndProcess sArr "" (countOfArguments sArr))
@@ -740,7 +812,9 @@ module ABIFunctions =
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
                 | StringArray sArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let contents = returnCountOfItems sArr |> fun s -> s + (unpackInputAndProcess sArr "" sArr.Length)
+                    let contents =
+                        returnCountOfItems sArr
+                        |> fun s -> s + (unpackInputAndProcess sArr "" sArr.Length)
                     let tail = tail @ [ contents |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64) )
                 
@@ -762,7 +836,9 @@ module ABIFunctions =
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64)) 
                 | TupleArray tArr ->
                     let acc = acc + returnCurrentOffset cursor
-                    let contents = returnCountOfItems tArr |> fun s -> s + (unpackInputAndProcess tArr "" (countOfArguments tArr))
+                    let contents =
+                        returnCountOfItems tArr
+                        |> fun s -> s + (unpackInputAndProcess tArr "" (countOfArguments tArr))
                     let tail = tail @ [ contents |> Blob ]
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64)) 
                 
@@ -790,7 +866,7 @@ module ABIFunctions =
 
 
     ///
-    /// Returns a substring for a given beginning offset, returning the entire word.
+    /// Returns a substring from a given offset, preset to one EVM word.
     let private emitSubstring start (blob: string) =
         blob.Substring(start, 64)
         
@@ -806,9 +882,10 @@ module ABIFunctions =
 
 
     ///
-    /// Returns the substring specifically for sized bytes, with a hex specifier prepended. Until I get around to
-    /// implementing a 'proper' type system for this, I can't trim 0's, because a set of trailing 0's might be
-    /// intended, or unintended.
+    /// Returns the substring specifically for sized bytes, with a hex specifier
+    /// prepended. Until I get around to implementing a 'proper' type system for
+    /// this, I can't trim 0's, because a set of trailing 0's might be intended,
+    /// or unintended.
     let private emitSubstringPrepend0xBytes start blob =
         emitSubstring start blob
         |> fun s ->
@@ -819,24 +896,28 @@ module ABIFunctions =
         
         
     ///
-    /// Returns an integer value contained in a given substring. This assumes that the count/offset value being
-    /// interpreted is not larger than a signed int. `Int32` is used because `List.init` (where this value is typically used)
-    /// for whatever reason only accepts this type.
+    /// Returns an integer value contained in a given substring. This assumes
+    /// that the count/offset value being interpreted is not larger than a
+    /// signed int. `Int32` is used because `List.init` (where this value is
+    /// being used) only accepts this type.
     /// 
     let private emitSubstringAsInt start blob =
         emitSubstring start blob |> fun i -> Convert.ToInt32(i, 16)
 
 
     ///
-    /// Returns an integer value contained in a given substring, with a byte-length-to-char-length compensator applied.
-    /// `Int32` is used because functions consuming this value assume `int`.
+    /// Returns an integer value contained in a given substring, with a
+    /// byte-length-to-char-length compensator applied. `Int32` is used because
+    /// functions consuming this value assume `int`.
     /// 
     let private emitSubstringAsOffset blob start =
         emitSubstring start blob |> fun i -> Convert.ToInt32(i, 16) |> fun i -> i * 2
 
 
     ///
-    /// Returns a boolean value after interpreting a substring in a boolean context. Non-0 values are taken as `true`.
+    /// Returns a boolean value after interpreting a substring in a boolean
+    /// context. Non-0 values are taken as `true`.
+    /// 
     let private emitSubstringAsBool start blob =
         emitSubstring start blob
         |> function
@@ -845,42 +926,52 @@ module ABIFunctions =
 
 
     ///
-    /// Returns a bigint that has been converted to a string, based upon the value contained in a substring.
+    /// Returns a bigint that has been converted to a string, based upon the
+    /// value contained in a substring.
+    /// 
     let private emitSubstringAsConvertedStringUnsigned start blob =
         emitSubstring start blob |> hexToBigintUnsigned |> fun s -> s.ToString()
         
         
     ///
-    /// Returns a bigint that has been converted to a string, based upon the value contained in a substring.
+    /// Returns a bigint that has been converted to a string, based upon the
+    /// value contained in a substring.
+    /// 
     let private emitSubstringAsConvertedStringSigned start blob =
         emitSubstring start blob |> hexToBigInt |> fun s -> s.ToString()
 
 
     ///
-    /// Returns the internal typed representation of an EVM function return value. This is typically the result of an
-    /// `EthParam1559Call` or other RPC response. When calling a contract's function from inside web3.fs or elsewhere,
-    /// the RPC response contains a value that is formatted according to the signature of the return type(s). This
-    /// function consumes the return types (captured during the import of a contract using `loadDeployedContract` as
-    /// well as the EVM's formatted return string.
-    ///
-    /// **Warning** The numeric types are represented in web3.fs as the widest version of their type, and the returned
-    /// types will thus all be `__256`. However, the values contained therein will retain their original size.
-    ///
-    /// **Warning** Multidimensional arrays and the `Function` types aren't supported.
+    /// Returns the internal typed representation of an EVM function return
+    /// value. This is typically the result of an `EthParam1559Call` or other
+    /// RPC response. When calling a contract's function from inside web3.fs or
+    /// elsewhere, the RPC response contains a value that is formatted according
+    /// to the signature of the return type(s).
+    /// 
+    /// **Warning** The numeric types are represented in web3.fs as the widest
+    /// version of their type, and the returned types will thus all be `__256`.
+    /// However, the values contained therein can be trusted to be conforming to
+    /// their intended size.
+    /// **Warning** Multidimensional arrays and the `Function` types aren't
+    /// supported.
     ///  
     let internal createOutputEvmTypes (evmList: EVMDatatype list) (evmOutput: string) =
             
-        // The general form of these cases is to take in the current position of the work in the `evmOutput` string
-        // derive a floating 'offset' value from it, and then to unpack/manipulate the contents of the string as
+        // The general form of these cases is to take in the current position of
+        // the work in the `evmOutput` string, derive a floating 'offset' value
+        // from it, and then to unpack/manipulate the contents of the string as
         // needed for each data type's context.
         //
-        // The sized array types have additional math to account for their contents, because unlike the dynamic
-        // array types, they don't leave an offset at which their contents are stored, but instead the contents are
-        // placed directly at the beginning cursor position. Thus they must advance the cursor more than one 'word'.
+        // The sized array types have additional math to account for their
+        // contents, because unlike the dynamic array types, they don't leave an
+        // offset at which their contents are stored, but instead the contents
+        // are placed directly at the beginning cursor position. Thus they must
+        // advance the cursor more than one 'word'.
         //
-        // Bytes (and by extension String) types are even more involved, since they can wrap 'words' and thus
-        // extracting their contents is more complex. The Bytes array types also function with a faked offset value,
-        // so placed so that the Bytes handler works properly.
+        // Bytes (and by extension String) types are even more involved, since
+        // they can wrap 'words' and thus extracting their contents is more
+        // complex. The Bytes array types also function with a faked offset
+        // value, placed so that the Bytes handler works properly.
         
         let rec unpackOutputAndProcess evmList evmOutput acc cursor = 
             match evmList with
@@ -1112,37 +1203,6 @@ module ABIFunctions =
     // ABI Type Checking
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    ///
-    /// Returns the input EVMDatatype list if the inputs conform to some basic checks, otherwise an error string that
-    /// will bubble up later in the pipeline. 
-    ///
-    //  TODO: This should be expanded to include checks against number of matching arguments, etc.
-    let internal checkEVMData evmDataList =
-        let rec checkEVMDataConforming evmDataList =
-            match evmDataList with
-            | head :: tail ->
-                match head with 
-                | Address a ->
-                    a
-                    |> strip0x
-                    |> fun s ->
-                        if s.Length % 40 = 0 then checkEVMDataConforming tail
-                        else "Specified Address length incorrect"
-                             |> DataValidatorError
-                             |> Error
-                | Bytes b ->
-                    b
-                    |> strip0x
-                    |> fun s ->
-                        if s.Length % 2 = 0 then checkEVMDataConforming tail
-                        else "Bytes length must be even, i.e. the specified bytes must be in pairs."
-                             |> DataValidatorError
-                             |> Error
-                | _ -> checkEVMDataConforming tail
-            | [] -> CheckedSuccess |> Ok
-        
-        checkEVMDataConforming evmDataList
         
                     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1151,8 +1211,9 @@ module ABIFunctions =
 
     
     ///
-    /// Returns the string representation of the wrapped EVMData value, except for bool types, which are handled in
-    /// `unwrapEVMBool`. EVMDatatypes that are lists return a comma-separated concatenated string.
+    /// Returns the string representation of the wrapped EVMData value, except
+    /// for bool types, which are handled in `unwrapEVMBool`. EVMDatatypes that
+    /// are lists return a comma-separated concatenated string.
     /// 
     let rec public unwrapEVMValue (evmDataType: EVMDatatype) =
         match evmDataType with
@@ -1177,12 +1238,12 @@ module ABIFunctions =
         | String s -> s |> trimParameter
         | StringArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
         | StringArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
-        | _ -> ""
+        | x -> $"{x.ToString()}"
 
 
     ///
-    /// Returns the underlying boolean contained in a wrapped Bool EVMDatatype. For obvious reasons, bools from `Bool`
-    /// will return a singleton List.
+    /// Returns the underlying boolean contained in a wrapped Bool EVMDatatype.
+    /// Bools from non-array `Bool` types will return a singleton list.
     /// 
     let public unwrapEVMBool (evmBools: EVMDatatype) =
         match evmBools with
@@ -1193,11 +1254,8 @@ module ABIFunctions =
 
     
     ///
-    /// Returns a function's outputs from the EVM as an EVMDatatype list for use elsewhere in Web3.fs. For example, 
-    /// using `makeEthCall` might return an address "0x00000000000000000000000022699e6AdD7159C3C385bf4d7e1C647ddB3a99ea".
-    /// This will convert it to [Address "0x22699e6AdD7159C3C385bf4d7e1C647ddB3a99ea"]
-    /// 
-    let public returnOutputAsEVMDatatypes contract functionIndicator output =
+    /// Returns a function's outputs from the EVM as an EVMDatatype list. 
+    let internal returnOutputAsEVMDatatypes contract functionIndicator output =
         match findFunction contract functionIndicator with
         | Ok result ->
              bindFunctionIndicator result
@@ -1208,7 +1266,7 @@ module ABIFunctions =
     ///
     /// Returns a wrapped EthAddress that has been checked for validity 
     let internal wrapEthAddress (address: string) =
-        match [address |> Address] |> checkEVMData with
-        | Ok _ -> address |> returnChecksumAddress |> Ok
-        | Error _ -> EthAddressError |> Error
+        match address.Length = 40 with
+        | true -> address |> returnChecksumAddress |> Ok
+        | false -> EthAddressError |> Error
         

@@ -178,8 +178,8 @@ module Logger =
             printfn $"{p}"
         
     ///
-    /// Emits console messages with color and glyphs based on the incoming message. I'm not certain these locks
-    /// are required, but better safe than sorry.
+    /// Emits console messages with color and glyphs based on the incoming
+    /// message. I'm not certain these locks are required.
     /// 
     let private loggerMailbox (mbox: Logger) =
         let locker = Object

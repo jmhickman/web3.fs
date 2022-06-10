@@ -11,8 +11,8 @@ module RPCMethodFunctions =
     
   
     ///
-    /// Binds EthMethod to a string representation of the desired call. Only making effort to support methods outlined
-    /// at
+    /// Binds EthMethod to a string representation of the desired call. Only
+    /// making effort to support methods outlined at
     /// https://playground.open-rpc.org/?schemaUrl=https://raw.githubusercontent.com/ethereum/eth1.0-apis/assembled-spec/
     /// 
     let internal bindEthMethod (m: EthMethod) =
@@ -64,8 +64,8 @@ module RPCParamFunctions =
     open Common
 
     //
-    // Convert call params into json string representation. RPC commands that consume filters will not work, as there
-    // is no websocket facility set up as of 0.2.0.
+    // Convert call params into json string representation. RPC commands that
+    // consume filters will not work, as there is no websocket support.
     //
     let internal bindEthParam (p: EthParam) =
         match p with
@@ -89,7 +89,9 @@ module RPCFunctions =
     
     
     ///
-    /// Detects if an ENS name was used and performs the lookup to resolve it to an address
+    /// Detects if an ENS name was used and performs the lookup to resolve it
+    /// to an address.
+    /// 
     let handleENSName env chainId (name: string) =
         if name.Contains('.') then
             let hash = convertENSName name
@@ -143,7 +145,9 @@ module RPCFunctions =
         
     
     ///
-    /// Checks that we aren't trying to call the fallback or receive function(s) on a contract that doesn't have them.
+    /// Checks that we aren't trying to call the fallback or receive function(s)
+    /// on a contract that doesn't have them.
+    /// 
     let checkForFallbackOrReceive contract (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
         |> Result.bind(fun (_,_,_,_,_, requestedFunction) ->
@@ -154,7 +158,7 @@ module RPCFunctions =
             else pipe)
     
     ///
-    /// Selects the supplied arguments or ones defaulted in the ContractConstants.
+    /// Selects the supplied arguments defaults in the ContractConstants.
     let private chooseDefaultOrSuppliedArguments suppliedArgs (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
         |> Result.bind(fun (a, b, c, defaultArgs, e, f) ->
@@ -164,7 +168,8 @@ module RPCFunctions =
     
     
     ///
-    /// Checks that we are lined up as far as function signature and supplied arguments.
+    /// Checks that arguments aren't supplied to functions with an empty
+    /// argument list, and that arguments aren't missing when required.
     let private checkArgsToFunction (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
         |> Result.bind(fun a ->
@@ -178,19 +183,11 @@ module RPCFunctions =
                 else FunctionArgumentsMissingError |> Error )
         
     
-    ///
-    /// Run arguments through checkEVMData
-    let private checkArgumentData (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
-        pipe
-        |> Result.bind (fun a ->
-            let _, _, _, args, _, _ = a
-            match checkEVMData args with
-            | Ok _ -> a |> Ok
-            | Error e -> e |> Error)
+
     
     
     ///
-    /// Check that we're not sending value to a non-Payable, or warn if 0 to a Payable
+    /// Check for sending value to a non-Payable.
     let private checkValueAndStateMutability (pipe: Result<string * string * string * EVMDatatype list * string * EVMFunction, Web3Error>) =
         pipe
         |> Result.bind (fun a ->
@@ -233,7 +230,7 @@ module RPCFunctions =
         
     
     ///
-    /// Returns a Txn object for use in the validation function `ValidateRPCParams`
+    /// Returns an unvalidated transaction object.
     let private createUnvalidatedTxn constants contract arguments value (pipe: Result<FunctionIndicator, Web3Error>) =
         pipe
         |> Result.bind (fun functionIndicator ->
@@ -244,14 +241,15 @@ module RPCFunctions =
             |> checkForFallbackOrReceive contract 
             |> chooseDefaultOrSuppliedArguments arguments
             |> checkArgsToFunction
-            |> checkArgumentData
             |> checkValueAndStateMutability
             |> createDataString
             |> returnUnvalidatedRecord constants.walletAddress contract )
 
     
     ///
-    /// Factored out for reuse. Passes through a specified blockheight, or supplies the LATEST default.
+    /// Factored out for reuse. Passes through a specified blockheight, or
+    /// supplies the LATEST default.
+    /// 
     let private blockHeight (constants: ContractConstants) =
         match constants.blockHeight with
         | Some s -> s
@@ -264,9 +262,11 @@ module RPCFunctions =
 
     
     ///
-    /// Checks that the signer is on the chain we're about to transact with. Emits WrongChainInSigner if not.
+    /// Checks that the signer is on the chain we're about to transact with.
+    /// Emits WrongChainInSigner if not.
     ///
-    /// Check that the chain we're trying to work with is actually selected in the signer
+    /// Check that the chain we're trying to work with is actually selected in
+    /// the signer.
     let private checkForChain env chainId  =
         { method = EthMethod.ChainId
           paramList = [] |> EthGenericRPC
@@ -274,7 +274,7 @@ module RPCFunctions =
           |> env.connection
           |> decomposeRPCResult EthMethod.ChainId
           |> env.log Emit
-          |> unwrapSimpleValue
+          |> unwrapRPCCallResponse
           |> fun chain ->
                 if chain = chainId then
                     () |> Ok
@@ -304,8 +304,8 @@ module RPCFunctions =
 
 
     ///
-    /// Check that we aren't supplying value to a non-Payable constructor, which will be accepted but the transaction
-    /// will fail with a status 0x0.
+    /// Check that we aren't supplying value to a non-Payable constructor, which
+    /// will be accepted but the transaction will fail with a status 0x0.
     /// 
     let private checkValueAndStateMutabilityDeploy value contract (pipe: Result<string * string * string, Web3Error>) =
         match contract.stateMutability with
@@ -314,7 +314,7 @@ module RPCFunctions =
     
     
     ///
-    ///
+    /// Returns the actual bytestring of the contract for the transaction.
     let private createDeployData args (pipe: Result<string * string * string,Web3Error>) =
         pipe
         |> Result.bind (fun (a, b, c) ->
@@ -352,14 +352,16 @@ module RPCFunctions =
     
         
     ///
-    /// Creates an Ethereum RPC request whose purpose is typically to query the RPC node for chain-based or network-
-    /// based data. Examples are retrieving the contents of a block, checking a transaction receipt, or getting an
+    /// Creates an Ethereum RPC request whose purpose is typically to query the
+    /// RPC node for chain-based or network-based data. Examples are retrieving
+    /// the contents of a block, checking a transaction receipt, or getting an
     /// account balance.
     /// * method: An EthMethod selector, like `EthMethod.GetBalance`
-    /// * paramList: An EthParam, such as `["0x3872353821064f55df53ad1e2d7255e969f6eac0", "0x9dc3fe"]`
+    /// * paramList: A string list, such as
+    ///     `["0x3872353821064f55df53ad1e2d7255e969f6eac0", "0x9dc3fe"]`
     /// * chainId: The hexadecimal representation of the chain ID.
     /// * env: A Web3Environment. See createWeb3Environment.
-    /// Note that some EthMethods have no arguments. Use an empty list in those cases.
+    /// Some EthMethods have no arguments. Use an empty list in those cases.
     ///
     let public rpcCall method (paramList: string list) chainId env =
         checkForChain env chainId
@@ -372,11 +374,15 @@ module RPCFunctions =
 
 
     ///
-    /// Creates an Ethereum transaction (a call that changes the state of the blockchain).
+    /// Creates a contract transaction (a call that changes the state of the
+    /// blockchain).
     /// * contract: A DeployedContract that is being called
-    /// * evmFunction: FunctionSelector corresponding to the the function being called. Typically (ByName "SomeFunction")
-    /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no arguments.
-    /// * value: the wei-denominated amount of ETH to send along with a transaction to a payable function.
+    /// * evmFunction: FunctionSelector corresponding to the the function being
+    ///     called. Typically (ByName "SomeFunction")
+    /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no
+    ///     arguments.
+    /// * value: the wei-denominated amount of ETH to send along with a
+    ///     transaction to a payable function.
     /// * env: An Web3Environment. See createWeb3Environment.
     ///
     let public contractTransaction contract evmFunction arguments value env =
@@ -404,10 +410,12 @@ module RPCFunctions =
     
     
     ///
-    /// Creates an Ethereum call that does NOT change the state of the blockchain.
+    /// Creates a contract call, a gasless transaction for querying the chain.
     /// * contract: A DeployedContract that is being called
-    /// * evmFunction: FunctionSelector corresponding to the the function being called. Typically (ByName "SomeFunction")
-    /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no arguments.
+    /// * evmFunction: FunctionSelector corresponding to the the function being
+    ///     called. Typically '(ByName "SomeFunction")'
+    /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no
+    ///     arguments.
     /// * env: An Web3Environment. See createWeb3Environment.
     ///
     let public contractCall contract evmFunction arguments env =
@@ -429,10 +437,10 @@ module RPCFunctions =
     
     
     ///
-    /// Creates an Ethereum transaction (a call that changes the state of the blockchain) specifically for deploying
-    /// a contract's bytecode.
+    /// Creates a transaction specifically for deploying a contract's bytecode.
     /// * contract: A UndeployedContract that is being deployed
-    /// * value: the wei-denominated amount of ETH to send along with a transaction to a payable constructor.
+    /// * value: the wei-denominated amount of ETH to send along with a
+    ///     transaction to a payable constructor.
     /// * env: An Web3Environment. See createWeb3Environment.
     ///
     let public deployContract (contract: UndeployedContract) value env =
@@ -462,8 +470,16 @@ module RPCFunctions =
         
         
     ///
-    /// Estimate the amount of gas units required for the given transaction to complete. Essentially the same as 
-    /// `makeEthTxn` but with a different underlying call. A static value argument of "0" is supplied.
+    /// Estimate the amount of gas units required for the given transaction to
+    /// complete. Essentially the same as contractTransaction but with a
+    /// different underlying call. A static value argument of "0" is supplied.
+    ///
+    /// * contract: A DeployedContract that is being called
+    /// * evmFunction: FunctionSelector corresponding to the the function being
+    ///     called. Typically (ByName "SomeFunction")
+    /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no
+    ///     arguments.
+    /// * env: An Web3Environment. See createWeb3Environment.
     let public estimateGas contract evmFunction arguments env =
         let blockHeight' = blockHeight env.constants
         
@@ -481,8 +497,9 @@ module RPCFunctions =
         
 
     ///
-    /// This function is for the sending of Ether between EOAs. Use `makeEthTxn` with the `Receive` function indicator
-    /// to send to contracts. ENS names are supported for this function.
+    /// This function is for the sending of Ether between Externally Owned
+    /// Accounts. Use 'contractTransaction' with the `Receive` indicator to send
+    /// to contracts. ENS names are supported for this function.
     ///
     let public sendValue chainId destination value env = 
         let _dest = handleENSName env chainId destination

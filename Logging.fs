@@ -12,8 +12,9 @@ module Logging =
 
     
     ///
-    /// Binds and starts the transaction monitor if a transaction hash was emitted from `makeEthTxn`. Intended to be
-    /// placed in a transaction pipeline to provide realtime logging of transaction completion.
+    /// Binds and starts the transaction monitor if a transaction hash was
+    /// emitted from `makeEthTxn`. Intended to be placed in a transaction
+    /// pipeline to provide realtime logging of transaction completion.
     /// 
     let internal monitorTransaction (monitor: Monitor) (r: Result<EthTransactionHash, Web3Error>) =
         match r with
@@ -33,7 +34,7 @@ module Logging =
     
     
     ///
-    /// Unwraps Result for the logging mechanism when Emit or LogAndEmit are signalled.
+    /// Unwraps Result when Emit or LogAndEmit are signalled.
     let private emitter pipeResult =
         match pipeResult with
         | Ok callResponses -> callResponses
@@ -43,9 +44,10 @@ module Logging =
     ///
     /// Generic logger for use in all RPC calls.
     /// 
-    /// * `logger`: A `Logger`. Typically generated from `createWeb3Environment`.
-    /// * `signal`: An indicator to tell the logger how to handle the Result. One of 'Log', 'Emit', 'LogAndEmit', or 'Quiet'
-    /// * `pipeResult`: Result flow. Provided by piping an Ethereum call into this function.
+    /// * logger: A `Logger`. Typically generated from `createWeb3Environment`.
+    /// * signal: An indicator to tell the logger how to handle the Result. One
+    ///           of 'Log', 'Emit', 'LogAndEmit', or 'Quiet'
+    /// * pipeResult: Result flow from an Ethereum call into this function.
     /// 
     let public log (logger: Logger) signal (pipeResult: Result<CallResponses, Web3Error>) =
         match signal with

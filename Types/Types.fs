@@ -99,7 +99,10 @@ module Types =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     
-    /// Convenience bindings for common networks. These are not assertions of compatibility.
+    ///
+    /// Convenience bindings for common networks. These are not assertions of
+    /// compatibility.
+    /// 
     let public ETHEREUM_MAINNET = "0x1"
     let public ROPSTEN = "0x3"
     let public RINKEBY = "0x4"
@@ -118,6 +121,9 @@ module Types =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     
+    ///
+    /// Used in revised type system. Acts as a flag for a set of functions to
+    /// use to test that inputs don't exceed the indicated width.
     type Bitness =
         | B8
         | B16
@@ -151,7 +157,11 @@ module Types =
         | B240
         | B248
         | B256
-        
+    
+    
+    ///
+    /// Used in revised type system. Acts as a flag for a set of functions to
+    /// use to test that inputs don't exceed the indicated length. 
     type ByteLength =
         | L1
         | L2
@@ -187,15 +197,16 @@ module Types =
         | L32     
         
 
-    /// Representations of EVM types in simplistic form. There is no effort made to check that provided values of these
-    /// types conform to any limitation of said types.
+    /// Representations of EVM types in simplistic form. 
     ///
-    /// **Warning** Note that while the Solidity documentation assert various `fixed` and `ufixed` types (describing
-    /// very large floats with ranges of precision for the whole and fractional parts), they are currently only 
-    /// partially implemented in the EVM and so are unsupported here at this time.
+    /// **Warning** Note that while the Solidity documentation assert various
+    /// `fixed` and `ufixed` types (describing very large floats with ranges of
+    /// precision for the whole and fractional parts), they are currently only 
+    /// partially implemented in the ABI encoder and so are unsupported here at
+    /// this time.
     ///
-    /// **Warning** There is no attempt to create types for multidimensional arrays. In practice their use is very rare,
-    /// but these types don't support 'composition' into such arrays.
+    /// **Warning** There is no attempt to create types for multidimensional
+    /// arrays. 
     ///
     type EVMDatatype =
         | Tuple of EVMDatatype list
@@ -210,9 +221,6 @@ module Types =
         | Bytes of string
         | BytesArraySz of EVMDatatype list
         | BytesArray of EVMDatatype list
-//        | Function of string
-//        | FunctionArray of string list
-//        | FunctionArraySz of string list
         | String of string
         | StringArraySz of EVMDatatype list
         | StringArray of EVMDatatype list
@@ -226,11 +234,9 @@ module Types =
         | BytesN of ByteLength * string
         | BytesNArraySz of ByteLength * string list
         | BytesNArray of ByteLength * string list
-
-        
-
-        
-    type CheckEVMData = CheckedSuccess
+//        | Function of string
+//        | FunctionArray of string list
+//        | FunctionArraySz of string list
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,8 +254,9 @@ module Types =
     
     
     ///
-    /// A 'raw' representation of an EIP-1559 compliant txn object. This is fed through a validation function
-    /// only to ensure that the bytes meet certain criteria (documented in Helpers.fs)
+    /// A 'raw' representation of an EIP-1559 compliant txn object. This is fed
+    /// through a validation function only to ensure that the bytes meet certain
+    /// criteria (documented in Common.fs)
     type UnvalidatedEthParam1559Call =
         { utxnType: string
           unonce: string
@@ -268,10 +275,11 @@ module Types =
     // Eth Parameter Types
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// There is a tremendous amount of leeway in acceptable RPC messages in terms of what is
-    /// included. This makes the type pretty gross-looking. `data` is the only properly 'required'
-    /// value, and in practice toAddr and from will be present as well (but not always!). `data` 
-    /// will also be intentionally '0x' when a contract's `receive()` is called.
+    /// There is a tremendous amount of leeway in acceptable RPC messages in
+    /// terms of what is included. This makes the type pretty gross-looking.
+    /// `data` is the only properly 'required' value, and in practice toAddr and
+    /// from will be present as well (but not always!). `data` will also be
+    /// intentionally '0x' when a contract's `receive()` is called.
     type EthParam1559Call =
         { [<JsonField("type")>] txnType: TxnType option
           nonce: Quantity option
@@ -286,7 +294,7 @@ module Types =
           chainId: Quantity option }
 
     
-    // mostly for potential future compat with override calls, not in use currently.
+    // Potential future compat with override calls, not in use currently.
     (*
     type EthParam1559OverrideCall =
         { [<JsonField("type")>] txnType: TxnType option 
@@ -552,9 +560,9 @@ module Types =
 
 
     ///
-    /// Result of the 'flattening' of the JSON representation of an EVM function. Used as the input to
-    /// the Keccak (SHA3) hash generated to provide the 'function selector' of a function and
-    /// only relevant for that purpose.
+    /// Result of the 'flattening' of the JSON representation of an EVM
+    /// function. Used as the input to the Keccak hash generator to provide the
+    /// 'function selector' of a function.
     ///
     type CanonicalRepresentation =
         internal
@@ -574,7 +582,9 @@ module Types =
 
 
     ///
-    /// The first 4 bytes of the Keccak256 hash of the function's canonical representation.
+    /// The first 4 bytes of the Keccak256 hash of the function's canonical
+    /// representation.
+    /// 
     type EVMFunctionHash = string
     type EVMEventHash = string
 
@@ -583,8 +593,10 @@ module Types =
     /// Describes the mutability of the function.
     /// * Pure: No reads from blockchain state, no writes to blockchain state.
     /// * View: Reads state, no writes to blockchain state.
-    /// * Nonpayable: Doesn't require an amount of ETH in the 'value' parameter of the txn object. Changes chain state.
-    /// * Payable: Accepts a value from the 'value' parameter of the txn object. Changes chain state.
+    /// * Nonpayable: Doesn't require an amount of ETH in the 'value' parameter
+    ///     of the txn object. Changes chain state.
+    /// * Payable: Accepts a value from the 'value' parameter of the txn object.
+    ///     Changes chain state.
     ///
     type StateMutability =
         | Pure
@@ -596,10 +608,13 @@ module Types =
     ///
     /// Represents a single function exposed by a Solidity contract.
     /// * name: Name of the function from the source code
-    /// * hash: The 'function selector' hash, the Keccak256 hash of the 'canonical representation' of the function.
-    /// * canonicalInputs: A string representation of the function's inputs, like "(address)".
+    /// * hash: The 'function selector' hash, the Keccak256 hash of the
+    ///     'canonical representation' of the function.
+    /// * canonicalInputs: A string representation of the function's inputs,
+    ///     like "(address)".
     /// * internalOutputs: Web3.fs' model of the output types.
-    /// * canonicalOutputs: A string representation of the function's outputs, like "(uint256)[]"
+    /// * canonicalOutputs: A string representation of the function's outputs,
+    ///     like "(uint256)[]"
     /// * config: The function's state mutability
     ///
     type EVMFunction =
@@ -645,8 +660,8 @@ module Types =
 
 
     ///
-    /// Used during `makeEth_` calls to indicate the function being used in the call. `IndicatedFunction`
-    /// is also returned from the function search helper.
+    /// Indicates the function being used in a call. `IndicatedFunction` is also
+    /// returned from the function search helper.
     type FunctionIndicator =
         | IndicatedFunction of EVMFunction
         | Receive
@@ -655,9 +670,10 @@ module Types =
 
 
     ///
-    /// A type for allowing various types of criteria to be searched for in contract functions. The EVM allows function
-    /// overloading, and thus some extra care may have to be taken by the user to ensure they are calling the function 
-    /// they intend to. 
+    /// A type for allowing various types of criteria to be searched for in
+    /// contract functions. The EVM allows function overloading, and thus some
+    /// extra care may have to be taken by the user to ensure they are calling
+    /// the function they intend to. 
     type FunctionSelector =
         | ByName of string
         | ByNameAndHash of (string * EVMFunctionHash)
@@ -674,8 +690,8 @@ module Types =
 
     
     ///
-    /// Convenience record that groups together various parameters that a user may wish to remain static between
-    /// calls or txns.
+    /// Convenience record that groups together various parameters that a user
+    /// may wish to remain static between calls or txns.
     ///
     type ContractConstants =
         { walletAddress: EthAddress
@@ -728,7 +744,7 @@ module Types =
     
     
     ///
-    /// Overall type for errors in various places in the pipeline. Not final at all.
+    /// Overall type for errors in various places in the pipeline.
     type Web3Error =
         | ContractParseFailure of string
         | ConnectionError of string
@@ -758,9 +774,10 @@ module Types =
         
         
     ///
-    /// Union of potential responses from the EVM through an RPC node. `Empty` here is a 'valid' result, usually indicating
-    /// that a transaction doesn't exist at a particular hash, or that a transaction hasn't been included in the chain
-    /// yet.
+    /// Union of potential responses from the EVM through an RPC node. `Empty`
+    /// here is a 'valid' result, usually indicating that a transaction doesn't
+    /// exist at a particular hash, or that a transaction hasn't been included
+    /// in the chain yet.
     /// 
     type CallResponses =
         | SimpleValue of string 
@@ -779,8 +796,9 @@ module Types =
     
     
     ///
-    /// Provides signals for the logger. Log will print a message to the console. Emit will produce a record or other
-    /// output ready for unwrapping. LogAndEmit does both. Quiet does neither.
+    /// Provides signals for the logger. 'Log' will print a message to the
+    /// console. 'Emit' will produce a record or other output ready for
+    /// unwrapping. 'LogAndEmit' does both. 'Quiet' does neither.
     ///  
     type LogSignal =
         | Log
@@ -795,7 +813,7 @@ module Types =
 
     
     ///
-    /// MailboxProcessor for sending and receiving the results of an RPC transmission
+    /// MailboxProcessor for sending and receiving the results of an RPC call.
     type MailboxTransaction =
         TransactionMessageAndReply of HttpRPCMessage * AsyncReplyChannel<Result<RPCResponse.Root, Web3Error>>
     

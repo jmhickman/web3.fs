@@ -69,33 +69,41 @@ module ContractFunctions =
 
     
     ///
-    /// Checks if the JsonValue 'type' value is a tuple. Tupled values are treated differently in the logic.
+    /// Checks if the JsonValue 'type' value is a tuple. Tupled values are
+    /// treated differently in the logic.
+    /// 
     let private checkForTuple (jVal: JsonValue) = (getInnerTypeText jVal).StartsWith("tuple") 
 
     
     ///
-    /// Checks if the JsonValue 'type' value is a tuple array. Tupled values are treated differently in the logic.
+    /// Checks if the JsonValue 'type' value is a tuple array. Tupled values
+    /// are treated differently in the logic.
+    /// 
     let private checkForTupleArray (jVal: JsonValue) =
         matchEVMInput "tuple\[\]" (getInnerTypeText jVal)
         
     
     ///
-    /// Checks if the JsonValue 'type' value is a sized tuple array. Tupled values are treated differently in the logic.
+    /// Checks if the JsonValue 'type' value is a sized tuple array. Tupled
+    /// values are treated differently in the logic.
+    /// 
     let private checkForSzTupleArray (jVal: JsonValue) =
         matchEVMInputSz "tuple\[([0-9]{1,2})\]" (getInnerTypeText jVal)
     
     
     ///
-    /// Tupled values in the ABI can be 'tuple' 'tuple[]' or 'tuple[k]'. Grab the glyphs if present for appending to the end
-    /// of the joined strings later.
+    /// Tupled values in the ABI can be 'tuple' 'tuple[]' or 'tuple[k]'. Grab
+    /// the glyphs if present for appending to the end of the joined strings
+    /// later.
     ///
     let private extractEnder (jVal: JsonValue) =
         jVal.GetProperty("type").InnerText().Substring(5)
 
 
     ///
-    /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for functions and returns
-    /// an Option for the name, inputs, outputs and the state mutability parameter.
+    /// Given the JsonValue parsed output of an exported ABI, this filters the
+    /// ABI for functions and returns an Option for the name, inputs, outputs
+    /// and the state mutability parameter.
     ///
     let private tryGetFunctionProperties (jVals: JsonValue array) =
         jVals
@@ -108,8 +116,9 @@ module ContractFunctions =
 
 
     ///
-    /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for events and returns
-    /// an option for the name, inputs, and the anonymous parameter.
+    /// Given the JsonValue parsed output of an exported ABI, this filters the
+    /// ABI for events and returns an option for the name, inputs, and the
+    /// anonymous parameter.
     ///
     let private tryGetEventProperties (jVals: JsonValue array) =
         jVals
@@ -118,8 +127,8 @@ module ContractFunctions =
 
 
     ///
-    /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for errors and returns
-    /// an Option for the name and inputs.
+    /// Given the JsonValue parsed output of an exported ABI, this filters the
+    /// ABI for errors and returns an Option for the name and inputs.
     ///
     let private tryGetErrorProperties (jVals: JsonValue array) =
         jVals
@@ -128,9 +137,9 @@ module ContractFunctions =
 
 
     ///
-    /// Given the JsonValue parsed output of an exported ABI, this filters the ABI for the constructor and
-    /// returns its inputs. Constructors never have a name or outputs. Only useful for deploying a contract
-    /// programmatically.
+    /// Given the JsonValue parsed output of an exported ABI, this filters the
+    /// ABI for the constructor and returns its inputs. Constructors never have
+    /// a name or outputs.
     ///
     let private tryGetConstructorProperties (jVals: JsonValue array) =
         jVals
@@ -139,9 +148,10 @@ module ContractFunctions =
 
 
     ///
-    /// Given a JsonValue parsed output of an exported ABI, this discovers the presence of an explicit
-    /// 'receive' function. Receive functions have no inputs, must be 'payable', and may not have outputs.
-    /// Thus, this function only returns the presence of a receive function only.
+    /// Given a JsonValue parsed output of an exported ABI, this discovers the
+    /// presence of an explicit 'receive' function. Receive functions have no
+    /// inputs, must be 'payable', and may not have outputs. Thus, this function
+    /// only returns the presence of a receive function.
     ///
     let private tryGetReceive (jVals: JsonValue array) =
         jVals
@@ -151,10 +161,10 @@ module ContractFunctions =
 
 
     ///
-    /// Given a JsonValue parsed output of an exported ABI, this discovers the presence of an explicit
-    /// 'fallback' function. The fallback may only have an empty argument tuple, or a bytes argument
-    /// that the EVM will fill with the calldata of the txn that hit the fallback. It may only return a
-    /// bytes as output. It may be payable.
+    /// Given a JsonValue parsed output of an exported ABI, this discovers the
+    /// presence of an explicit 'fallback' function. The fallback may only have
+    /// an empty argument tuple, or the calldata of the txn that hit the
+    /// fallback. It may be payable.
     ///
     let private tryGetFallback (jVals: JsonValue array) =
         jVals
@@ -169,8 +179,9 @@ module ContractFunctions =
     
     
     ///
-    /// Recursively send tupled components through the function in order to extract and format nested values properly.
-    /// Non-tupled values are concatenated directly. ()'s inserted as needed.
+    /// Recursively send tupled components through the function in order to
+    /// extract and format nested values properly. Non-tupled values are
+    /// concatenated directly. ()'s inserted as needed.
     ///
     let rec private collapseTuples (_input: JsonValue) =
         match _input with
@@ -187,9 +198,8 @@ module ContractFunctions =
 
     
     ///
-    /// Returns an EVMDatatype based on a static lookup of the EVM datatype culled from the ABI. Some definite liberties
-    /// are taken with regards to the precision of number types. They are 'upcast' to the largest representation.
-    /// Multi-dimensional arrays are not supported.
+    /// Returns an EVMDatatype based on a static lookup of the EVM datatype
+    /// culled from the ABI. Multi-dimensional arrays are not supported.
     /// 
     let private typeLookup evmTypeString =
       match evmTypeString with
@@ -233,8 +243,9 @@ module ContractFunctions =
     
     
     ///
-    /// Returns an internal complete representation of a Solidity function's types, with some caveats. Types with
-    /// variable precision are upcast to the largest value type (i.e., uint8 -> uint256) and multi-dimensional
+    /// Returns an internal complete representation of a Solidity function's
+    /// types, with some caveats. Types with variable precision are upcast to
+    /// the largest value type (i.e., uint8 -> uint256) and multi-dimensional
     /// arrays are not supported.
     ///  
     let rec private returnEVMTypes (_input: JsonValue) (acc: EVMDatatype list) =
@@ -266,8 +277,8 @@ module ContractFunctions =
     
         
     ///
-    /// Returns the state mutability parameter of the EVM function, given a JsonValue option.
-    /// Defaults to 'nonpayable' as is the spec.
+    /// Returns the state mutability parameter of the EVM function, given a
+    /// JsonValue option. Defaults to 'nonpayable' as is the spec.
     ///
     let private returnStateMutability (b: JsonValue option) =
         match b with
@@ -282,8 +293,8 @@ module ContractFunctions =
 
 
     ///
-    /// Returns the function name of an EVM function, given a JsonValue option. Defaults to an
-    /// empty string, which may be non-compliant.
+    /// Returns the function name of an EVM function, given a JsonValue option.
+    /// Defaults to an empty string, which may be non-compliant.
     ///
     let private returnFunctionName (b: JsonValue option) =
         match b with
@@ -292,7 +303,9 @@ module ContractFunctions =
 
 
     ///
-    /// Returns a canonical representation of function inputs. Defaults to an empty tuple "()"
+    /// Returns a canonical representation of function inputs. Defaults to an
+    /// empty tuple "()"
+    /// 
     let private returnCanonicalInputs (b: JsonValue option) =
         match b with
         | Some jVal -> $"""{collapseTuples jVal}"""
@@ -300,7 +313,9 @@ module ContractFunctions =
 
     
     ///
-    /// Returns a canonical representation of function outputs. Defaults to an empty tuple "()"
+    /// Returns a canonical representation of function outputs. Defaults to an
+    /// empty tuple "()"
+    /// 
     let private returnCanonicalOutputs (b: JsonValue option) =
         match b with
         | Some jVal -> $"""{collapseTuples jVal}"""
@@ -308,8 +323,8 @@ module ContractFunctions =
     
     
     ///
-    /// Returns the outputs of an EVM function in term of web3.fs' internal representation of these types. This is not
-    /// the same as the canonical representation (i.e., `(address)`)
+    /// Returns the outputs of an EVM function in term of web3.fs' internal
+    /// representation of these types. 
     /// 
     let private returnInternalOutputs (b: JsonValue option) =
        match b with
@@ -327,7 +342,7 @@ module ContractFunctions =
 
 
     ///
-    /// Returns an EVMFunction corresponding to the intermediate representation supplied.
+    /// Returns an EVMFunction corresponding to the representation supplied.
     let private returnEVMFunction (digest: Keccak) (interFunc: IntermediateFunctionRepresentation) =
 
         let _funcName, _inputs, _outputs, _stateMut = interFunc
@@ -349,7 +364,7 @@ module ContractFunctions =
 
 
     ///
-    /// Returns an EVMEvent corresponding to the intermediate representation supplied.
+    /// Returns an EVMEvent corresponding to the representation supplied.
     let private returnEVMEvent (digest: Keccak) (interEvent: IntermediateEventRepresentation) =
 
         let _eventName, _inputs, _anon = interEvent
@@ -369,7 +384,7 @@ module ContractFunctions =
 
 
     ///
-    /// Returns an EVMError corresponding to the intermediate representation supplied.
+    /// Returns an EVMError corresponding to the representation supplied.
     let private returnEVMError (digest: Keccak) (interError: IntermediateErrorRepresentation) =
 
         let _errName, _inputs = interError
@@ -387,8 +402,9 @@ module ContractFunctions =
 
 
     ///
-    /// When supplied with a Solidity contract ABI in Json format, returns a list of all functions as
-    /// EVMFunctions. A Keccak hash digest is required to generate function selectors.
+    /// When supplied with a Solidity contract ABI in Json format, returns a
+    /// list of all functions as EVMFunctions. A Keccak hash digest is required
+    /// to generate function selectors.
     ///
     let private parseABIForFunctions (digest: Keccak) (json: JsonValue array) =
         json
@@ -398,8 +414,9 @@ module ContractFunctions =
 
 
     ///
-    /// When supplied with a Solidity contract ABI in Json format, returns a list of EVMEvents.
-    /// A Keccak hash digest is required to generate event selectors.
+    /// When supplied with a Solidity contract ABI in Json format, returns a
+    /// list of EVMEvents. A Keccak hash digest is required to generate event
+    /// selectors.
     ///
     let private parseABIForEvents (digest: Keccak) (json: JsonValue array) =
         json
@@ -409,8 +426,9 @@ module ContractFunctions =
 
 
     ///
-    /// When supplied with a Solidity contract ABI in Json format, returns a tuple of the constructor,
-    /// an optional fallback function, and optional receive function.
+    /// When supplied with a Solidity contract ABI in Json format, returns a
+    /// tuple of the constructor, an optional fallback function, and optional
+    /// receive function.
     ///
     let private parseABIForConstructor (digest: Keccak) (json: JsonValue array) =
         match tryGetConstructorProperties json with
@@ -421,8 +439,9 @@ module ContractFunctions =
 
     
     ///
-    /// When supplied with a Solidity contract ABI in Json format, returns a list of EVMErrors.
-    /// A Keccak hash digest is required to generate function selectors.
+    /// When supplied with a Solidity contract ABI in Json format, returns a
+    /// list of EVMErrors. A Keccak hash digest is required to generate function
+    /// selectors.
     ///
     let private parseABIForErrors (digest: Keccak) (json: JsonValue array) =
         json
@@ -437,7 +456,9 @@ module ContractFunctions =
     
     
     ///
-    /// Basic check to ensure there is actually bytecode, in case the file used to provide it was malformed.
+    /// Basic check to ensure there is actually bytecode, in case the file used
+    /// to provide it was malformed.
+    /// 
     let checkForBytecode (bytecode: RawContractBytecode) (abi: ABI) =
         let (RawContractBytecode s) = bytecode
         match s.Length with
@@ -446,8 +467,9 @@ module ContractFunctions =
     
     
     ///
-    /// Generates Web3Error if the abi can't be parsed, implying interacting with the contract after deployment will
-    /// fail. Otherwise, passes along the JsonValue.
+    /// Generates Web3Error if the ABI can't be parsed, implying interacting
+    /// with the contract after deployment will fail. Otherwise, passes along
+    /// the JsonValue.
     /// 
     let private canABIBeParsed (pipe: Result<ABI, Web3Error>) =
         pipe
@@ -502,7 +524,8 @@ module ContractFunctions =
        
     
     ///
-    /// Extracts the constructor hash for this contract, so that checks can be made. Doesn't generate Web3Errors.
+    /// Extracts the constructor hash for this contract, so that checks can be
+    /// made. Doesn't generate Web3Errors.
     let private buildConstructorHash digest (pipe: Result<JsonValue, Web3Error>) =
         pipe
         |> Result.bind(fun b ->
@@ -512,7 +535,9 @@ module ContractFunctions =
     
     
     ///
-    /// Generates a Web3Error if the user attempted to pass arguments to a `constructor()`
+    /// Generates a Web3Error if the user attempted to pass arguments to a
+    /// constructor that takes no arguments
+    /// 
     let private constructorEmptyButArgsGiven (args: 'a list ) (pipe: Result<string * StateMutability, Web3Error>) =
         pipe
         |> Result.bind (fun (b, s ) ->
@@ -521,7 +546,7 @@ module ContractFunctions =
     
     
     ///
-    /// Generates a Web3Error if the user failed to supply arguments to a constructor.
+    /// Generates a Web3Error if the user failed to supply constructor arguments.
     let private constructorRequireArgsAndNoneWereGiven (args: 'a list ) (pipe: Result<string * StateMutability, Web3Error>) =
         pipe
         |> Result.bind (fun (b, s) ->
@@ -530,14 +555,17 @@ module ContractFunctions =
     
     
     ///
-    /// Returns a Result containing either a DeployedContract for interaction, or a variety of errors such as the signer being
-    /// on the wrong chain, malformed ABI, bad contract address, or errors in extracting components of the contract.
+    /// Returns a Result containing either a DeployedContract for interaction,
+    /// or a variety of errors such as the signer being on the wrong chain,
+    /// malformed ABI, bad contract address, or errors in extracting components
+    /// of the contract.
     /// 
-    /// * `env`: a `Web3Environment`
-    /// * `address`: A string indicating the address the deployed contract may be found out. For example, "0xd2BA82c4777a8d619144d32a2314ee620BC9E09c"
-    /// * `chainId`: A string in hex notation indicating the network the contract is deployed to, such as '0x1' (mainnet) 
-    /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
-    /// * `abi`: An `ABI` associated with the deployed contract.
+    /// * abi: An `ABI` associated with the deployed contract.
+    /// * chainId: A string in hex notation indicating the network the contract
+    ///     is deployed to, such as '0x1' (mainnet) or '0x4' (rinkeby).See
+    ///     Types.fs for a set of pre-defined network aliases.
+    /// * address: A string indicating the address the deployed contract may be
+    ///     found at. For example, "0xd2BA82c4777a8d619144d32a2314ee620BC9E09c"
     ///
     let public loadDeployedContract (abi: ABI) chainId address   =
         let digest = newKeccakDigest
@@ -559,15 +587,18 @@ module ContractFunctions =
   
 
     ///
-    /// Returns an UndeployedContract for use in `deployEthContract`. Emits Web3Errors in a variety of circumstances,
-    /// such as malformed ABI, collisions in the function hashes, and issues with constructors and arguments.
+    /// Returns an UndeployedContract for use in `deployEthContract`. Emits
+    /// Web3Errors in a variety of circumstances, such as malformed ABI,
+    /// collisions in the function hashes, and issues with constructors and
+    /// arguments.
     /// 
-    /// * `env`: a `Web3Environment`
-    /// * `bytecode`: a `RawContractBytecode` representing the bytecode to be deployed.
-    /// * `constructorArguments`: An list option of EVMDatatypes representing inputs to the constructor of the contract.
-    /// * `chainId`: A string in hex notation indicating the network the contract is deployed to, such as '0x1' (mainnet) 
-    /// or '0x4' (rinkeby). See `Types.fs` for a set of pre-defined network aliases.
-    /// * `abi`: An `ABI` associated with the deployed contract.
+    /// * bytecode: RawContractBytecode containing the bytecode to be deployed.
+    /// * abi: An ABI associated with the deployed contract.
+    /// * chainId: A string in hex notation indicating the network the contract
+    ///     is deployed to, such as '0x1' (mainnet) or '0x4' (rinkeby). See
+    ///     Types.fs for a set of pre-defined network aliases.
+    /// * constructorArguments: An list of EVMDatatypes representing inputs to
+    /// the constructor of the contract.    
     /// 
     let public prepareUndeployedContract bytecode abi chainId (constructorArguments: EVMDatatype list)  =
         let digest = newKeccakDigest
