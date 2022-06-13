@@ -1,6 +1,4 @@
-namespace web3.fs
-
-open Types
+namespace Web3.fs
 
 module Logger =
     
@@ -168,14 +166,40 @@ module Logger =
     
     ///
     /// Formatted print of a call result 
-    let prettyCallResult (callResult: EVMDatatype list) =
-        callResult
-        |> List.fold (fun acc s ->
-            let stripped = s.ToString().Replace(QUOTE, EMPTY)
-            $"{acc}\t{stripped}\n") ""
-        |> fun p ->
-            printAndRevert Blue "Call response\n"
-            printfn $"{p}"
+    let rec prettyCallResult (callResult: EVMDatatype list) =
+        match callResult with
+        | head::tail ->
+            match head with
+            | Uint (bitness, s) ->
+                let _bitness = bitness.ToString().Replace("B", EMPTY)
+                let _s = s.Replace(QUOTE, EMPTY)
+                printAndRevert Blue "Call response: "
+                printfn $"Uint{_bitness} {_s}"
+                prettyCallResult tail
+            | Int (bitness, s) ->
+                let _bitness = bitness.ToString().Replace("B", EMPTY)
+                let _s = s.Replace(QUOTE, EMPTY)
+                printAndRevert Blue "Call response: "
+                printfn $"Int{_bitness} {_s}"
+                prettyCallResult tail
+            | BytesN (byteLength, s) ->
+                let _len = byteLength.ToString().Replace("L", EMPTY)
+                let _s = s.Replace(QUOTE, EMPTY)
+                printAndRevert Blue "Call response: "
+                printfn $"Byte{_len} {_s}"
+            | s ->
+                let _s = s.ToString().Replace(QUOTE, EMPTY)
+                printAndRevert Blue "Call response: "
+                printfn $"{_s}"
+                prettyCallResult tail
+        | [] -> ()
+//    callResult
+//        |> List.fold (fun acc s ->
+//            let stripped = s.ToString().Replace(QUOTE, EMPTY)
+//            $"{acc}\t{stripped}\n") ""
+//        |> fun p ->
+//            printAndRevert Blue "Call response\n"
+//            printfn $"{p}"
         
     ///
     /// Emits console messages with color and glyphs based on the incoming
@@ -202,16 +226,15 @@ module Logger =
                     | Library s ->
                         printAndRevert DarkBlue "[@] "
                         prettySimple s
-                    | _ -> ()
-                    
-                    printAndRevert Green "[+]  Success\n"
-                    match message with
-                    | Block ethBlock -> prettyBlock ethBlock
-                    | Transaction mTransaction -> prettyTransaction mTransaction
-                    | TransactionReceiptResult receipt -> prettyTransactionReceipt receipt
-                    | CallResult evmDatatypes -> prettyCallResult evmDatatypes
-                    | SimpleValue s -> prettySimple s
-                    | _ -> () )
+                    | _ ->                     
+                        printAndRevert Green "[+]  Success\n"
+                        match message with
+                        | Block ethBlock -> prettyBlock ethBlock
+                        | Transaction mTransaction -> prettyTransaction mTransaction
+                        | TransactionReceiptResult receipt -> prettyTransactionReceipt receipt
+                        | CallResult evmDatatypes -> prettyCallResult evmDatatypes
+                        | SimpleValue s -> prettySimple s
+                        | _ -> () )
                 
                 do! receiver () 
             }

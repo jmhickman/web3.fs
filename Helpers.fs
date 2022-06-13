@@ -1,6 +1,4 @@
-namespace web3.fs
-
-open web3.fs
+namespace Web3.fs
 
 [<AutoOpen>]
 module Helpers =

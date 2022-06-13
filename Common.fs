@@ -1,6 +1,4 @@
-namespace web3.fs
-
-open Types
+namespace Web3.fs
 
 [<AutoOpen>]
 module Common =

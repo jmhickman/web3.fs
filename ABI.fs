@@ -1,15 +1,10 @@
-namespace web3.fs
-
-open Types
+namespace Web3.fs
 
 [<AutoOpen>]
 module ABIFunctions =
     open System
     open System.Text
         
-    open Common
-
-    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // ABI Helpers
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -598,7 +593,7 @@ module ABIFunctions =
 
 
         let addressLengthCheck (value: string) =
-            value.Length = 40
+            value |> strip0x |> fun v -> v.Length = 40
             
             
         let arrayAddressLengthCheck (values: string list) =
@@ -608,7 +603,7 @@ module ABIFunctions =
         
         
         let bytesTwosCheck (value: string) =
-            value.Length % 2 = 0
+            value |> strip0x |> fun v -> v.Length % 2 = 0
             
             
         let cursor = countOfArguments evmDatatypeList
@@ -779,7 +774,7 @@ module ABIFunctions =
                             |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
                         let tail = tail @ [ contents |> Blob ]
                         unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
-                    else $"#Byte string {bs} must be composed of pairs of characters. Length uneven.#"
+                    else $"#Bytes {bs} must be composed of pairs of characters. Length uneven.#"
                 | BytesArraySz bsArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = (unpackInputAndProcess bsArr "" (countOfArguments bsArr))
@@ -793,18 +788,16 @@ module ABIFunctions =
                     let tail = tail @ [ contents |> Blob ] 
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
                 | String st -> 
-                    if bytesTwosCheck st then  
-                        let acc = acc + returnCurrentOffset cursor
-                        let bs = st |> formatToBytes
-                        let contents =
-                            bs.Length
-                            |> byteDivide2
-                            |> formatTypes padTo32BytesLeft
-                            |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
-                        
-                        let tail = tail @ [contents |> Blob ] 
-                        unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
-                    else $"#Byte string {st} must be composed of pairs of characters. Length uneven.#"    
+                    let acc = acc + returnCurrentOffset cursor
+                    let bs = st |> formatToBytes
+                    let contents =
+                        bs.Length
+                        |> byteDivide2
+                        |> formatTypes padTo32BytesLeft
+                        |> fun s -> s + (wrapBytesAcrossWords bs [] |> String.concat "")
+                    
+                    let tail = tail @ [contents |> Blob ] 
+                    unpackInputAndProcess tail acc (cursor + (contents.Length / 64))
                 | StringArraySz sArr ->
                     let acc = acc + returnCurrentOffset cursor
                     let contents = (unpackInputAndProcess sArr "" (countOfArguments sArr))
@@ -943,10 +936,10 @@ module ABIFunctions =
 
     ///
     /// Returns the internal typed representation of an EVM function return
-    /// value. This is typically the result of an `EthParam1559Call` or other
-    /// RPC response. When calling a contract's function from inside web3.fs or
-    /// elsewhere, the RPC response contains a value that is formatted according
-    /// to the signature of the return type(s).
+    /// value. This is typically the result of an `EthParam1559Call`. When
+    /// calling a contract's function from inside web3.fs or elsewhere, the RPC
+    /// response contains a value that is formatted according to the signature
+    /// of the return type(s).
     /// 
     /// **Warning** The numeric types are represented in web3.fs as the widest
     /// version of their type, and the returned types will thus all be `__256`.
@@ -1266,7 +1259,7 @@ module ABIFunctions =
     ///
     /// Returns a wrapped EthAddress that has been checked for validity 
     let internal wrapEthAddress (address: string) =
-        match address.Length = 40 with
+        match address |> strip0x |> fun a -> a.Length = 40 with
         | true -> address |> returnChecksumAddress |> Ok
         | false -> EthAddressError |> Error
         

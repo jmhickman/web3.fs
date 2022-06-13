@@ -1,12 +1,7 @@
-namespace web3.fs
-
-open Types
+namespace Web3.fs
 
 [<AutoOpen>]
 module ReceiptManager =
-
-    open Common
-
 
     ///
     /// Simple polling loop for pending Transactions. No 'give up' function yet
@@ -16,7 +11,7 @@ module ReceiptManager =
             | Error e ->
                 match e with
                 | RPCNullResponse ->
-                    do! Async.Sleep 7500
+                    do! Async.Sleep 1500
                     return! callLoop rpc call
                 | e -> return e |> Error
             | Ok o -> return o |> Ok 
