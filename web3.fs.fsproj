@@ -2,11 +2,17 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyVersion>0.2.0</AssemblyVersion>
+    <AssemblyVersion>0.3.0</AssemblyVersion>
     <PackageId>Web3.fs</PackageId>
-    <Version>0.2.3</Version>
+    <Version>0.3.0</Version>
     <Authors>jmhickman</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyName>Web3.fs</AssemblyName>
+    <RootNamespace>Web3.fs</RootNamespace>
+    <Description>Functional library for interacting with Web3 facilities</Description>
+    <PackageProjectUrl>https://github.com/jmhickman/web3.fs</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageVersion>0.3.0</PackageVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <PlatformTarget>x64</PlatformTarget>

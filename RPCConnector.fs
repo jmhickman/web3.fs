@@ -1,6 +1,4 @@
-namespace web3.fs
-
-open web3.fs.Types
+namespace Web3.fs
 
 [<AutoOpen>]
 module RPCConnector =
@@ -20,11 +18,13 @@ module RPCConnector =
     
     
     ///
-    /// Some RPC calls require a parameter indicating at what block height the call should be performed against. This
-    /// finds calls that require it in order to insert a parameter passed in from the user, and ignores it otherwise.
-    /// Note that many calls that come in the form of lists (rather than formatted JSON) include the block height
-    /// parameter already, and so come through this function as 'false' because the parameter doesn't need to be
-    /// handled here. 
+    /// Some RPC calls require a parameter indicating at what block height the
+    /// call should be performed against. This finds calls that require it in
+    /// order to insert a parameter passed in from the user, and ignores it
+    /// otherwise. Note that many calls that come in the form of lists (rather
+    /// than formatted JSON) include the block height parameter already, and so
+    /// come through this function as 'false' because the parameter doesn't need
+    /// to be handled here. 
     ///
     let private needsBlockArgs method =
         match method with
@@ -62,9 +62,10 @@ module RPCConnector =
 
     
     ///
-    /// Handles certain types of responses from RPCs that come back with a `null` in the Result field, which causes
-    /// issues if not handled first. This means the same response is essentially double-filtered, which is inefficient
-    /// but not the slowest link in the chain.
+    /// Handles certain types of responses from RPCs that come back with a
+    /// `null` in the Result field, which causes issues if not handled first.
+    /// This means the same response is essentially double-filtered, which is
+    /// inefficient but not the slowest link in the chain.
     ///  
     let private filterNullOrErrorResponse rpcResponse =
         match RPCResponse.Parse(rpcResponse) with
@@ -80,7 +81,7 @@ module RPCConnector =
     
     
     ///
-    /// A MailboxProcessor that manages making and returning RPC calls via a Reply channel.
+    /// A MailboxProcessor for making and returning RPC calls.
     let internal rpcConnector url rpcVersion (mbox: HttpRPCMailbox) =
         let rec receiveLoop () =
             async {
@@ -101,20 +102,21 @@ module RPCConnector =
 
 
     ///
-    /// Returns the MailboxProcessor that oversees Http communications with the RPC
+    /// Returns the MailboxProcessor that oversees Http communications.
     let private startRpcConnector url rpcVersion =
         MailboxProcessor.Start(rpcConnector url rpcVersion)
 
 
     ///
-    /// Function allowing easier pipelining of RPC connection and the two-way communication channel.
+    /// Function allowing easier pipelining of RPC connection.
     let private transactionMessage (mbox: HttpRPCMailbox) rpcMessage =
         mbox.PostAndReply(fun c -> TransactionMessageAndReply(rpcMessage, c))
 
 
     ///
-    /// Returns a partially applied function ready to take an HttpRPCMessage and send it to the RPC endpoint and
-    /// return a Result. Called automatically in `createWeb3Environment`
+    /// Returns a partially applied function ready to take an HttpRPCMessage and
+    /// send it to the RPC endpoint and return a Result. Called automatically in
+    /// 'createWeb3Environment'.
     ///
     let public createWeb3Connection url rpcVersion =
         (url, rpcVersion)
