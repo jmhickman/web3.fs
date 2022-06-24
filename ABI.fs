@@ -4,6 +4,7 @@ namespace Web3.fs
 module ABIFunctions =
     open System
     open System.Text
+    
         
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // ABI Helpers
@@ -1257,9 +1258,15 @@ module ABIFunctions =
         
        
     ///
-    /// Returns a wrapped EthAddress that has been checked for validity 
+    /// Returns a wrapped EthAddress that has been checked for validity. This
+    /// code assumes that an address containing capital letters has already been
+    /// checksummed. This is probably a weak assumption.
     let internal wrapEthAddress (address: string) =
+        let regex = RegularExpressions.Regex("[A-F]")
         match address |> strip0x |> fun a -> a.Length = 40 with
-        | true -> address |> returnChecksumAddress |> Ok
+        | true ->
+            let _match = regex.Match(address)
+            if _match.Success then address |> EthAddress |> Ok
+            else address |> returnChecksumAddress |> Ok
         | false -> EthAddressError |> Error
         

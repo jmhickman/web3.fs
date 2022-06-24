@@ -202,8 +202,6 @@ module RPCFunctions =
             |> Result.bind (fun r -> (a, b, c, e, $"{evmFunction.hash}{r}") |> Ok)) 
             
             
-        
-    
     ///
     /// Creates an unvalidated record 
     let private returnUnvalidatedRecord address contract (pipe: Result<string * string * string * string * string, Web3Error>)  =
