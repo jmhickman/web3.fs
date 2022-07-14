@@ -508,7 +508,7 @@ module Types =
             nonce: string
             r: string
             s: string
-            toAddr: EthAddress 
+            toAddr: EthAddress option 
             transactionIndex: string
             tType: string
             v: string
@@ -530,7 +530,7 @@ module Types =
             nonce = "wrong unwrap or upstream web3 error"
             r = "wrong unwrap or upstream web3 error"
             s = "wrong unwrap or upstream web3 error"
-            toAddr = zeroEVMValue |> EthAddress
+            toAddr = zeroEVMValue |> EthAddress |> Some
             transactionIndex = "wrong unwrap or upstream web3 error"
             tType = "wrong unwrap or upstream web3 error"
             v = "wrong unwrap or upstream web3 error"

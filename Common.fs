@@ -586,6 +586,10 @@ module Common =
     let private returnMinedTransactionRecord (result: RPCResponse.Result) =
         let mined = RPCMinedTransaction.Parse(result.JsonValue.ToString()) 
         let access = mined.AccessList |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
+        let toAddress =
+            match mined.To with
+            | "" -> None
+            | x ->  x |> returnChecksumAddress |> Some
         
         { MinedTransaction.accessList = [access]
           MinedTransaction.blockHash = mined.BlockHash
@@ -602,7 +606,7 @@ module Common =
           MinedTransaction.r = mined.R
           MinedTransaction.s = mined.S
           MinedTransaction.v = mined.V
-          MinedTransaction.toAddr = mined.To |> returnChecksumAddress
+          MinedTransaction.toAddr = toAddress
           MinedTransaction.transactionIndex = mined.TransactionIndex
           MinedTransaction.tType = mined.Type
           MinedTransaction.value = mined.Value }

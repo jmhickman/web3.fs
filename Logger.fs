@@ -79,10 +79,12 @@ module Logger =
                 |> Array.map(fun s -> "\t" + s)
                 |> fun a -> String.Join("\n", a)
             else ""
-            
+
+        let toAddress = txn.toAddr |> Option.defaultValue "Deployment transaction"
+        
         printAndRevert Blue $"Transaction hash: {txn.hash}\n"
         printAndRevert DarkBlue $"From: {txn.from}\n"
-        printAndRevert Blue $"To: {txn.toAddr}\n"
+        printAndRevert Blue $"To: {toAddress}\n"
         printAndRevert Blue "Nonce: "
         printfn $"{txn.nonce}"
         printAndRevert Blue "Input: "
