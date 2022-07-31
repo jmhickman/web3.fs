@@ -23,7 +23,7 @@ module Logger =
     
     ///
     /// Prints the message, reverts the color.
-    let printAndRevert (color: WConsoleColor) message =
+    let internal printAndRevert (color: WConsoleColor) message =
         setColor color
         printf $"{message}"
         revertColor ()
@@ -31,13 +31,13 @@ module Logger =
     
     ///
     /// Formatted print of a simple response value, typically an RPC response
-    let prettySimple (simple: string) =
+    let private prettySimple (simple: string) =
         printAndRevert Blue $"{simple |> trimParameter}\n"
         
     
     ///
     /// Formatted print of a TransactionReceipt
-    let prettyTransactionReceipt (receipt: TransactionReceipt) =
+    let private prettyTransactionReceipt (receipt: TransactionReceipt) =
         let toOrContract =
             if receipt.contractAddress.IsSome then
                 $"Contract deployed to: {receipt.contractAddress.Value}\n"
@@ -71,7 +71,7 @@ module Logger =
         
     ///
     /// Formatted print of Transaction records
-    let prettyTransaction (txn: MinedTransaction) =
+    let private prettyTransaction (txn: MinedTransaction) =
         let accessList =
             if txn.accessList.Length > 0 then
                 txn.accessList
@@ -112,7 +112,7 @@ module Logger =
         
     ///
     /// Formatted print of a Block record
-    let prettyBlock (block: EthBlock) =
+    let private prettyBlock (block: EthBlock) =
         let sealFields =
             if block.sealFields.Length > 0 then
                 block.sealFields
@@ -168,7 +168,7 @@ module Logger =
     
     ///
     /// Formatted print of a call result 
-    let rec prettyCallResult (callResult: EVMDatatype list) =
+    let rec private prettyCallResult (callResult: EVMDatatype list) =
         match callResult with
         | head::tail ->
             match head with
@@ -195,13 +195,7 @@ module Logger =
                 printfn $"{_s}"
                 prettyCallResult tail
         | [] -> ()
-//    callResult
-//        |> List.fold (fun acc s ->
-//            let stripped = s.ToString().Replace(QUOTE, EMPTY)
-//            $"{acc}\t{stripped}\n") ""
-//        |> fun p ->
-//            printAndRevert Blue "Call response\n"
-//            printfn $"{p}"
+
         
     ///
     /// Emits console messages with color and glyphs based on the incoming

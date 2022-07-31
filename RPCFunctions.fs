@@ -126,7 +126,7 @@ module RPCFunctions =
     let private convertValueToHex value (pipe: Result<string * string * string * EVMDatatype list, Web3Error>) =
         pipe
         |> Result.bind(fun (a, b, c, d) ->
-            (a, b, c, d, (value |> bigintToHex |> prepend0x))
+            (a, b, c, d, (value |> bigintToHex))
             |> Ok)
         
     
@@ -328,7 +328,7 @@ module RPCFunctions =
               utoAddr = ""
               ufrom = env.constants.walletAddress
               ugas = "0x4C4B40"
-              uvalue = value |> bigintToHex |> prepend0x
+              uvalue = value |> bigintToHex
               udata =
                   $"{_rawBytecode}{data}" |> prepend0x           
               umaxFeePerGas = maxfee
@@ -497,7 +497,7 @@ module RPCFunctions =
         { dummyTransaction with
             utoAddr = _dest
             ufrom =  env.constants.walletAddress
-            uvalue = value |> bigintToHex |> prepend0x
+            uvalue = value |> bigintToHex
             uchainId = chainId}
         |> validateRPCParams
         |> Result.bind

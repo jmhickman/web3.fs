@@ -932,7 +932,7 @@ module ABIFunctions =
     /// value contained in a substring.
     /// 
     let private emitSubstringAsConvertedStringSigned start blob =
-        emitSubstring start blob |> hexToBigInt |> fun s -> s.ToString()
+        emitSubstring start blob |> hexToBigint |> fun s -> s.ToString()
 
 
     ///

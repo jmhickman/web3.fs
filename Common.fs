@@ -160,7 +160,7 @@ module Common =
     ///
     /// Returns a hexadecimal string with no leading 0's.
     let public bigintToHex num =
-        if num = "0" then "0x0" else num |> fun n -> bigint.Parse(n).ToString("X").TrimStart('0').ToLower()
+        if num = "0" then "0x0" else num |> fun n -> bigint.Parse(n).ToString("X").TrimStart('0').ToLower() |> prepend0x
 
 
     ///
@@ -181,7 +181,7 @@ module Common =
     /// leading 0's, so that BigInteger.Parse() can correctly emit negative
     /// integers.
     /// 
-    let internal hexToBigInt hexString =
+    let internal hexToBigint hexString =
         hexString |> strip0x |> trimParameter |> fun h -> bigint.Parse(h, NumberStyles.AllowHexSpecifier)
 
 
@@ -215,27 +215,30 @@ module Common =
     
     ///
     /// Converts an `Ether` or `Gwei` into `Wei` terms. 
-    /// **This function does not fractional units of these quantities.**
+    /// Invalid small values of Ether or Gwei will simply return 0.
     /// 
     let public asWei quantity =
         match quantity with
         | Gwei _gwei -> _gwei |> convertToWei 9
         | Ether _eth -> _eth |> convertToWei 18
-        | _ -> "Input was Wei"
+        | _ -> "0"
         
         
     ///
     /// Converts an `Ether` into `Gwei` terms. This function is really
     /// only for presentation purposes. The EVM deals exclusively in `Wei`.
     /// 
-    /// **This function does not provide guards around entering less than
-    /// one unit of `Ether`.**
-    /// 
-    let public asGwei quantity =
+    let rec public asGwei quantity =
         match quantity with
-        | Ether _eth -> _eth |> convertToWei 9
-        | Wei _wei -> bigint.Parse(_wei) |> convertFromWei gweiFactor 9
-        | _ -> "Input was Wei or Gwei"
+        | Ether _eth ->
+            match _eth |> convertToWei 9 with
+            | "0" -> asWei quantity |> fun result -> asGwei (Wei $"{result}")
+            | x -> x
+        | Wei _wei ->
+            match bigint.Parse(_wei) |> convertFromWei gweiFactor 9 with
+            | "0.000000000" -> "0"
+            | x -> x
+        | _ -> "0"
         
     
     ///
@@ -245,9 +248,13 @@ module Common =
     let public asEth quantity =
         match quantity with
         | Wei _wei ->
-            bigint.Parse(_wei) |> convertFromWei weiFactor 18
+            match bigint.Parse(_wei) |> convertFromWei weiFactor 18 with
+            | "0.000000000000000000" -> "0"
+            | x -> x
         | Gwei _gwei ->
-            _gwei |> convertToWei 9 |> fun w -> bigint.Parse(w) |> convertFromWei weiFactor 18 |> fun s -> s.TrimEnd('0')
+            match _gwei |> convertToWei 9 |> fun w -> bigint.Parse(w) |> convertFromWei weiFactor 18 with
+            | "0.000000000000000000" -> "0"
+            | x -> x.TrimEnd('0')
         | _ -> "Input was Ether"
     
     
@@ -291,12 +298,12 @@ module Common =
 
         let maxFeePerGas =
             match c.maxFeePerGas with
-            | Some t -> t |> bigintToHex |> prepend0x
+            | Some t -> t |> bigintToHex 
             | None -> ""
 
         let maxPriorityFeePerGas =
             match c.maxPriorityFeePerGas with
-            | Some t -> t |> bigintToHex |> prepend0x
+            | Some t -> t |> bigintToHex 
             | None -> ""
 
         let data =
