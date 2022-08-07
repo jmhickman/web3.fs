@@ -398,7 +398,7 @@ module ABIFunctions =
     let Byte32Array value = (L32, value) |> BytesNArray
     
         
-    let bitnessToInt bitness =
+    let private bitnessToInt bitness =
         match bitness with
         | B8 -> 8
         | B16 -> 16
@@ -433,7 +433,7 @@ module ABIFunctions =
         | B248 -> 248
         | B256 -> 256
         
-    let byteLengthToInt length =
+    let private byteLengthToInt length =
         match length with
         | L1 -> 1
         | L2 -> 2
@@ -990,7 +990,7 @@ module ABIFunctions =
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
                 | Address _ ->
-                    let acc = acc @ [(Address $"{emitSubstringPrepend0x (cursor * 64) evmOutput}")]
+                    let acc = acc @ [Address ($"{emitSubstringPrepend0x (cursor * 64) evmOutput}" |> returnChecksumAddress)]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
                 | AddressArraySz uArr ->
@@ -998,7 +998,8 @@ module ABIFunctions =
                     let arrayContents =
                         List.init uArr.Length (fun count ->
                             offset <- offset + (count * 64)
-                            $"{emitSubstringPrepend0x offset evmOutput}")
+                            $"{emitSubstringPrepend0x offset evmOutput}"
+                            |> returnChecksumAddress)
                     let acc = acc @ [AddressArraySz arrayContents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + uArr.Length)
                 
@@ -1008,7 +1009,8 @@ module ABIFunctions =
                     offset <- offset + 64
                     let contents = List.init count (fun count ->
                         offset <- offset + (count * 64)
-                        $"{emitSubstringPrepend0x offset evmOutput}")
+                        $"{emitSubstringPrepend0x offset evmOutput}"
+                        |> returnChecksumAddress)
                     let acc = acc @ [AddressArray contents]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 

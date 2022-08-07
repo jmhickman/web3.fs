@@ -41,7 +41,7 @@ module Helpers =
     
     ///
     /// Sometimes crafting or exposing bytestrings can be used programmatically,
-    /// such as to create calldata for use in low-level areas.
+    /// such as to create calldata for use in certain functions.
     /// 
     let public returnEVMBytestring evmDatatypes =
         match createInputByteString evmDatatypes with
@@ -50,9 +50,12 @@ module Helpers =
         
 
     ///
-    /// For use in the common case where only one contract is being loaded, and
-    /// no errors are anticipated in the parsing of the ABI. Will crash the
-    /// runtime if anything goes wrong (hence 'optimistically')
+    /// Because of the potential for errors during contract loading,
+    /// `loadDeployedContract` returns a Result type. The Result is bound into
+    /// a singleton list in the success case. This function returns the
+    /// DeployedContract on its own, ready for use. However, its use of
+    /// `List.head` means that it will crash the library if you use it when the
+    /// contract won't parse properly or have some other Web3Error.
     /// 
     let public optimisticallyBindDeployedContract a =
         a |> bindDeployedContract |> List.head

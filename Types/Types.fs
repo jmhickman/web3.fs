@@ -37,7 +37,7 @@ module Types =
 
     [<Literal>]
     let nullable =
-        """[{"id":1,"jsonrpc":"2.0","result":{"blockHash":"0x","blockNumber":"0x","contractAddress":null,"cumulativeGasUsed":"0x","effectiveGasPrice":"0x","from":"0x","gasUsed":"0x","logs":[],"logsBloom":"0x","status":"0x1","to":null,"transactionHash":"0x","transactionIndex":"0x56","type":"0x2"}}, {"id":1,"jsonrpc":"2.0","result":null}, {"id":1,"jsonrpc":"2.0","error":{"message":"","code":-1}}]"""
+        """[{"id":1,"jsonrpc":"2.0","result":{"blockHash":"0x","blockNumber":"0x","contractAddress":null,"cumulativeGasUsed":"0x","effectiveGasPrice":"0x","from":"0x","gasUsed":"0x","logs":[],"logsBloom":"0x","status":"0x1","to":null,"transactionHash":"0x","transactionIndex":"0x56","type":"0x2"}}, {"id":1,"jsonrpc":"2.0","result":null}, {"id":1,"jsonrpc":"2.0","error":{"message":"msg","code":-1}}]"""
 
     type RPCResponse = JsonProvider<nullable, SampleIsList=true>
     
@@ -72,7 +72,7 @@ module Types =
     /// Derived from Remix 'bytecode' output
     [<Literal>]
     let sampleRemixBytecode =
-        """{"functionDebugData":{"@_3063":{"entryPoint":null,"id":3063,"parameterSlots":2,"returnSlots":0}},"generatedSources":[{"ast":{"nodeType":"0x","src":"0x","statements":[{"body":{"nodeType":"","src":"","statements":[{"body":{"nodeType":"0x","src":"0x","statements":[{"expression":{"arguments":[{"kind":"","nodeType":"","src":"","type":"","value":""}],"functionName":{"name":"","nodeType":"","src":""},"nodeType":"","src":""},"nodeType":"","src":""}]},"condition":{"arguments":[{"arguments":[{"name":"","nodeType":"","src":""},{"arguments":[{"name":"","nodeType":"","src":""}],"functionName":{"name":"","nodeType":"","src":""},"nodeType":"","src":""}],"functionName":{"name":"","nodeType":"","src":""},"nodeType":"","src":""}],"functionName":{"name":"","nodeType":"","src":""},"nodeType":"","src":""},"nodeType":"","src":""}]},"name":"","nodeType":"","parameters":[{"name":"","nodeType":"","src":"","type":""}],"src":""}]},"contents":"{}","id":19,"language":"","name":""}],"linkReferences":{},"object":"0x60806040","opcodes":"PUSH01","sourceMap":"0x"}"""
+        """{"functionDebugData": {"@_3063": {"entryPoint": null,"id": 3063,"parameterSlots": 2,"returnSlots": 0}},"linkReferences": {},"object": "0x60806040","opcodes": "PUSH01","sourceMap": "0x"}"""
     
     type internal RemixBytecode = JsonProvider<sampleRemixBytecode>
         
