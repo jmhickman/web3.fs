@@ -1,0 +1,50 @@
+[
+  {
+    "jsonrpc": "2.0",
+    "result": {
+      "blockHash": "0x9705bb3a753e3837f296f84d88bd4dec1778537bf6b06f6e275916125185aee9",
+      "blockNumber": "0xef1aac",
+      "contractAddress": null,
+      "cumulativeGasUsed": "0x43ced",
+      "effectiveGasPrice": "0x60db88400",
+      "from": "0xe98a649e475ac4a5b01b18aa9794a6a49b8d95ab",
+      "gasUsed": "0x10059",
+      "logs": [
+        {
+          "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x000000000000000000000000e98a649e475ac4a5b01b18aa9794a6a49b8d95ab",
+            "0x000000000000000000000000fc6e49704bbd9480e65d26ca8580c87a70b9bc6e"
+          ],
+          "data": "0x000000000000000000000000000000000000000000000000000000005986b380",
+          "blockNumber": "0xef1aac",
+          "transactionHash": "0x27eb6fa70e26b0ca4718d66d667ba747716cf61bee0f51c181a10e8ee7f4688b",
+          "transactionIndex": "0x4",
+          "blockHash": "0x9705bb3a753e3837f296f84d88bd4dec1778537bf6b06f6e275916125185aee9",
+          "logIndex": "0x7",
+          "removed": false
+        }
+      ],
+      "logsBloom": "0x00000000000000000000000000000080000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000009000008000000000000000000000000000000000000000000004000000000000000000000000000800000000000000000000010000000000000000000000000020000000000000000000000010000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "status": "0x1",
+      "to": null,
+      "transactionHash": "0x27eb6fa70e26b0ca4718d66d667ba747716cf61bee0f51c181a10e8ee7f4688b",
+      "transactionIndex": "0x4",
+      "type": "0x0"
+    },
+    "id": 0
+  },
+  {
+    "jsonrpc": "2.0",
+    "id": 0,
+    "error": {
+      "code": -32602,
+      "message": "invalid argument 0: empty hex string"}
+  },
+  {
+    "jsonrpc": "2.0",
+    "result": null,
+    "id": 0
+  }
+]

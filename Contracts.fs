@@ -457,7 +457,7 @@ module ContractFunctions =
     /// Basic check to ensure there is actually bytecode, in case the file used
     /// to provide it was malformed.
     /// 
-    let checkForBytecode (bytecode: RawContractBytecode) (abi: ABI) =
+    let private checkForBytecode (bytecode: RawContractBytecode) (abi: ABI) =
         let (RawContractBytecode s) = bytecode
         match s.Length with
         | x when x = 0 -> EmptyBytecodeError |> Error

@@ -72,14 +72,6 @@ module Logger =
     ///
     /// Formatted print of Transaction records
     let private prettyTransaction (txn: MinedTransaction) =
-        let accessList =
-            if txn.accessList.Length > 0 then
-                txn.accessList
-                |> List.toArray
-                |> Array.map(fun s -> "\t" + s)
-                |> fun a -> String.Join("\n", a)
-            else ""
-
         let toAddress = txn.toAddr |> Option.defaultValue "Deployment transaction"
         
         printAndRevert Blue $"Transaction hash: {txn.hash}\n"
@@ -94,15 +86,8 @@ module Logger =
         printfn $"{txn.gas |> hexToBigintUnsigned}"
         printAndRevert Gold "Gas price: "
         printfn $"{txn.gasPrice |> hexToBigintUnsigned}"
-        printAndRevert Gold "Max fee per gas: "
-        printfn $"{txn.maxFeePerGas |> hexToBigintUnsigned}"
-        printAndRevert Gold "Max priority fee per gas: "
-        printfn $"{txn.maxPriorityFeePerGas |> hexToBigintUnsigned}"
-        printfn "Access list: "
-        printfn $"{accessList}"
         printfn $"Block hash: {txn.blockHash}"
         printfn $"Block number: {txn.blockNumber |> hexToBigintUnsigned}"
-        printfn $"Chain ID: {txn.chainId}"
         printfn $"R: {txn.r}"
         printfn $"S: {txn.s}"
         printfn $"V: {txn.v}"
@@ -113,14 +98,6 @@ module Logger =
     ///
     /// Formatted print of a Block record
     let private prettyBlock (block: EthBlock) =
-        let sealFields =
-            if block.sealFields.Length > 0 then
-                block.sealFields
-                |> List.toArray
-                |> Array.map(fun s -> "\t" + s)
-                |> fun a -> String.Join("\n", a)
-            else ""
-        
         let uncles =
             if block.uncles.Length > 0 then
                 block.uncles
@@ -139,7 +116,7 @@ module Logger =
         
         
         printAndRevert Blue $"Ethereum Block: {block.number}\n"
-        printfn $"Block author: {block.author}"
+        printfn $"Block author: {block.miner}"
         printAndRevert Blue "Miner: "
         printfn $"{block.miner}"
         printAndRevert Gold "Base fee per gas: "
@@ -152,7 +129,6 @@ module Logger =
         printfn $"Extra data: {block.extraData}"
         printfn $"Parent hash: {block.parentHash}"
         printfn $"Receipts root: {block.receiptsRoot}"
-        printfn $"Seal fields: {sealFields}"
         printfn $"Uncles hash: {block.sha3Uncles}"
         printAndRevert Blue "Block size: "
         printfn $"{block.size}"

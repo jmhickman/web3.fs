@@ -143,6 +143,7 @@ module Common =
     let public returnChecksumAddress address =
         let _addr = address |> strip0x
         let digest = newKeccakDigest
+        
         digest.Hash(_addr).Remove(40)
         |> String.mapi(fun iter char ->
             if Int32.Parse(char.ToString(), NumberStyles.HexNumber) > 7 then
@@ -160,7 +161,10 @@ module Common =
     ///
     /// Returns a hexadecimal string with no leading 0's.
     let public bigintToHex num =
-        if num = "0" then "0x0" else num |> fun n -> bigint.Parse(n).ToString("X").TrimStart('0').ToLower() |> prepend0x
+        if num = "0" then
+            "0x0"
+        else num |> fun n ->
+            bigint.Parse(n).ToString("X").TrimStart('0').ToLower() |> prepend0x
 
 
     ///
@@ -325,7 +329,6 @@ module Common =
         | _ -> results |> AmbiguousFunctionError |> Error
     
     
-    
     ///
     /// Returns a single FunctionSelector.
     let internal findFunction contract search =
@@ -461,11 +464,11 @@ module Common =
     /// The purpose is to ensure that the data supplied in each field is
     /// consistent with requirements for each type. Note that the resulting
     /// EthParam1559Call is not guaranteed to succeed or be syntactically
-    /// valid EVM bytecode.
+    /// valid.
     ///
     let internal validateRPCParams (unvalidatedRpcParam: UnvalidatedEthParam1559Call) =
         match validateData unvalidatedRpcParam.udata with
-        | Some d ->
+        | Some data ->
             { txnType = validateTxnType unvalidatedRpcParam.utxnType
               nonce = validateQuantity unvalidatedRpcParam.unonce
               toAddr = validateAddress unvalidatedRpcParam.utoAddr
@@ -476,7 +479,7 @@ module Common =
               maxPriorityFeePerGas = validateQuantity unvalidatedRpcParam.umaxPriorityFeePerGas
               chainId = validateQuantity unvalidatedRpcParam.uchainId
               accessList = unvalidatedRpcParam.uaccessList |> Some
-              data = d }
+              data = data }
             |> EthParam1559Call
             |> Ok
         | None ->
@@ -551,7 +554,7 @@ module Common =
     /// 
     let internal unpackRoot (r:RPCResponse.Root) =
         match r.Result with
-        | Some r' -> r'
+        | Some root -> root
         | None -> RPCResponse.Result(JsonValue.Null)
         
         
@@ -592,23 +595,19 @@ module Common =
     /// Returns a record of a mined transaction for use in `decomposeResult`. 
     let private returnMinedTransactionRecord (result: RPCResponse.Result) =
         let mined = RPCMinedTransaction.Parse(result.JsonValue.ToString()) 
-        let access = mined.AccessList |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
+        //let access = mined.AccessList |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
         let toAddress =
             match mined.To with
             | "" -> None
             | x ->  x |> returnChecksumAddress |> Some
         
-        { MinedTransaction.accessList = [access]
-          MinedTransaction.blockHash = mined.BlockHash
+        { MinedTransaction.blockHash = mined.BlockHash
           MinedTransaction.blockNumber = mined.BlockNumber
-          MinedTransaction.chainId = mined.ChainId
           MinedTransaction.from = mined.From |> returnChecksumAddress
           MinedTransaction.gas = mined.Gas
           MinedTransaction.gasPrice = mined.GasPrice
           MinedTransaction.hash = mined.Hash |> EthTransactionHash
           MinedTransaction.input = mined.Input
-          MinedTransaction.maxFeePerGas = mined.MaxFeePerGas
-          MinedTransaction.maxPriorityFeePerGas = mined.MaxPriorityFeePerGas
           MinedTransaction.nonce = mined.Nonce
           MinedTransaction.r = mined.R
           MinedTransaction.s = mined.S
@@ -624,8 +623,7 @@ module Common =
     let private returnEthBlock (result: RPCResponse.Result) =
         let ethBlock = RPCBlock.Parse(result.JsonValue.ToString())
         let uncles = ethBlock.Uncles |> Array.fold(fun acc i -> $"{acc}{i.ToString()}" ) ""
-        { author = ethBlock.Author
-          baseFeePerGas = ethBlock.BaseFeePerGas
+        { baseFeePerGas = ethBlock.BaseFeePerGas
           difficulty = ethBlock.Difficulty
           extraData = ethBlock.ExtraData
           gasLimit = ethBlock.GasLimit
@@ -636,7 +634,6 @@ module Common =
           number = ethBlock.Number
           parentHash = ethBlock.ParentHash
           receiptsRoot = ethBlock.ReceiptsRoot
-          sealFields = ethBlock.SealFields |> Array.toList
           sha3Uncles = ethBlock.Sha3Uncles
           size = ethBlock.Size
           stateRoot = ethBlock.StateRoot

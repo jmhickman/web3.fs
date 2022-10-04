@@ -35,46 +35,17 @@ module Types =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    [<Literal>]
-    let nullable =
-        """[{"id":1,"jsonrpc":"2.0","result":{"blockHash":"0x","blockNumber":"0x","contractAddress":null,"cumulativeGasUsed":"0x","effectiveGasPrice":"0x","from":"0x","gasUsed":"0x","logs":[],"logsBloom":"0x","status":"0x1","to":null,"transactionHash":"0x","transactionIndex":"0x56","type":"0x2"}}, {"id":1,"jsonrpc":"2.0","result":null}, {"id":1,"jsonrpc":"2.0","error":{"message":"msg","code":-1}}]"""
-
-    type RPCResponse = JsonProvider<nullable, SampleIsList=true>
+    type RPCResponse = JsonProvider<"samples/nullable.json", EmbeddedResource="Web3.fs, Web3.fs.samples.nullable.json", SampleIsList=true>
     
+    type RPCMinedTransaction = JsonProvider<"samples/sampleTransaction.json", EmbeddedResource="Web3.fs, Web3.fs.samples.sampleTransaction.json">
     
-    [<Literal>]
-    let minedTransaction =
-        """{"accessList":[],"blockHash":"0x","blockNumber":"0x","chainId":"0x4","from":"0x","gas":"0x","gasPrice":"0x","hash":"0x","input":"0x","maxFeePerGas":"0x","maxPriorityFeePerGas":"0x","nonce":"0x","r":"0x","s":"0x","to":"0x","transactionIndex":"0x11","type":"0x2","v":"0x0","value":"0x0"}"""
-    
-    type RPCMinedTransaction = JsonProvider<minedTransaction>
-    
-    [<Literal>]
-    let block =
-        """{"author":"0x","baseFeePerGas":"0xb","difficulty":"0x1","extraData":"0x","gasLimit":"0x","gasUsed":"0x","hash":"0x","logsBloom":"0x","miner":"0x","number":"0x","parentHash":"0x","receiptsRoot":"0x","sealFields":["0x","0x"],"sha3Uncles":"0x","size":"0x","stateRoot":"0x","timestamp":"0x","totalDifficulty":"0x","transactions":["0x","0x"],"transactionsRoot":"0x","uncles":["0x","0x"]}"""
-
-    type RPCBlock = JsonProvider<block>    
+    type RPCBlock = JsonProvider<"samples/blocksample.json", EmbeddedResource="Web3.fs, Web3.fs.samples.blocksample.json">    
         
-    [<Literal>]
-    let sampleABI =
-        """[{"type":"error","inputs": [{"name":"available","type":"uint256"},{"name":"required","type":"uint256"}],"name":"InsufficientBalance"}, {"type":"event","inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],"name":"Event"}, {"type":"event","inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],"name":"Event2"}, {"type":"function","inputs": [{"name":"a","type":"uint256"}],"name":"foo","outputs": []}]"""
+    type internal ParsedABI = JsonProvider<"samples/sampleABI.json", EmbeddedResource="Web3.fs, Web3.fs.samples.sampleABI.json", SampleIsList=true>
 
-    type internal ParsedABI = JsonProvider<sampleABI, SampleIsList=true>
-
-    ///
-    /// Derived from Solc output, remix output looks different
-    [<Literal>]
-    let sampleSolcBytecode =
-        """{"contractName":"","abi":[{"thing":"0x"}],"metadata":"","bytecode":"0x","deployedBytecode":"","sourceMap":"","deployedSourceMap":"","sourcePath":"","compiler":{"name":"","version":""},"ast":{},"functionHashes":{"func":"0x"},"gasEstimates":{"creation":{"codeDepositCost":"","executionCost":"","totalCost":"infinite"},"external":{}}}"""
-   
-    type internal ContractBytecode = JsonProvider<sampleSolcBytecode>
+    type internal ContractBytecode = JsonProvider<"samples/sampleSolcBytecode.json", EmbeddedResource="Web3.fs, Web3.fs.samples.sampleSolcBytecode.json">
     
-    ///
-    /// Derived from Remix 'bytecode' output
-    [<Literal>]
-    let sampleRemixBytecode =
-        """{"functionDebugData": {"@_3063": {"entryPoint": null,"id": 3063,"parameterSlots": 2,"returnSlots": 0}},"linkReferences": {},"object": "0x60806040","opcodes": "PUSH01","sourceMap": "0x"}"""
-    
-    type internal RemixBytecode = JsonProvider<sampleRemixBytecode>
+    type internal RemixBytecode = JsonProvider<"samples/sampleRemixBytecode.json", EmbeddedResource="Web3.fs, Web3.fs.samples.sampleRemixBytecode.json">
         
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constants
@@ -442,8 +413,7 @@ module Types =
     ///
     /// Record representing a block on the Ethereum blockchain 
     type EthBlock =
-        { author: string
-          baseFeePerGas: string // gold
+        { baseFeePerGas: string // gold
           difficulty: string
           extraData: string
           gasLimit: string // gold
@@ -454,13 +424,12 @@ module Types =
           number: string //blue
           parentHash: string
           receiptsRoot: string
-          sealFields: string list
           sha3Uncles: string
           size: string
           stateRoot: string
           timestamp: string
           totalDifficulty: string
-          transactions: string list // ??
+          transactions: string list
           transactionsRoot: string
           uncles: string list }
         
@@ -468,8 +437,7 @@ module Types =
     ///
     /// Record representing a block on the Ethereum blockchain 
     let nullEthBlock =
-        { author = "wrong unwrap or upstream web3 error"
-          baseFeePerGas = "wrong unwrap or upstream web3 error"
+        { baseFeePerGas = "wrong unwrap or upstream web3 error"
           difficulty = "wrong unwrap or upstream web3 error"
           extraData = "wrong unwrap or upstream web3 error"
           gasLimit = "wrong unwrap or upstream web3 error"
@@ -480,7 +448,6 @@ module Types =
           number = "wrong unwrap or upstream web3 error"
           parentHash = "wrong unwrap or upstream web3 error"
           receiptsRoot = "wrong unwrap or upstream web3 error"
-          sealFields = ["wrong unwrap or upstream web3 error"]
           sha3Uncles = "wrong unwrap or upstream web3 error"
           size = "wrong unwrap or upstream web3 error"
           stateRoot = "wrong unwrap or upstream web3 error"
@@ -494,47 +461,39 @@ module Types =
     ///
     ///  Record representing a completed transaction on the Ethereum network.
     type MinedTransaction =
-          { accessList: string list
-            blockHash: string
-            blockNumber: string
-            chainId: string
-            from: EthAddress 
-            gas: string
-            gasPrice: string
-            hash: EthTransactionHash 
-            input: string
-            maxFeePerGas: string
-            maxPriorityFeePerGas: string
-            nonce: string
-            r: string
-            s: string
-            toAddr: EthAddress option 
-            transactionIndex: string
-            tType: string
-            v: string
-            value: string }
+        { blockHash: string 
+          blockNumber: string 
+          from: EthAddress
+          gas: string 
+          gasPrice: string 
+          hash: EthTransactionHash 
+          input: string
+          nonce: string 
+          r: string 
+          s: string 
+          toAddr: EthAddress option 
+          transactionIndex: string 
+          tType: string 
+          v: string 
+          value: string } 
     
     
     let nullMinedTransaction =
-          { accessList = ["wrong unwrap or upstream web3 error"]
-            blockHash = "wrong unwrap or upstream web3 error"
-            blockNumber = "wrong unwrap or upstream web3 error"
-            chainId = "wrong unwrap or upstream web3 error"
-            from = zeroEVMValue |> EthAddress
-            gas = "wrong unwrap or upstream web3 error"
-            gasPrice = "wrong unwrap or upstream web3 error"
-            hash = zeroEVMValue |> EthTransactionHash
-            input = "wrong unwrap or upstream web3 error"
-            maxFeePerGas = "wrong unwrap or upstream web3 error"
-            maxPriorityFeePerGas = "wrong unwrap or upstream web3 error"
-            nonce = "wrong unwrap or upstream web3 error"
-            r = "wrong unwrap or upstream web3 error"
-            s = "wrong unwrap or upstream web3 error"
-            toAddr = zeroEVMValue |> EthAddress |> Some
-            transactionIndex = "wrong unwrap or upstream web3 error"
-            tType = "wrong unwrap or upstream web3 error"
-            v = "wrong unwrap or upstream web3 error"
-            value = "wrong unwrap or upstream web3 error" }
+        { blockHash = "wrong unwrap or upstream web3 error"
+          blockNumber = "wrong unwrap or upstream web3 error"
+          from = zeroEVMValue |> EthAddress
+          gas = "wrong unwrap or upstream web3 error"
+          gasPrice = "wrong unwrap or upstream web3 error"
+          hash = zeroEVMValue |> EthTransactionHash
+          input = "wrong unwrap or upstream web3 error"
+          nonce = "wrong unwrap or upstream web3 error"
+          r = "wrong unwrap or upstream web3 error"
+          s = "wrong unwrap or upstream web3 error"
+          toAddr = zeroEVMValue |> EthAddress |> Some
+          transactionIndex = "wrong unwrap or upstream web3 error"
+          tType = "wrong unwrap or upstream web3 error"
+          v = "wrong unwrap or upstream web3 error"
+          value = "wrong unwrap or upstream web3 error" }
           
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

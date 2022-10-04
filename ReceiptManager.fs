@@ -14,7 +14,7 @@ module ReceiptManager =
                     do! Async.Sleep 1500
                     return! callLoop rpc call
                 | e -> return e |> Error
-            | Ok o -> return o |> Ok 
+            | Ok o -> return o |> Ok
         }
 
 
