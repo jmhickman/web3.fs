@@ -39,44 +39,6 @@ module Helpers =
         
 
     ///
-    /// Because of the potential for errors during contract loading,
-    /// `loadDeployedContract` returns a Result type. The Result is bound into
-    /// a singleton list in the success case. This function returns the
-    /// DeployedContract on its own, ready for use. However, its use of
-    /// `List.head` means that it will crash the library if you use it when the
-    /// contract won't parse properly or have some other Web3Error.
-    /// 
-    let public optimisticallyBindDeployedContract a =
-        a |> bindDeployedContract |> List.head
-    
-    
-    
-    ///
-    /// Combines the preparation and deployment of a contract. Automatically
-    /// calls Log on environment logger. Mostly for convenience.
-    /// 
-    let public prepareAndDeployContract bytecode abi chainId (constructorArguments: EVMDatatype list) value env =
-        prepareUndeployedContract bytecode abi chainId constructorArguments 
-        |> Result.bind(fun contract -> deployContract contract value env )
-        |> env.log
-        |> fun _ -> ()
-    
-    
-    ///
-    /// Combines the preparation, deployment, and loading steps of contract
-    /// interaction. Mostly for convenience.
-    /// 
-    // let public prepareDeployAndLoadContract bytecode abi chainId (constructorArguments: EVMDatatype list) value env =
-    //     prepareUndeployedContract bytecode abi chainId constructorArguments
-    //     |> Result.bind(fun contract -> deployContract contract value env)
-    //     |> Result.bind(fun res -> 
-    //         match res with
-    //         | TransactionReceiptResult transactionReceipt ->
-    //             loadDeployedContract abi chainId transactionReceipt.contractAddress.Value
-    //         | _ -> "Result of `deployEthContract` wasn't of the expected type" |> GenericPipelineError |> Error )
-
-
-    ///
     /// Public accessor for a bind function to get the simple string out of
     /// contract function wrapper type. Use with
     /// <contract>.functions.canonicalInputs

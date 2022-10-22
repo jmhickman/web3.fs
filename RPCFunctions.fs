@@ -466,6 +466,7 @@ module RPCFunctions =
     /// .dumpStorage (DeployedContract -> ...?)
     /// .getLogByTopic (DeployedContract -> ...?)
     /// .getSourceCode ...
+    
     type Contract = class end
         with    
         
