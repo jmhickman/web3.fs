@@ -5,38 +5,27 @@ module Helpers =
 
     open Logger
     
-    ///
-    /// Convenience function that returns a ContractConstants that contains the
-    /// address used for the session, along with other values ready for
-    /// manipulation via the `with` statement for modifying records. If the RPC
-    /// is a wallet, these defaults should work perfectly well. If the RPC is an
-    /// actual Ethereum node, the gas values and transaction type should be
-    /// changed as required.
-    /// 
-    let public createDefaultConstants (address: string) =
-        {
-        walletAddress = address |> EthAddress
-        transactionType = None
-        maxFeePerGas = None
-        maxPriorityFeePerGas = None
-        arguments = None
-        blockHeight = Some LATEST
-        defaultValue = Some "0"
-        }
+    let public ZEROVALUE = "0" |> Wei
         
-
     ///
     /// Convenience function that creates all of the necessary parts of a
     /// functioning web3 environment. The record contains the rpc connection, a
     /// transaction monitor, contract constants, a Keccak digester, and the
     /// initialized logger instance.
     /// 
-    let public createWeb3Environment url version address =
-        let rpc = createWeb3Connection url version
+    let public createWeb3Environment url chainId address =
+        let rpc = createWeb3Connection url
+        let log' = startLogger() |> log
         {connection = rpc
+         chainId = chainId
          monitor = createReceiptMonitor rpc
-         constants = createDefaultConstants address
-         log = startLogger() |> log }
+         signerAddress = address
+         maxFeePerGas = "0" |> Wei |> Some
+         maxPriorityFeePerGas = "0" |> Wei |> Some
+         log = log' Log
+         emit = log' Emit
+         logAndEmit = log' LogAndEmit
+         quiet = log' Quiet }
         
     
     ///
@@ -69,7 +58,7 @@ module Helpers =
     let public prepareAndDeployContract bytecode abi chainId (constructorArguments: EVMDatatype list) value env =
         prepareUndeployedContract bytecode abi chainId constructorArguments 
         |> Result.bind(fun contract -> deployContract contract value env )
-        |> env.log Log
+        |> env.log
         |> fun _ -> ()
     
     
@@ -77,14 +66,14 @@ module Helpers =
     /// Combines the preparation, deployment, and loading steps of contract
     /// interaction. Mostly for convenience.
     /// 
-    let public prepareDeployAndLoadContract bytecode abi chainId (constructorArguments: EVMDatatype list) value env =
-        prepareUndeployedContract bytecode abi chainId constructorArguments
-        |> Result.bind(fun contract -> deployContract contract value env)
-        |> Result.bind(fun res -> 
-            match res with
-            | TransactionReceiptResult transactionReceipt ->
-                loadDeployedContract abi chainId transactionReceipt.contractAddress.Value
-            | _ -> "Result of `deployEthContract` wasn't of the expected type" |> GenericPipelineError |> Error )
+    // let public prepareDeployAndLoadContract bytecode abi chainId (constructorArguments: EVMDatatype list) value env =
+    //     prepareUndeployedContract bytecode abi chainId constructorArguments
+    //     |> Result.bind(fun contract -> deployContract contract value env)
+    //     |> Result.bind(fun res -> 
+    //         match res with
+    //         | TransactionReceiptResult transactionReceipt ->
+    //             loadDeployedContract abi chainId transactionReceipt.contractAddress.Value
+    //         | _ -> "Result of `deployEthContract` wasn't of the expected type" |> GenericPipelineError |> Error )
 
 
     ///
@@ -103,3 +92,6 @@ module Helpers =
     /// 
     let public unwrapFunctionOutputs evmOutputs =
         bindEVMFunctionOutputs evmOutputs
+        
+        
+    

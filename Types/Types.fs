@@ -22,9 +22,9 @@ module Types =
     type Ether = string
     
     type WeiConversion =
-        | Wei of Wei
-        | Gwei of Gwei
-        | Ether of Ether
+        | WeiConv of Wei
+        | GweiConv of Gwei
+        | EtherConv of Ether
         
     
     type ChainId = string
@@ -56,13 +56,13 @@ module Types =
     let public LATEST = "latest"
     let public PENDING = "pending"
     let public ZEROHEX = "0x0"
-    let public ZEROVALUE = "0"
     let internal fakedOffset =  "0000000000000000000000000000000000000000000000000000000000000020"
     let public zeroEVMValue = "0000000000000000000000000000000000000000000000000000000000000000"
     let internal nullAddress = "0000000000000000000000000000000000000000"
     let internal QUOTE = '"' |> fun s -> s.ToString()
     let internal EMPTY = ""
     let internal ENSZero = Convert.FromHexString(zeroEVMValue)
+    let internal EIP1159 = "0x2"
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Chains
@@ -645,47 +645,12 @@ module Types =
     ///
     /// 'Object' property of json output from `solc`.
     type RawContractBytecode = RawContractBytecode of string
-
     
-    ///
-    /// Convenience record that groups together various parameters that a user
-    /// may wish to remain static between calls or txns.
-    ///
-    type ContractConstants =
-        { walletAddress: EthAddress
-          transactionType: string option
-          maxFeePerGas: string option
-          maxPriorityFeePerGas: string option
-          arguments: EVMDatatype list option
-          blockHeight: string option
-          defaultValue: string option }
-    
-    
-    ///
-    /// Represents an undeployed contract and therefore doesn't have an address.
-    /// May add in estimated gas to deploy and constructor arguments later.
-    ///
-    type UndeployedContract =
-        { abi: ABI
-          bytecode: RawContractBytecode
-          chainId: string
-          constructorArguments: EVMDatatype list
-          stateMutability: StateMutability }
+    type ImportContract =
+        { rawContractBytecode: RawContractBytecode
+          abi: ABI }
 
 
-    ///
-    /// Represents a deployed contract.
-    type DeployedContract =
-        { address: EthAddress
-          abi: ABI
-          chainId: string 
-          functions: EVMFunction list
-          events: EVMEvent list
-          errors: EVMError list
-          hasFallback: bool
-          hasReceive: bool }
-    
-    
     let dummyTransaction =
         { utxnType = "0x2"
           unonce = ""
@@ -807,11 +772,40 @@ module Types =
     ///  
     type Web3Environment =
         { connection: Web3Connection
+          chainId: string
           monitor: Monitor
-          constants: ContractConstants
-          log : LogSignal -> Result<CallResponses, Web3Error> -> CallResponses }
-        
+          signerAddress: EthAddress
+          maxFeePerGas: Wei option
+          maxPriorityFeePerGas: Wei option
+          log : Result<CallResponses, Web3Error> -> CallResponses
+          emit: Result<CallResponses, Web3Error> -> CallResponses
+          logAndEmit: Result<CallResponses, Web3Error> -> CallResponses
+          quiet: Result<CallResponses, Web3Error> -> CallResponses }
+
+    
+    ///
+    /// Represents an undeployed contract and therefore doesn't have an address.
+    /// May add in estimated gas to deploy and constructor arguments later.
+    ///
+    type UndeployedContract =
+        { env: Web3Environment
+          abi: ABI
+          bytecode: RawContractBytecode
+          constructorArguments: EVMDatatype list
+          stateMutability: StateMutability }        
              
+    ///
+    /// Represents a deployed contract.
+    type DeployedContract =
+        { env: Web3Environment
+          address: EthAddress
+          abi: ABI
+          functions: EVMFunction list
+          events: EVMEvent list
+          errors: EVMError list
+          hasFallback: bool
+          hasReceive: bool }
+        
         
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Logging types

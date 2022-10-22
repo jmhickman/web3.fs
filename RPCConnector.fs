@@ -36,13 +36,13 @@ module RPCConnector =
 
     ///
     /// Returns properly formatted JSON-RPC values to send to the RPC.
-    let private formatRPCString (rpcMsg: HttpRPCMessage) ver blockHeight blockArgs =
+    let private formatRPCString (rpcMsg: HttpRPCMessage) blockHeight blockArgs =
         let method = bindEthMethod rpcMsg.method
         let par = bindEthParam rpcMsg.paramList
         
         match blockArgs with
-        | true -> $"""{{"jsonrpc":"{ver}","method":"{method}","params":[{par}, "{blockHeight}"], "id":1}}"""
-        | false -> $"""{{"jsonrpc":"{ver}","method":"{method}","params":[{par}], "id":1}}"""
+        | true -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}, "{blockHeight}"], "id":1}}"""
+        | false -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}], "id":1}}"""
 
 
     ///
@@ -82,7 +82,7 @@ module RPCConnector =
     
     ///
     /// A MailboxProcessor for making and returning RPC calls.
-    let internal rpcConnector url rpcVersion (mbox: HttpRPCMailbox) =
+    let internal rpcConnector url (mbox: HttpRPCMailbox) =
         let rec receiveLoop () =
             async {
                 let! msg = mbox.Receive()
@@ -90,8 +90,7 @@ module RPCConnector =
                 
                 rpcMessage.method
                 |> needsBlockArgs
-                |> formatRPCString rpcMessage rpcVersion rpcMessage.blockHeight
-                //|> fun s -> printfn $"{s}"; s
+                |> formatRPCString rpcMessage rpcMessage.blockHeight
                 |> requestHttpAsync url
                 |> Async.RunSynchronously                
                 |> Result.bind filterNullOrErrorResponse
@@ -104,8 +103,8 @@ module RPCConnector =
 
     ///
     /// Returns the MailboxProcessor that oversees Http communications.
-    let private startRpcConnector url rpcVersion =
-        MailboxProcessor.Start(rpcConnector url rpcVersion)
+    let private startRpcConnector url =
+        MailboxProcessor.Start(rpcConnector url)
 
 
     ///
@@ -119,9 +118,9 @@ module RPCConnector =
     /// send it to the RPC endpoint and return a Result. Called automatically in
     /// 'createWeb3Environment'.
     ///
-    let public createWeb3Connection url rpcVersion =
-        (url, rpcVersion)
-        ||> startRpcConnector
+    let public createWeb3Connection url =
+        url
+        |> startRpcConnector
         |> transactionMessage
 
 

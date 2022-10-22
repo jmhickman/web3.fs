@@ -35,18 +35,18 @@ module ContractFunctions =
     ///Returns unwrapped canonical representation of a function, event or error.
     let internal bindCanonicalRepresentation a =
         match a with
-        | CanonicalFunctionRepresentation s -> s
-        | CanonicalEventRepresentation s -> s
-        | CanonicalErrorRepresentation s -> s
+        | CanonicalFunctionRepresentation canonicalFunction -> canonicalFunction
+        | CanonicalEventRepresentation canonicalEvent -> canonicalEvent
+        | CanonicalErrorRepresentation canonicalError -> canonicalError
         
 
     ///    
-    /// Returns upwrapped EVMFunctionInput string.
+    /// Returns unwrapped EVMFunctionInput string.
     let internal bindEVMFunctionInputs = function EVMFunctionInputs s -> s
     
     
     /// 
-    /// Returns upwrapped EVMFunctionOutput string.
+    /// Returns unwrapped EVMFunctionOutput string.
     let internal bindEVMFunctionOutputs = function EVMFunctionOutputs s -> s
     
     
@@ -565,7 +565,7 @@ module ContractFunctions =
     /// * address: A string indicating the address the deployed contract may be
     ///     found at. For example, "0xd2BA82c4777a8d619144d32a2314ee620BC9E09c"
     ///
-    let public loadDeployedContract (abi: ABI) chainId address   =
+    let public loadDeployedContract env (abi: ABI) address   =
         let digest = newKeccakDigest
         address
         |> wrapEthAddress
@@ -573,15 +573,17 @@ module ContractFunctions =
         |> convertJsonValueToArray
         |> getFunctionsEventsErrors digest
         |> Result.bind (fun (address, functions, events, errors, hasFallback, hasReceive) ->
-            { address = address 
+            { env = env
+              address = address 
               abi = abi
               functions = functions
               events = events
               errors = errors
               hasFallback = hasFallback
-              hasReceive = hasReceive
-              chainId = chainId }
+              hasReceive = hasReceive }
             |> Ok)
+        |> bindDeployedContract
+        |> List.head
   
 
     ///
@@ -598,19 +600,23 @@ module ContractFunctions =
     /// * constructorArguments: An list of EVMDatatypes representing inputs to
     /// the constructor of the contract.    
     /// 
-    let public prepareUndeployedContract bytecode abi chainId (constructorArguments: EVMDatatype list)  =
+    let public prepareUndeployedContract env (constructorArguments: EVMDatatype list) (importContract: ImportContract)  =
         let digest = newKeccakDigest
-        abi
-        |> checkForBytecode bytecode
+        importContract.abi
+        |> checkForBytecode importContract.rawContractBytecode
         |> canABIBeParsed
         |> checkForHashCollisions digest
         |> buildConstructorHash digest
         |> constructorRequireArgsAndNoneWereGiven constructorArguments
         |> constructorEmptyButArgsGiven constructorArguments
         |> Result.bind(fun (_, s) ->
-            { abi = abi
-              bytecode = bytecode
-              chainId = chainId
+            { env = env
+              abi = importContract.abi
+              bytecode = importContract.rawContractBytecode
               constructorArguments = constructorArguments
               stateMutability = s }
             |> Ok)
+    
+
+            
+        

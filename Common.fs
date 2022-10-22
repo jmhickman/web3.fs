@@ -223,8 +223,8 @@ module Common =
     /// 
     let public asWei quantity =
         match quantity with
-        | Gwei _gwei -> _gwei |> convertToWei 9
-        | Ether _eth -> _eth |> convertToWei 18
+        | GweiConv _gwei -> _gwei |> convertToWei 9
+        | EtherConv _eth -> _eth |> convertToWei 18
         | _ -> "0"
         
         
@@ -234,11 +234,11 @@ module Common =
     /// 
     let rec public asGwei quantity =
         match quantity with
-        | Ether _eth ->
+        | EtherConv _eth ->
             match _eth |> convertToWei 9 with
-            | "0" -> asWei quantity |> fun result -> asGwei (Wei $"{result}")
+            | "0" -> asWei quantity |> fun result -> asGwei (WeiConv $"{result}")
             | x -> x
-        | Wei _wei ->
+        | WeiConv _wei ->
             match bigint.Parse(_wei) |> convertFromWei gweiFactor 9 with
             | "0.000000000" -> "0"
             | x -> x
@@ -251,11 +251,11 @@ module Common =
     /// 
     let public asEth quantity =
         match quantity with
-        | Wei _wei ->
+        | WeiConv _wei ->
             match bigint.Parse(_wei) |> convertFromWei weiFactor 18 with
             | "0.000000000000000000" -> "0"
             | x -> x
-        | Gwei _gwei ->
+        | GweiConv _gwei ->
             match _gwei |> convertToWei 9 |> fun w -> bigint.Parse(w) |> convertFromWei weiFactor 18 with
             | "0.000000000000000000" -> "0"
             | x -> x.TrimEnd('0')
@@ -276,7 +276,7 @@ module Common =
     /// strings from the EVM. This does not actually check that the string is a
     /// hexadecimal string.
     let public hexAsEth quantity =
-        quantity |> hexToBigintUnsigned |> fun i -> i.ToString() |> Wei |> asEth 
+        quantity |> hexToBigintUnsigned |> fun i -> i.ToString() |> WeiConv |> asEth 
     
     
     ///
@@ -292,30 +292,30 @@ module Common =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     
-    ///
-    /// Returns unwrapped value and handles the defaults for any `None` cases.
-    let internal constantsBind (c: ContractConstants) =
-        let txn =
-            match c.transactionType with
-            | Some t -> t
-            | None -> "0x2"
-
-        let maxFeePerGas =
-            match c.maxFeePerGas with
-            | Some t -> t |> bigintToHex 
-            | None -> ""
-
-        let maxPriorityFeePerGas =
-            match c.maxPriorityFeePerGas with
-            | Some t -> t |> bigintToHex 
-            | None -> ""
-
-        let data =
-            match c.arguments with
-            | Some t -> t
-            | None -> []
-
-        (txn, maxFeePerGas, maxPriorityFeePerGas, data)
+    // ///
+    // /// Returns unwrapped value and handles the defaults for any `None` cases.
+    // let internal constantsBind (c: ContractConstants) =
+    //     let txn =
+    //         match c.transactionType with
+    //         | Some t -> t
+    //         | None -> "0x2"
+    //
+    //     let maxFeePerGas =
+    //         match c.maxFeePerGas with
+    //         | Some t -> t |> bigintToHex 
+    //         | None -> ""
+    //
+    //     let maxPriorityFeePerGas =
+    //         match c.maxPriorityFeePerGas with
+    //         | Some t -> t |> bigintToHex 
+    //         | None -> ""
+    //
+    //     let data =
+    //         match c.arguments with
+    //         | Some t -> t
+    //         | None -> []
+    //
+    //     (txn, maxFeePerGas, maxPriorityFeePerGas, data)
 
     
     ///
@@ -657,14 +657,14 @@ module Common =
                 | method when
                     method = EthMethod.GetBlockByHash ||
                     method = EthMethod.GetBlockByNumber ->
-                    returnEthBlock result |> Block |> Ok
+                        returnEthBlock result |> Block |> Ok
                 | method when
                     method = EthMethod.GetTransactionByHash ||
                     method = EthMethod.GetTransactionByBlockHashAndIndex ||
                     method = EthMethod.GetTransactionByBlockNumberAndIndex ->
-                    returnMinedTransactionRecord result |> Transaction |> Ok
+                        returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionReceipt ->
-                    returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
+                        returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
                 | _ -> returnSimpleValue result |> SimpleValue |> Ok )
         
 
@@ -733,7 +733,7 @@ module Common =
             |> Array.toList
             |> List.rev
             |> List.append [""]
-            |> fun p -> printfn $"{p}"; p
+            //|> fun p -> printfn $"{p}"; p
     
         let rec hashName (labels: string list) acc =
             match labels with
