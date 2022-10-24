@@ -47,6 +47,7 @@
   <ItemGroup>
     <Content Include="Samples\nullable.json" />
     <Content Include="Samples\sampleABI.json" />
+    <Content Include="Samples\sampleFoundry.json" />
     <Content Include="Samples\sampleRemixBytecode.json" />
     <Content Include="Samples\sampleTransaction.json" />
   </ItemGroup>

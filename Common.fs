@@ -59,62 +59,31 @@ module Common =
         |> String.concat ""
 
 
-    ///
-    /// Returns the bytecode of a compiled contract from a
-    /// <contract>.json file emitted from the `solc` binary. 
-    /// * `path`: A path string. Should be triple quoted if you want to use
-    /// Windows file path specifiers. Otherwise, use forward slashes, i.e.
-    /// "c:/users/user/some/more/path/contract.json".
-    /// 
-    let public returnBytecodeFromSolcJsonFile (path: string) =
-        let file = new StreamReader(path)
-        let obj = ContractBytecode.Parse(file.ReadToEnd()) |> fun r -> r.Bytecode
-        file.Dispose()
-        obj |> RawContractBytecode
-    
-    
-    ///
-    /// Returns the ABI and bytecode of a compiled contract from a
-    /// <contract>.json file emitted from the `solc` binary. 
-    /// * `path`: A path string. Should be triple quoted if you want to use
-    /// Windows file path specifiers. Otherwise, use forward slashes, i.e.
-    /// "c:/users/user/some/path/contract.json".
-    /// 
-    let public returnABIAndBytecodeFromSolcJsonFile (path: string) =
+    let public importBytecodeFromFile (filetype: FileType) (path: string) =
+        let solc = Regex(""""bytecode": {.*?"object": ("[a-f0-9A-F]*")""", RegexOptions.Singleline)
+        let foundry = Regex(""""bytecode": {.*?"object": ("0x[a-f0-9A-F]*")""", RegexOptions.Singleline)
+        let remix = Regex("""object": ("[a-f0-9A-F]*")""", RegexOptions.Singleline)
+        let other = Regex(""""bytecode": ("[a-f0-9A-F]*")""", RegexOptions.Singleline)
+                
         use file = new StreamReader(path)
-        let root = file.ReadToEnd() |> ContractBytecode.Parse
-        let abi =
-            root.Abi
-            |> Array.map(fun i -> i.JsonValue)
-            |> Array.map(fun i -> i.ToString())
-            |> fun a -> String.Join(",", a)
-            |> stripNewlinesAndWhitespace
-            |> fun s -> "[" + s + "]"
-            
-        (abi |> ABI, root.Bytecode |> RawContractBytecode)
-
+        let contents = file.ReadToEnd ()
+        
+        match filetype with
+        | Solc -> solc.Match(contents).Groups[1].Value
+        | Foundry -> foundry.Match(contents).Groups[1].Value
+        | Remix -> remix.Match(contents).Groups[1].Value
+        | Other -> other.Match(contents).Groups[1].Value
+        
 
     ///
     /// Returns the ABI string from a file. This can be the .abi emitted by the
     /// solc compiler, or Remix output copied into a file and saved.
     /// 
-    let public returnABIFromFile (path:string) =
+    let public importABIFromFile (path:string) =
         use file = new StreamReader(path)
         file.ReadToEnd()
         |> stripNewlinesAndWhitespace
         |> ABI
-    
-    
-    ///
-    /// Returns the bytecode string from a file that contains the 'bytecode'
-    /// output from Remix.
-    /// 
-    let public returnBytecodeFromRemix (path: string) =
-        use file = new StreamReader(path)
-        file.ReadToEnd()
-        |> RemixBytecode.Parse
-        |> fun root -> root.Object
-        |> RawContractBytecode
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -290,32 +259,6 @@ module Common =
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Binders
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
-    
-    // ///
-    // /// Returns unwrapped value and handles the defaults for any `None` cases.
-    // let internal constantsBind (c: ContractConstants) =
-    //     let txn =
-    //         match c.transactionType with
-    //         | Some t -> t
-    //         | None -> "0x2"
-    //
-    //     let maxFeePerGas =
-    //         match c.maxFeePerGas with
-    //         | Some t -> t |> bigintToHex 
-    //         | None -> ""
-    //
-    //     let maxPriorityFeePerGas =
-    //         match c.maxPriorityFeePerGas with
-    //         | Some t -> t |> bigintToHex 
-    //         | None -> ""
-    //
-    //     let data =
-    //         match c.arguments with
-    //         | Some t -> t
-    //         | None -> []
-    //
-    //     (txn, maxFeePerGas, maxPriorityFeePerGas, data)
 
     
     ///
@@ -692,7 +635,6 @@ module Common =
         match callResponse with
         | TransactionReceiptResult rpcTransactionResponse -> rpcTransactionResponse
         | _ -> nullTransactionReceipt
-    
     
     ///
     /// Unwraps CallResponses to a Transaction. For use with `rpcCall` and

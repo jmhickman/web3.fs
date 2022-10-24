@@ -40,13 +40,14 @@ module Types =
     type RPCMinedTransaction = JsonProvider<"samples/sampleTransaction.json", EmbeddedResource="Web3.fs, Web3.fs.samples.sampleTransaction.json">
     
     type RPCBlock = JsonProvider<"samples/blocksample.json", EmbeddedResource="Web3.fs, Web3.fs.samples.blocksample.json">    
-        
-    type internal ParsedABI = JsonProvider<"samples/sampleABI.json", EmbeddedResource="Web3.fs, Web3.fs.samples.sampleABI.json", SampleIsList=true>
 
-    type internal ContractBytecode = JsonProvider<"samples/sampleSolcBytecode.json", EmbeddedResource="Web3.fs, Web3.fs.samples.sampleSolcBytecode.json">
-    
-    type internal RemixBytecode = JsonProvider<"samples/sampleRemixBytecode.json", EmbeddedResource="Web3.fs, Web3.fs.samples.sampleRemixBytecode.json">
+    type FileType =
+        | Foundry
+        | Solc
+        | Remix
+        | Other
         
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constants
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +63,7 @@ module Types =
     let internal QUOTE = '"' |> fun s -> s.ToString()
     let internal EMPTY = ""
     let internal ENSZero = Convert.FromHexString(zeroEVMValue)
-    let internal EIP1159 = "0x2"
+    let internal EIP1559 = "0x2"
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Chains
@@ -74,12 +75,9 @@ module Types =
     /// compatibility.
     /// 
     let public ETHEREUM_MAINNET = "0x1"
-    let public ROPSTEN = "0x3"
-    let public RINKEBY = "0x4"
     let public GORLI = "0x5"
     let public ETHCLASSIC = "0x6"
     let public OPTIMISM = "0xa"
-    let public KOVAN = "0x2a"
     let public ARBITRUM = "0xa4b1"
     let public MOONRIVER = "0x505"
     let public MOONBEAM = "0x504"
@@ -204,9 +202,6 @@ module Types =
         | BytesN of ByteLength * string
         | BytesNArraySz of ByteLength * string list
         | BytesNArray of ByteLength * string list
-//        | Function of string
-//        | FunctionArray of string list
-//        | FunctionArraySz of string list
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -262,30 +257,6 @@ module Types =
           maxFeePerGas: Quantity option 
           accessList: AccessList option 
           chainId: Quantity option }
-
-    
-    // Potential future compat with override calls, not in use currently.
-    (*
-    type EthParam1559OverrideCall =
-        { [<JsonField("type")>] txnType: TxnType option 
-          nonce: Quantity option 
-          [<JsonField("to")>] toAddr: EthAddress option 
-          from: EthAddress option 
-          gas: Quantity option
-          value: Quantity option 
-          data: Data 
-          maxPriorityFeePerGas: Quantity option 
-          maxFeePerGas: Quantity option 
-          accessList: AccessList option
-          chainId: Quantity option
-          bytecode: string
-          fakeBalance: Quantity option
-          fakeNonce: Quantity option
-          fakeState: string option
-          fakeStateDiff: string option }
-    *)
-
-    //type EthParam2930CreateAccessList = EthParam1559Call
     
     (*
     type EthParamGetLogs =
@@ -662,8 +633,7 @@ module Types =
           umaxFeePerGas = "" 
           umaxPriorityFeePerGas = "" 
           uaccessList = []
-          uchainId = "" }
-    
+          uchainId = "" }    
     
     
     ///
@@ -711,7 +681,7 @@ module Types =
         | CallResult of EVMDatatype list 
         | Library of string
         | Empty
-        
+
         
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Ethereum MailboxProcessor types

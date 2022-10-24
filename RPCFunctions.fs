@@ -183,7 +183,7 @@ module RPCFunctions =
     let private returnUnvalidatedRecord address contract (pipe: Result<string * string, Web3Error>)  =
         pipe
         |> Result.bind (fun (value, data) -> 
-        { utxnType = EIP1159
+        { utxnType = EIP1559
           unonce = ""
           utoAddr = contract.address
           ufrom = address
@@ -261,7 +261,7 @@ module RPCFunctions =
         
         pipe
         |> Result.bind (fun data ->
-            { utxnType = EIP1159
+            { utxnType = EIP1559
               unonce = ""
               utoAddr = ""
               ufrom = contract.env.signerAddress
@@ -395,7 +395,6 @@ module RPCFunctions =
         |> monitorTransaction contract.env.monitor
         
         
-        
     ///
     /// Estimate the amount of gas units required for the given transaction to
     /// complete. Essentially the same as contractTransaction but with a
@@ -450,7 +449,7 @@ module RPCFunctions =
                 env.log (Library $"Monitoring transaction {ethHash}" |> Ok )
                 |> fun _ -> ethHash
             |> Ok)        
-        |> monitorTransaction env.monitor
+        |> monitorTransaction env.monitor        
         
     ///
     /// Expose every single function directly
@@ -458,9 +457,9 @@ module RPCFunctions =
     /// .estimateGas (FunctionSelector -> EVMDatatype list -> DeployedContract -> Result<CallResponses, Web3Error>)
     /// .sendValue (env -> ETHAddress -> Wei -> Result<CallResponses, Web3Error>)
     /// .everySingleEthMethod
-    // type RPC = class end
-    //     with
-    //     static member getChainId = ()
+    type RPC = class end
+        with
+        static member getChainId = ()
     
 
     /// .dumpStorage (DeployedContract -> ...?)
@@ -494,6 +493,18 @@ module RPCFunctions =
         static member listFunctions contract =
             contract.functions
             |> List.iter (fun p -> contract.env.log (Library $"{p}" |> Ok) |> ignore)
+            
+        static member printFunctionInputs contract =
+            contract.functions
+            |> List.iter(fun f ->
+                contract.env.log (Library $"{f.canonicalInputs |> bindEVMFunctionInputs}" |> Ok )
+                |> ignore)
+            
+        static member printFunctionOutputs contract =
+            contract.functions
+            |> List.iter(fun f ->
+                contract.env.log (Library $"{f.canonicalOutputs |> bindEVMFunctionOutputs}" |> Ok )
+                |> ignore)        
             
         static member listEvents contract =
             contract.events

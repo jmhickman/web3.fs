@@ -36,24 +36,3 @@ module Helpers =
         match createInputByteString evmDatatypes with
         | Ok resultValue -> resultValue
         | Error e -> $"{e}"
-        
-
-    ///
-    /// Public accessor for a bind function to get the simple string out of
-    /// contract function wrapper type. Use with
-    /// <contract>.functions.canonicalInputs
-    /// 
-    let public unwrapFunctionInputs evmInputs =
-        bindEVMFunctionInputs evmInputs
-        
-        
-    ///
-    /// Public accessor for a bind function to get the simple string out of a
-    /// contract function wrapper type. Use with
-    /// <contract>.functions.canonicalOutputs
-    /// 
-    let public unwrapFunctionOutputs evmOutputs =
-        bindEVMFunctionOutputs evmOutputs
-        
-        
-    

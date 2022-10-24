@@ -232,11 +232,6 @@ module ContractFunctions =
           Byte32ArraySz (List.init count (fun _ -> ""))
       | x when matchEVMInput "bytes[0-9]{1,3}\[\]$" x -> Byte32Array []
       | x when matchEVMInput "^string$" x -> EVMDatatype.String ""
-//      | x when matchEVMInput "^function$" x -> EVMDatatype.Function ""
-//      | x when matchEVMInput "^function\[([0-9]{1,2})\]$" x -> FunctionArraySz []
-//      | x when matchEVMInput "^function\[([0-9]{1,2})\]$" x  ->
-//          let count = matchEVMInputSz "function\[([0-9]{1,2})\]$" x
-//          FunctionArraySz (List.init count (fun _ -> ""))
       | _ -> Blob ""
     
     
@@ -584,7 +579,10 @@ module ContractFunctions =
             |> Ok)
         |> bindDeployedContract
         |> List.head
-  
+
+    // Change this to something like
+    // loadDeployedContract env address abi
+    // allows getABIFunctions |> loadDeployedContract env "0x345345234523452345" |> Contract.call (ByName "owner") [] |> logResponse
 
     ///
     /// Returns an UndeployedContract for use in `deployEthContract`. Emits
@@ -616,6 +614,19 @@ module ContractFunctions =
               constructorArguments = constructorArguments
               stateMutability = s }
             |> Ok)
+
+    // Change this to something like
+    // prepareUndeployedContract env (constructorArguments: EVMDatatype list) {rawcontractbytecode; abi}
+    // allows getABIAndBytecodeFunctions |> prepareUndeployedContract env [] |> Contract.deploy |> logResponse
+    // where Contract.deploy is something like
+    // (deploy: string -> UndeployedContract -> Result<CallResponses, Web3Error>)
+    
+    // Maybe ultimately fold it into Contract as well, such that
+    // getABIAndBytecodeFunctions
+    // |> Contract.prepare env []
+    // |> Result.bind Contract.deploy
+    // |> Result.bind Contract.call (ByName "owner") []
+    // |> logResponse
     
 
             
