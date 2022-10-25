@@ -12,7 +12,7 @@
     <Description>Functional library for interacting with Web3 facilities</Description>
     <PackageProjectUrl>https://github.com/jmhickman/web3.fs</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageVersion>0.3.2.8</PackageVersion>
+    <PackageVersion>0.4.0.0</PackageVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -40,16 +40,6 @@
     <PackageReference Include="SHA3Core" Version="1.0.1" />
     <EmbeddedResource Include="samples/blocksample.json" />
     <EmbeddedResource Include="samples/nullable.json" />
-    <EmbeddedResource Include="samples/sampleRemixBytecode.json" />
-    <EmbeddedResource Include="samples/sampleABI.json" />
     <EmbeddedResource Include="samples/sampleTransaction.json" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="Samples\nullable.json" />
-    <Content Include="Samples\sampleABI.json" />
-    <Content Include="Samples\sampleFoundry.json" />
-    <Content Include="Samples\sampleRemixBytecode.json" />
-    <Content Include="Samples\sampleTransaction.json" />
-  </ItemGroup>
-  
 </Project>
