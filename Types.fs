@@ -22,9 +22,9 @@ module Types =
     type Ether = string
     
     type WeiConversion =
-        | WeiConv of Wei
-        | GweiConv of Gwei
-        | EtherConv of Ether
+        | WeiValue of Wei
+        | GweiValue of Gwei
+        | EtherValue of Ether
         
     
     type ChainId = string
@@ -34,12 +34,18 @@ module Types =
     //// Type Provider parser setup
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    type RPCResponse = JsonProvider<"samples/nullable.json", EmbeddedResource="Web3.fs, Web3.fs.samples.nullable.json", SampleIsList=true>
+    [<Literal>]
+    let nullablePath = __SOURCE_DIRECTORY__ + """\samples\nullable.json""" 
+    [<Literal>]
+    let transactionPath = __SOURCE_DIRECTORY__ + """\samples\sampleTransaction.json"""
+    [<Literal>]
+    let blockPath = __SOURCE_DIRECTORY__ + """\samples\blocksample.json"""
     
-    type RPCMinedTransaction = JsonProvider<"samples/sampleTransaction.json", EmbeddedResource="Web3.fs, Web3.fs.samples.sampleTransaction.json">
+    type RPCResponse = JsonProvider<nullablePath, EmbeddedResource="Web3.fs, Web3.fs.samples.nullable.json", SampleIsList=true>
     
-    type RPCBlock = JsonProvider<"samples/blocksample.json", EmbeddedResource="Web3.fs, Web3.fs.samples.blocksample.json">    
+    type RPCMinedTransaction = JsonProvider<transactionPath, EmbeddedResource="Web3.fs, Web3.fs.samples.sampleTransaction.json">
+    
+    type RPCBlock = JsonProvider<blockPath, EmbeddedResource="Web3.fs, Web3.fs.samples.blocksample.json">    
 
     type FileType =
         | Foundry
@@ -59,7 +65,7 @@ module Types =
     let public ZEROHEX = "0x0"
     let internal fakedOffset =  "0000000000000000000000000000000000000000000000000000000000000020"
     let public zeroEVMValue = "0000000000000000000000000000000000000000000000000000000000000000"
-    let internal nullAddress = "0000000000000000000000000000000000000000"
+    let internal NULLADDRESS = "0000000000000000000000000000000000000000"
     let internal QUOTE = '"' |> fun s -> s.ToString()
     let internal EMPTY = ""
     let internal ENSZero = Convert.FromHexString(zeroEVMValue)

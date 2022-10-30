@@ -2,6 +2,8 @@ namespace Web3.fs
 
 [<AutoOpen>]
 module RPCConnector =
+    open System.Security.Cryptography
+    
     open FsHttp    
           
     open RPCMethodFunctions
@@ -40,9 +42,10 @@ module RPCConnector =
         let method = bindEthMethod rpcMsg.method
         let par = bindEthParam rpcMsg.paramList
         
+        let id = RandomNumberGenerator.GetInt32(0, 256)
         match blockArgs with
-        | true -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}, "{blockHeight}"], "id":1}}"""
-        | false -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}], "id":1}}"""
+        | true -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}, "{blockHeight}"], "id":{id}}}"""
+        | false -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}], "id":{id}}}"""
 
 
     ///
@@ -91,6 +94,7 @@ module RPCConnector =
                 rpcMessage.method
                 |> needsBlockArgs
                 |> formatRPCString rpcMessage rpcMessage.blockHeight
+                //|> fun p -> printfn $"{p}"; p
                 |> requestHttpAsync url
                 |> Async.RunSynchronously                
                 |> Result.bind filterNullOrErrorResponse

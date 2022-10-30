@@ -1,8 +1,8 @@
 namespace Web3.fs
 
 module RPCMethodFunctions =
-    
-  
+
+
     ///
     /// Binds EthMethod to a string representation of the desired call. Only
     /// making effort to support methods outlined at
@@ -85,7 +85,7 @@ module RPCFunctions =
     /// Detects if an ENS name was used and performs the lookup to resolve it
     /// to an address.
     /// 
-    let handleENSName env chainId (name: string) =
+    let internal handleENSName env chainId (name: string) =
         if name.Contains('.') then
             let hash = convertENSName name
             let bytes = [Byte32 hash] |> createInputByteString |> function Ok o -> o | Error _ -> "" 
@@ -198,7 +198,7 @@ module RPCFunctions =
     
     ///
     /// Returns an unvalidated transaction object.
-    let private createUnvalidatedTxn env contract (arguments: EVMDatatype list) value (pipe: Result<FunctionIndicator, Web3Error>) =
+    let private createUnvalidatedTxn contract (arguments: EVMDatatype list) value (pipe: Result<FunctionIndicator, Web3Error>) =
         pipe
         |> Result.bind (fun functionIndicator ->
             value
@@ -208,7 +208,7 @@ module RPCFunctions =
             |> checkArgsToFunction arguments
             |> checkValueAndStateMutability
             |> createDataString arguments
-            |> returnUnvalidatedRecord env.signerAddress contract)
+            |> returnUnvalidatedRecord contract.env.signerAddress contract)
     
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -292,7 +292,7 @@ module RPCFunctions =
     /// * env: A Web3Environment. See createWeb3Environment.
     /// Some EthMethods have no arguments. Use an empty list in those cases.
     ///
-    let public rpcCall method (paramList: string list) env =
+    let internal rpcCall method (paramList: string list) env =
         { method = method
           paramList = paramList |> EthGenericRPC
           blockHeight = LATEST }
@@ -312,11 +312,11 @@ module RPCFunctions =
     ///     transaction to a payable function.
     /// * env: An Web3Environment. See createWeb3Environment.
     ///
-    let public contractTransaction evmFunction arguments value contract =
+    let internal contractTransaction evmFunction arguments value contract =
         
         checkForEmptyValueString value
         |> checkFunctionExists contract evmFunction 
-        |> createUnvalidatedTxn contract.env contract arguments value
+        |> createUnvalidatedTxn contract arguments value
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -345,12 +345,12 @@ module RPCFunctions =
     ///     arguments.
     /// * env: An Web3Environment. See createWeb3Environment.
     ///
-    let public contractCall evmFunction arguments contract =
+    let internal contractCall evmFunction arguments contract =
         let blockHeight' = LATEST
         
         () |> Ok// kind of stupid but whatever 
         |> checkFunctionExists contract evmFunction
-        |> createUnvalidatedTxn contract.env contract arguments "0"  
+        |> createUnvalidatedTxn contract arguments "0"  
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -371,7 +371,7 @@ module RPCFunctions =
     ///     transaction to a payable constructor.
     /// * env: An Web3Environment. See createWeb3Environment.
     ///
-    let public deployContract (value: Wei) (contract: UndeployedContract) =
+    let internal deployContract (value: Wei) (contract: UndeployedContract) =
         
         checkForEmptyValueString value
         |> checkValueAndStateMutabilityDeploy value contract
@@ -406,19 +406,19 @@ module RPCFunctions =
     /// * arguments: a list of EVMDatatypes. Use an empty list to indicate no
     ///     arguments.
     /// * env: An Web3Environment. See createWeb3Environment.
-    let public estimateGas contract evmFunction arguments env =
+    let internal estimateGas evmFunction arguments contract =
         let blockHeight' = LATEST
         
         () |> Ok
         |> checkFunctionExists contract evmFunction
-        |> createUnvalidatedTxn env contract arguments "0"
+        |> createUnvalidatedTxn contract arguments "0"
         |> Result.bind validateRPCParams
         |> Result.bind
             (fun _params ->
                 { method = EthMethod.EstimateGas 
                   paramList = _params 
                   blockHeight = blockHeight' }
-                |> env.connection)
+                |> contract.env.connection)
         |> decomposeRPCResult EthMethod.EstimateGas
         
 
@@ -427,13 +427,13 @@ module RPCFunctions =
     /// Accounts. Use 'contractTransaction' with the `Receive` indicator to send
     /// to contracts. ENS names are supported for this function.
     ///
-    let public sendValue chainId destination value env = 
-        let _dest = handleENSName env chainId destination
+    let internal sendValue destination value env = 
+        let _dest = handleENSName env env.chainId destination
         { dummyTransaction with
             utoAddr = _dest
             ufrom =  env.signerAddress
             uvalue = value |> bigintToHex
-            uchainId = chainId}
+            uchainId = env.chainId}
         |> validateRPCParams
         |> Result.bind
             (fun _params ->
@@ -454,28 +454,98 @@ module RPCFunctions =
     ///
     /// Expose every single function directly
     /// Now we can easily check for argument correctness where we couldn't before
-    /// .estimateGas (FunctionSelector -> EVMDatatype list -> DeployedContract -> Result<CallResponses, Web3Error>)
     /// .sendValue (env -> ETHAddress -> Wei -> Result<CallResponses, Web3Error>)
-    /// .everySingleEthMethod
+
     type RPC = class end
         with
-        static member getChainId = ()
+        
+        static member accounts env = rpcCall EthMethod.Accounts [] env
+        
+        static member blockNumber env = rpcCall EthMethod.BlockNumber [] env
+        
+        static member getChainId env = rpcCall EthMethod.ChainId [] env
     
-
-    /// .dumpStorage (DeployedContract -> ...?)
-    /// .getLogByTopic (DeployedContract -> ...?)
-    /// .getSourceCode ...
+        static member coinbase env = rpcCall EthMethod.Coinbase [] env
+        
+        static member gasPrice env = rpcCall EthMethod.GasPrice [] env
+        
+        static member getBalance address env = rpcCall EthMethod.GetBalance [address] env
+        
+        static member getBlockByHash blockHash env = rpcCall EthMethod.GetBlockByHash [blockHash; "false"] env
+        
+        static member getBlockByNumber (blockNumber: string) env =
+            if blockNumber.StartsWith("0x") then rpcCall EthMethod.GetBlockByNumber [blockNumber; "false"] env
+            else rpcCall EthMethod.GetBlockByNumber [$"{blockNumber |> bigintToHex}"; "false"] env
+            
+        static member getBlockTransactionCountByHash blockHash env = rpcCall EthMethod.GetBlockTransactionCountByHash [blockHash] env
+        
+        static member getBlockTransactionCountByNumber (blockNumber: string) env =
+            if blockNumber.StartsWith("0x") then rpcCall EthMethod.GetBlockTransactionCountByNumber [blockNumber] env
+            else rpcCall EthMethod.GetBlockTransactionCountByNumber [$"{blockNumber |> bigintToHex}"] env
+            
+        static member getCode address (blockNumber: string) env =
+            if blockNumber.StartsWith("0x") then rpcCall EthMethod.GetCode [address; blockNumber] env
+            else rpcCall EthMethod.GetCode [address; $"{blockNumber |> bigintToHex}"] env
+        
+        static member getStorageAt address (slot: string) env =
+            if slot.StartsWith("0x") then rpcCall EthMethod.GetStorageAt [address; slot] env
+            else rpcCall EthMethod.GetStorageAt [address; $"{slot |> bigintToHex}"] env
+            
+        static member getTransactionCount address env = rpcCall EthMethod.GetTransactionCount [address] env
+        
+        static member getTransactionByHash transactionHash env = rpcCall EthMethod.GetTransactionByHash [transactionHash] env
+        
+        static member getTransactionByBlockHashAndIndex blockHash (index: string) env =
+            if index.StartsWith("0x") then rpcCall EthMethod.GetTransactionByBlockHashAndIndex [blockHash; index] env
+            else rpcCall EthMethod.GetTransactionByBlockHashAndIndex [blockHash; $"{index |> bigintToHex}"] env
+            
+        static member getTransactionByBlockNumberAndIndex (blockNumber: string) (index: string) env =
+            match blockNumber.StartsWith("0x") with
+            | false ->
+                match index.StartsWith("0x") with
+                | false ->
+                    rpcCall EthMethod.GetTransactionByBlockHashAndIndex [$"{blockNumber |> bigintToHex}"; $"{index |> bigintToHex}"] env
+                | true -> 
+                    rpcCall EthMethod.GetTransactionByBlockHashAndIndex [$"{blockNumber |> bigintToHex}"; index] env
+            | true ->
+                match index.StartsWith("0x") with
+                | false ->
+                    rpcCall EthMethod.GetTransactionByBlockHashAndIndex [blockNumber; $"{index |> bigintToHex}"] env
+                | true -> 
+                    rpcCall EthMethod.GetTransactionByBlockHashAndIndex [blockNumber; index] env
+                    
+        static member getTransactionReceipt transactionHash env = rpcCall EthMethod.GetTransactionReceipt [transactionHash] env
+        
+        static member getUncleCountByBlockHash blockHash env = rpcCall EthMethod.GetUncleCountByBlockHash [blockHash] env
+        
+        static member getUncleCountByBlockNumber (blockNumber: string) env =
+            if blockNumber.StartsWith("0x") then rpcCall EthMethod.GetUncleCountByBlockNumber [blockNumber] env 
+            else rpcCall EthMethod.GetUncleCountByBlockNumber [$"{blockNumber |> bigintToHex}"] env
     
+        static member protocolVersion env = rpcCall EthMethod.ProtocolVersion [] env
+        
+        static member syncing env = rpcCall EthMethod.Syncing [] env
+        
+        static member sendRawTransaction rawTransaction env = rpcCall EthMethod.SendRawTransaction [rawTransaction] env
+        
+        static member sendTransaction transactionObject env = rpcCall EthMethod.SendTransaction [transactionObject] env
+        
+        static member sign message env = rpcCall EthMethod.Sign [env.signerAddress; message] env
+        
+        // Frame's devs, for whatever reason, refuse to support this basic eth method. I'm providing it, but I can't test it.
+        static member signTransaction transactionObject env = rpcCall EthMethod.SignTransaction [transactionObject] env
+        
+        static member sendValue destinationAddress (value: Wei) env = sendValue destinationAddress value env
+        
     type Contract = class end
         with    
         
         static member prepare env arguments abiAndBytecode =
             prepareUndeployedContract env arguments abiAndBytecode
             
-        static member deploy value contract =
-            deployContract value contract
+        static member deploy value contract = deployContract value contract            
         
-        static member connect env abi address =
+        static member connect env abi (address: EthAddress) =
             loadDeployedContract env abi address
         
         static member call function' arguments contract =
@@ -483,6 +553,9 @@ module RPCFunctions =
         
         static member tx function' arguments value contract =
             contractTransaction function' arguments value contract
+            
+        static member estimateGas function' arguments contract =
+            estimateGas function' arguments contract 
         
         static member fallback arguments value contract =
           contractTransaction Fallback arguments value contract
@@ -514,4 +587,6 @@ module RPCFunctions =
             contract.errors
             |> List.iter (fun p -> contract.env.log (Library $"{p}" |> Ok) |> ignore)
         
-        
+    // .dumpStorage (DeployedContract -> ...?)
+    // .getLogByTopic (DeployedContract -> ...?)
+    // .getSourceCode ...

@@ -69,10 +69,10 @@ module Common =
         let contents = file.ReadToEnd ()
         
         match filetype with
-        | Solc -> solc.Match(contents).Groups[1].Value
-        | Foundry -> foundry.Match(contents).Groups[1].Value
-        | Remix -> remix.Match(contents).Groups[1].Value
-        | Other -> other.Match(contents).Groups[1].Value
+        | Solc -> solc.Match(contents).Groups[1].Value |> trimParameter |> RawContractBytecode
+        | Foundry -> foundry.Match(contents).Groups[1].Value |> trimParameter |> fun s -> s.Remove(0, 2) |> RawContractBytecode
+        | Remix -> remix.Match(contents).Groups[1].Value |> trimParameter |> RawContractBytecode
+        | Other -> other.Match(contents).Groups[1].Value |> trimParameter |> RawContractBytecode
         
 
     ///
@@ -192,8 +192,8 @@ module Common =
     /// 
     let public asWei quantity =
         match quantity with
-        | GweiConv _gwei -> _gwei |> convertToWei 9
-        | EtherConv _eth -> _eth |> convertToWei 18
+        | GweiValue _gwei -> _gwei |> convertToWei 9
+        | EtherValue _eth -> _eth |> convertToWei 18
         | _ -> "0"
         
         
@@ -203,11 +203,11 @@ module Common =
     /// 
     let rec public asGwei quantity =
         match quantity with
-        | EtherConv _eth ->
+        | EtherValue _eth ->
             match _eth |> convertToWei 9 with
-            | "0" -> asWei quantity |> fun result -> asGwei (WeiConv $"{result}")
+            | "0" -> asWei quantity |> fun result -> asGwei (WeiValue $"{result}")
             | x -> x
-        | WeiConv _wei ->
+        | WeiValue _wei ->
             match bigint.Parse(_wei) |> convertFromWei gweiFactor 9 with
             | "0.000000000" -> "0"
             | x -> x
@@ -220,11 +220,11 @@ module Common =
     /// 
     let public asEth quantity =
         match quantity with
-        | WeiConv _wei ->
+        | WeiValue _wei ->
             match bigint.Parse(_wei) |> convertFromWei weiFactor 18 with
             | "0.000000000000000000" -> "0"
             | x -> x
-        | GweiConv _gwei ->
+        | GweiValue _gwei ->
             match _gwei |> convertToWei 9 |> fun w -> bigint.Parse(w) |> convertFromWei weiFactor 18 with
             | "0.000000000000000000" -> "0"
             | x -> x.TrimEnd('0')
@@ -245,7 +245,7 @@ module Common =
     /// strings from the EVM. This does not actually check that the string is a
     /// hexadecimal string.
     let public hexAsEth quantity =
-        quantity |> hexToBigintUnsigned |> fun i -> i.ToString() |> WeiConv |> asEth 
+        quantity |> hexToBigintUnsigned |> fun i -> i.ToString() |> WeiValue |> asEth 
     
     
     ///

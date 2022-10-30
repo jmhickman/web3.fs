@@ -871,7 +871,7 @@ module ABIFunctions =
         emitSubstring start blob
         |> fun s ->
             match s with
-            | x when x = zeroEVMValue -> nullAddress |> prepend0x
+            | x when x = zeroEVMValue -> NULLADDRESS |> prepend0x
             | x -> x.Remove(0,24) |> prepend0x
 
 

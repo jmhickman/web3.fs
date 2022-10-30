@@ -560,7 +560,7 @@ module ContractFunctions =
     /// * address: A string indicating the address the deployed contract may be
     ///     found at. For example, "0xd2BA82c4777a8d619144d32a2314ee620BC9E09c"
     ///
-    let public loadDeployedContract env (abi: ABI) address   =
+    let internal loadDeployedContract env (abi: ABI) (address: EthAddress)   =
         let digest = newKeccakDigest
         address
         |> wrapEthAddress
@@ -598,7 +598,7 @@ module ContractFunctions =
     /// * constructorArguments: An list of EVMDatatypes representing inputs to
     /// the constructor of the contract.    
     /// 
-    let public prepareUndeployedContract env (constructorArguments: EVMDatatype list) (importContract: ImportContract)  =
+    let internal prepareUndeployedContract env (constructorArguments: EVMDatatype list) (importContract: ImportContract)  =
         let digest = newKeccakDigest
         importContract.abi
         |> checkForBytecode importContract.rawContractBytecode
@@ -615,18 +615,14 @@ module ContractFunctions =
               stateMutability = s }
             |> Ok)
 
-    // Change this to something like
-    // prepareUndeployedContract env (constructorArguments: EVMDatatype list) {rawcontractbytecode; abi}
-    // allows getABIAndBytecodeFunctions |> prepareUndeployedContract env [] |> Contract.deploy |> logResponse
-    // where Contract.deploy is something like
-    // (deploy: string -> UndeployedContract -> Result<CallResponses, Web3Error>)
-    
-    // Maybe ultimately fold it into Contract as well, such that
-    // getABIAndBytecodeFunctions
-    // |> Contract.prepare env []
-    // |> Result.bind Contract.deploy
-    // |> Result.bind Contract.call (ByName "owner") []
-    // |> logResponse
+    let public getDeployedAddress txResult =
+        match txResult with
+        | Ok o ->
+            let receipt = o |> unwrapTransactionReceipt
+            match receipt.contractAddress with
+            | Some address -> address |> EthAddress
+            | None -> NULLADDRESS |> prepend0x |> EthAddress
+        | Error _ -> NULLADDRESS |> prepend0x |> EthAddress
     
 
             
