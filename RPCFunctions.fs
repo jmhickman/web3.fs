@@ -1,7 +1,7 @@
 namespace Web3.fs
 
+[<AutoOpen>]
 module RPCMethodFunctions =
-
 
     ///
     /// Binds EthMethod to a string representation of the desired call. Only
@@ -297,7 +297,7 @@ module RPCFunctions =
           paramList = paramList |> EthGenericRPC
           blockHeight = LATEST }
         |> env.connection
-        |> decomposeRPCResult method
+        |> convertRPCResponseToCallResponses method
 
 
     ///
@@ -419,12 +419,12 @@ module RPCFunctions =
                   paramList = _params 
                   blockHeight = blockHeight' }
                 |> contract.env.connection)
-        |> decomposeRPCResult EthMethod.EstimateGas
+        |> convertRPCResponseToCallResponses EthMethod.EstimateGas
         
 
     ///
     /// This function is for the sending of Ether between Externally Owned
-    /// Accounts. Use 'contractTransaction' with the `Receive` indicator to send
+    /// Accounts. Use `Contract.receive` to send
     /// to contracts. ENS names are supported for this function.
     ///
     let internal sendValue destination value env = 
@@ -451,54 +451,97 @@ module RPCFunctions =
             |> Ok)        
         |> monitorTransaction env.monitor        
         
-    ///
-    /// Expose every single function directly
-    /// Now we can easily check for argument correctness where we couldn't before
-    /// .sendValue (env -> ETHAddress -> Wei -> Result<CallResponses, Web3Error>)
 
+    ///
+    /// Type for interacting with connected RPCs. 
     type RPC = class end
         with
         
+        ///
+        /// Returns the list of accounts currently available from the signer. Different signers respond differently
+        /// to this call, but should always return the active signer.
+        ///  
         static member accounts env = rpcCall EthMethod.Accounts [] env
         
+        ///
+        /// Returns the latest completed block on the chain.
         static member blockNumber env = rpcCall EthMethod.BlockNumber [] env
         
+        ///
+        /// Returns the chainId of the current active chain.
         static member getChainId env = rpcCall EthMethod.ChainId [] env
     
+        ///
+        /// Returns the address that will receive block rewards.
         static member coinbase env = rpcCall EthMethod.Coinbase [] env
         
+        ///
+        /// Returns the current basefee on EIP-1559 chains. Returns market rate on other chains.
         static member gasPrice env = rpcCall EthMethod.GasPrice [] env
         
+        ///
+        /// Returns the gas token balance of the requested address.
         static member getBalance address env = rpcCall EthMethod.GetBalance [address] env
         
+        ///
+        /// Returns a given block on the chain by its hash. String must start with '0x'.
         static member getBlockByHash blockHash env = rpcCall EthMethod.GetBlockByHash [blockHash; "false"] env
         
+        ///
+        /// Returns a given block on the chain by its block number. Accepts either decimal or hexadecimal representation. 
         static member getBlockByNumber (blockNumber: string) env =
             if blockNumber.StartsWith("0x") then rpcCall EthMethod.GetBlockByNumber [blockNumber; "false"] env
             else rpcCall EthMethod.GetBlockByNumber [$"{blockNumber |> bigintToHex}"; "false"] env
-            
+        
+        ///
+        /// Returns the number of transactions in a given block by the block's hash. String must start with '0x'. 
         static member getBlockTransactionCountByHash blockHash env = rpcCall EthMethod.GetBlockTransactionCountByHash [blockHash] env
         
+        ///
+        /// Returns the number of transactions in a given block by the block's hash. Accepts either decimal or
+        /// hexadecimal representation.
+        /// 
         static member getBlockTransactionCountByNumber (blockNumber: string) env =
             if blockNumber.StartsWith("0x") then rpcCall EthMethod.GetBlockTransactionCountByNumber [blockNumber] env
             else rpcCall EthMethod.GetBlockTransactionCountByNumber [$"{blockNumber |> bigintToHex}"] env
-            
+
+        ///
+        /// Returns the deployed bytecode of a contract at the requested EthAddress. Accepts either decimal or
+        /// hexadecimal representation for the block number.
+        /// 
         static member getCode address (blockNumber: string) env =
             if blockNumber.StartsWith("0x") then rpcCall EthMethod.GetCode [address; blockNumber] env
             else rpcCall EthMethod.GetCode [address; $"{blockNumber |> bigintToHex}"] env
-        
+
+        ///
+        /// Returns the contents of a given contract's storage slot. Accepts either decimal or hexadecimal
+        /// representation for the slot number.
+        /// 
         static member getStorageAt address (slot: string) env =
             if slot.StartsWith("0x") then rpcCall EthMethod.GetStorageAt [address; slot] env
             else rpcCall EthMethod.GetStorageAt [address; $"{slot |> bigintToHex}"] env
             
+        ///
+        /// Returns the current nonce of an address's transaction counter.
         static member getTransactionCount address env = rpcCall EthMethod.GetTransactionCount [address] env
         
+        ///
+        /// Returns a transaction record for an included transaction.
         static member getTransactionByHash transactionHash env = rpcCall EthMethod.GetTransactionByHash [transactionHash] env
         
+        ///
+        /// Returns a transaction by providing the hash of the block it was included in, and the index
+        /// (inclusion offset) it appeared in the block. Accepts either decimal or hexadecimal representation for the
+        /// index.
+        /// 
         static member getTransactionByBlockHashAndIndex blockHash (index: string) env =
             if index.StartsWith("0x") then rpcCall EthMethod.GetTransactionByBlockHashAndIndex [blockHash; index] env
             else rpcCall EthMethod.GetTransactionByBlockHashAndIndex [blockHash; $"{index |> bigintToHex}"] env
             
+        ///
+        /// Returns a transaction by providing the block it was included in, and the index (inclusion offset) it
+        /// appeared in the block. Accepts either decimal or hexadecimal representation for the index and block number.
+        ///  
         static member getTransactionByBlockNumberAndIndex (blockNumber: string) (index: string) env =
             match blockNumber.StartsWith("0x") with
             | false ->
@@ -513,28 +556,51 @@ module RPCFunctions =
                     rpcCall EthMethod.GetTransactionByBlockHashAndIndex [blockNumber; $"{index |> bigintToHex}"] env
                 | true -> 
                     rpcCall EthMethod.GetTransactionByBlockHashAndIndex [blockNumber; index] env
-                    
+        
+        ///
+        /// Returns a transaction receipt by its hash. 
         static member getTransactionReceipt transactionHash env = rpcCall EthMethod.GetTransactionReceipt [transactionHash] env
         
+        ///
+        /// Returns the count of uncle blocks by the mined block's hash.
         static member getUncleCountByBlockHash blockHash env = rpcCall EthMethod.GetUncleCountByBlockHash [blockHash] env
         
+        ///
+        /// Returns the count of uncle blocks by the mined block's number. Accepts either decimal or hexadecimal
+        /// representation for the block number.
         static member getUncleCountByBlockNumber (blockNumber: string) env =
             if blockNumber.StartsWith("0x") then rpcCall EthMethod.GetUncleCountByBlockNumber [blockNumber] env 
             else rpcCall EthMethod.GetUncleCountByBlockNumber [$"{blockNumber |> bigintToHex}"] env
     
+        ///
+        /// Returns the current chain's version.
         static member protocolVersion env = rpcCall EthMethod.ProtocolVersion [] env
         
+        ///
+        /// Returns a boolean indicating if the connected RPC is caught up to the head of the selected chain.
         static member syncing env = rpcCall EthMethod.Syncing [] env
         
+        ///
+        /// Sends a signed transaction directly to the RPC. 
         static member sendRawTransaction rawTransaction env = rpcCall EthMethod.SendRawTransaction [rawTransaction] env
         
+        ///
+        /// Sends an unsigned transaction to the RPC. A proxying signer like Frame will enable signing the transaction. 
         static member sendTransaction transactionObject env = rpcCall EthMethod.SendTransaction [transactionObject] env
         
+        ///
+        /// Allows the signing of arbitrary strings. 
         static member sign message env = rpcCall EthMethod.Sign [env.signerAddress; message] env
         
+        ///
+        /// Submits a transaction to an RPC for signing. The result can be used with RPC.sendRawTransaction
         // Frame's devs, for whatever reason, refuse to support this basic eth method. I'm providing it, but I can't test it.
         static member signTransaction transactionObject env = rpcCall EthMethod.SignTransaction [transactionObject] env
         
+        ///
+        /// Allows the transfer of gas tokens between accounts. The signer in the supplied Web3Environment will be the
+        /// source of tokens.
+        /// 
         static member sendValue destinationAddress (value: Wei) env = sendValue destinationAddress value env
         
     type Contract = class end

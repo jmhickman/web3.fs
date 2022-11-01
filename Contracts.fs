@@ -549,15 +549,12 @@ module ContractFunctions =
     
     ///
     /// Returns a Result containing either a DeployedContract for interaction,
-    /// or a variety of errors such as the signer being on the wrong chain,
-    /// malformed ABI, bad contract address, or errors in extracting components
-    /// of the contract.
+    /// or a variety of errors such as a malformed ABI, bad contract address,
+    /// or errors in extracting components of the contract.
     /// 
+    /// * env: The Web3Environment to be associated with this contract instance
     /// * abi: An `ABI` associated with the deployed contract.
-    /// * chainId: A string in hex notation indicating the network the contract
-    ///     is deployed to, such as '0x1' (mainnet) or '0x4' (rinkeby).See
-    ///     Types.fs for a set of pre-defined network aliases.
-    /// * address: A string indicating the address the deployed contract may be
+    /// * address: An EthAddress indicating the address the deployed contract may be
     ///     found at. For example, "0xd2BA82c4777a8d619144d32a2314ee620BC9E09c"
     ///
     let internal loadDeployedContract env (abi: ABI) (address: EthAddress)   =
@@ -580,23 +577,16 @@ module ContractFunctions =
         |> bindDeployedContract
         |> List.head
 
-    // Change this to something like
-    // loadDeployedContract env address abi
-    // allows getABIFunctions |> loadDeployedContract env "0x345345234523452345" |> Contract.call (ByName "owner") [] |> logResponse
-
     ///
     /// Returns an UndeployedContract for use in `deployEthContract`. Emits
     /// Web3Errors in a variety of circumstances, such as malformed ABI,
     /// collisions in the function hashes, and issues with constructors and
     /// arguments.
     /// 
-    /// * bytecode: RawContractBytecode containing the bytecode to be deployed.
-    /// * abi: An ABI associated with the deployed contract.
-    /// * chainId: A string in hex notation indicating the network the contract
-    ///     is deployed to, such as '0x1' (mainnet) or '0x4' (rinkeby). See
-    ///     Types.fs for a set of pre-defined network aliases.
+    /// * env: The Web3Environment to be associated with this contract instance
+    /// * importContract: A record containing the ABI and bytecode of the contract
     /// * constructorArguments: An list of EVMDatatypes representing inputs to
-    /// the constructor of the contract.    
+    ///   the constructor of the contract.    
     /// 
     let internal prepareUndeployedContract env (constructorArguments: EVMDatatype list) (importContract: ImportContract)  =
         let digest = newKeccakDigest
@@ -614,16 +604,3 @@ module ContractFunctions =
               constructorArguments = constructorArguments
               stateMutability = s }
             |> Ok)
-
-    let public getDeployedAddress txResult =
-        match txResult with
-        | Ok o ->
-            let receipt = o |> unwrapTransactionReceipt
-            match receipt.contractAddress with
-            | Some address -> address |> EthAddress
-            | None -> NULLADDRESS |> prepend0x |> EthAddress
-        | Error _ -> NULLADDRESS |> prepend0x |> EthAddress
-    
-
-            
-        

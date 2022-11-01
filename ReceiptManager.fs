@@ -22,24 +22,22 @@ module ReceiptManager =
     /// Mailbox processor to monitor the status of a transaction.
     let private receiptManager rpc (mbox: ReceiptManagerMailbox) =
         let rec msgLoop () =
-            async {
-                let! msg = mbox.Receive()
-                let (ReceiptMessageAndReply (txnHash, reply)) = msg
+            async { let! msg = mbox.Receive()
+                    let (ReceiptMessageAndReply (txnHash, reply)) = msg
                 
-                let call =
-                    { method = EthMethod.GetTransactionReceipt 
-                      paramList =
-                          [ txnHash |> trimParameter ]
-                          |> EthGenericRPC
-                      blockHeight = LATEST }
-                
-                callLoop rpc call 
-                |> Async.RunSynchronously
-                |> decomposeRPCResult EthMethod.GetTransactionReceipt 
-                |> reply.Reply
-                
-                do! msgLoop ()
-                }
+                    let call =
+                        { method = EthMethod.GetTransactionReceipt 
+                          paramList =
+                              [ txnHash |> trimParameter ]
+                              |> EthGenericRPC
+                          blockHeight = LATEST }
+                    
+                    callLoop rpc call 
+                    |> Async.RunSynchronously
+                    |> convertRPCResponseToCallResponses EthMethod.GetTransactionReceipt 
+                    |> reply.Reply
+                    
+                    do! msgLoop () }
         
         msgLoop ()
 

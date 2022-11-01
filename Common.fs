@@ -591,7 +591,7 @@ module Common =
     /// Returns a decomposed RPC response record matching the output of the
     /// given EthMethod
     /// 
-    let internal decomposeRPCResult method result =
+    let internal convertRPCResponseToCallResponses method result =
         result
         |> Result.bind (
             fun root ->
@@ -612,50 +612,46 @@ module Common =
         
 
     ///
-    /// Unwraps CallResponses to a EVMDatatype list. Use with makeEthCall.
-    let public unwrapCallResult callResponse =
-        match callResponse with
-        | CallResult evmDatatypes -> evmDatatypes
-        | _ -> [EVMDatatype.String "wrong unwrap or upstream web3 error"]
+    /// Type for working with the output of Contract and RPC interactions
+    /// (CallResponses).
+    type Unwrap = class end
+        with
         
-
-    ///
-    /// Unwraps CallResponses to a SimpleValue. Use with most `rpcCall` output.
-    let public unwrapRPCCallResponse callResponse =
-        match callResponse with
-        | SimpleValue s -> s
-        | _ -> "wrong unwrap or upstream web3 error"
-
-
-    /// 
-    /// Unwraps CallResponses to a transaction receipt. For use with `rpcCall`
-    /// and EthMethod.GetTransactionReceipt
-    /// 
-    let public unwrapTransactionReceipt callResponse =
-        match callResponse with
-        | TransactionReceiptResult rpcTransactionResponse -> rpcTransactionResponse
-        | _ -> nullTransactionReceipt
-    
-    ///
-    /// Unwraps CallResponses to a Transaction. For use with `rpcCall` and
-    /// EthMethod.GetTransactionAt__
-    ///  
-    let public unwrapTransaction callResponse =
-        match callResponse with
-        | Transaction transaction -> transaction
-        | _ -> nullMinedTransaction
+        ///
+        /// Returns an unwrapped EthBlock.
+        static member block env result =
+            match result |> env.emit with
+            | Block ethBlock -> ethBlock
+            | _ -> nullEthBlock
         
-    
-    ///
-    /// Unwraps CallResponse to a EthBlock. For use with `rpcCall` and
-    /// EthMethod.GetBlockBy__
-    /// 
-    let public unwrapBlock callResponse =
-        match callResponse with
-        | Block ethBlock -> ethBlock
-        | _ -> nullEthBlock
+        ///
+        /// Returns an unwrapped MinedTransaction.
+        static member transaction env result =
+            match result |> env.emit with
+            | Transaction transaction -> transaction
+            | _ -> nullMinedTransaction
         
+        ///
+        /// Returns a unwrapped TransactionReceipt. 
+        static member transactionReceipt env result =
+            match result |> env.emit with
+            | TransactionReceiptResult rpcTransactionResponse -> rpcTransactionResponse
+            | _ -> nullTransactionReceipt
+            
+        ///
+        /// Returns an unwrapped string from an RPC call.
+        static member rpcMethod env result =
+            match result |> env.emit with
+            | SimpleValue s -> s
+            | _ -> "wrong unwrap or upstream web3 error"
         
+        ///
+        /// Returns an unwrapped list of EVMDatatypes from a contract call.
+        static member call env result =
+            match result |> env.emit with
+            | CallResult evmDatatypes -> evmDatatypes
+            | _ -> [EVMDatatype.String "wrong unwrap or upstream web3 error"]
+            
     ///
     /// This function returns the 256bit hash of the input ENS name string.
     /// The function also does this in a way that doesn't fit the documentation

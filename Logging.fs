@@ -3,7 +3,6 @@ namespace Web3.fs
 [<AutoOpen>]    
 module Logging =
     
-    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Logging
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +46,7 @@ module Logging =
     ///           of 'Log', 'Emit', 'LogAndEmit', or 'Quiet'
     /// * pipeResult: Result flow from an Ethereum call into this function.
     /// 
-    let public log (logger: Logger) signal (pipeResult: Result<CallResponses, Web3Error>) =
+    let internal log (logger: Logger) signal (pipeResult: Result<CallResponses, Web3Error>) =
         match signal with
         | Log ->
             logCallResponsesOrWeb3Errors logger pipeResult
@@ -59,4 +58,3 @@ module Logging =
             Async.Sleep(100) |> Async.RunSynchronously
             emitter pipeResult
         | Quiet -> Empty
-                
