@@ -85,7 +85,7 @@ module RPCFunctions =
     /// Detects if an ENS name was used and performs the lookup to resolve it
     /// to an address.
     /// 
-    let internal handleENSName env chainId (name: string) =
+    let internal handleENSName env (name: string) =
         if name.Contains('.') then
             let hash = convertENSName name
             let bytes = [Byte32 hash] |> createInputByteString |> function Ok o -> o | Error _ -> "" 
@@ -100,13 +100,14 @@ module RPCFunctions =
               umaxPriorityFeePerGas = ""
               umaxFeePerGas = ""
               uaccessList = []
-              uchainId = chainId}
+              uchainId = env.chainId}
             |> validateRPCParams
             |> Result.bind
                 (fun _params ->
                     { method = EthMethod.Call 
                       paramList = _params 
-                      blockHeight = LATEST }
+                      blockHeight = LATEST
+                      chainId = env.chainId }
                     |> env.connection)
            |> fun res ->
                match res with
@@ -295,7 +296,8 @@ module RPCFunctions =
     let internal rpcCall method (paramList: string list) env =
         { method = method
           paramList = paramList |> EthGenericRPC
-          blockHeight = LATEST }
+          blockHeight = LATEST
+          chainId = env.chainId }
         |> env.connection
         |> convertRPCResponseToCallResponses method
 
@@ -322,7 +324,8 @@ module RPCFunctions =
             (fun _params ->
                 { method = EthMethod.SendTransaction 
                   paramList = _params 
-                  blockHeight = LATEST }
+                  blockHeight = LATEST
+                  chainId = contract.env.chainId }
                 |> contract.env.connection)
         |> Result.bind (fun r ->
             unpackRoot r
@@ -356,7 +359,8 @@ module RPCFunctions =
             (fun _params ->
                 { method = EthMethod.Call 
                   paramList = _params 
-                  blockHeight = blockHeight' }
+                  blockHeight = blockHeight'
+                  chainId = contract.env.chainId }
                 |> contract.env.connection)
         |> Result.bind (fun r ->
             returnOutputAsEVMDatatypes contract evmFunction (unpackRoot r |> stringAndTrim)
@@ -382,7 +386,8 @@ module RPCFunctions =
             (fun _params ->
                 { method = EthMethod.SendTransaction 
                   paramList = _params 
-                  blockHeight = LATEST }
+                  blockHeight = LATEST
+                  chainId = contract.env.chainId }
                 |> contract.env.connection)
         |> Result.bind (fun r ->
             unpackRoot r
@@ -417,7 +422,8 @@ module RPCFunctions =
             (fun _params ->
                 { method = EthMethod.EstimateGas 
                   paramList = _params 
-                  blockHeight = blockHeight' }
+                  blockHeight = blockHeight'
+                  chainId = contract.env.chainId }
                 |> contract.env.connection)
         |> convertRPCResponseToCallResponses EthMethod.EstimateGas
         
@@ -428,7 +434,7 @@ module RPCFunctions =
     /// to contracts. ENS names are supported for this function.
     ///
     let internal sendValue destination value env = 
-        let _dest = handleENSName env env.chainId destination
+        let _dest = handleENSName env destination
         { dummyTransaction with
             utoAddr = _dest
             ufrom =  env.signerAddress
@@ -437,9 +443,10 @@ module RPCFunctions =
         |> validateRPCParams
         |> Result.bind
             (fun _params ->
-                {method = EthMethod.SendTransaction
-                 paramList = _params
-                 blockHeight = LATEST}
+                { method = EthMethod.SendTransaction
+                  paramList = _params
+                  blockHeight = LATEST
+                  chainId = env.chainId }
                 |> env.connection)
         |> Result.bind (fun r ->
             unpackRoot r

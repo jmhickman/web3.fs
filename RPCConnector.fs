@@ -44,8 +44,8 @@ module RPCConnector =
         
         let id = RandomNumberGenerator.GetInt32(0, 256)
         match blockArgs with
-        | true -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}, "{blockHeight}"], "id":{id}}}"""
-        | false -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}], "id":{id}}}"""
+        | true -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}, "{blockHeight}"], "id":{id}, chainId: {rpcMsg.chainId}}}"""
+        | false -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}], "id":{id}, chainId: {rpcMsg.chainId}}}"""
 
 
     ///

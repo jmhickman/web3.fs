@@ -348,7 +348,8 @@ module Types =
     type HttpRPCMessage =
         { method: EthMethod
           paramList: EthParam
-          blockHeight: string }
+          blockHeight: string
+          chainId: string }
 
     
     ///
