@@ -5,7 +5,7 @@ module ABIFunctions =
     open System
     open System.Text
     
-        
+            
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // ABI Helpers
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -636,7 +636,8 @@ module ABIFunctions =
                         let acc = acc + returnCurrentOffset cursor
                         let payload =
                             arr
-                            |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesLeft}") (returnCountOfItems arr)
+                            |> List.fold (fun acc s ->
+                                $"{acc}{s |> strip0x |> padTo32BytesLeft}") (returnCountOfItems arr)
                             |> Blob
                         let tail = tail @ [payload]
                         unpackInputAndProcess tail acc (cursor + arr.Length + 1)
@@ -752,7 +753,8 @@ module ABIFunctions =
                         let acc = acc + returnCurrentOffset cursor
                         let payload =
                             bs
-                            |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems bs)
+                            |> List.fold (fun acc s ->
+                                $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems bs)
                             |> Blob 
                         let tail = tail @ [payload]
                         unpackInputAndProcess tail acc (cursor + bs.Length + 1 )
@@ -837,15 +839,6 @@ module ABIFunctions =
                     unpackInputAndProcess tail acc (cursor + (contents.Length / 64)) 
                 
                 | Blob blob -> unpackInputAndProcess tail (acc + blob) cursor
-//                | Function f -> unpackInputAndProcess tail (acc + $"{f |> strip0x |> padTo32BytesRight }") cursor
-//                
-//                | FunctionArraySz fArr ->
-//                    unpackInputAndProcess tail (acc + (fArr |> List.map(strip0x >> fun p -> $"{padTo32BytesRight p}") |> String.concat "")) cursor
-//                
-//                | FunctionArray fArr -> 
-//                    let acc = acc + returnCurrentOffset cursor
-//                    let tail = tail @ [ fArr |> List.fold (fun acc s -> $"{acc}{s |> strip0x |> padTo32BytesRight}") (returnCountOfItems fArr) |> Blob ]
-//                    unpackInputAndProcess tail acc (cursor + fArr.Length + 1)
             | [] -> acc
 
         let bytestring = unpackInputAndProcess evmDatatypeList "" cursor
@@ -990,7 +983,8 @@ module ABIFunctions =
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
                 | Address _ ->
-                    let acc = acc @ [Address ($"{emitSubstringPrepend0x (cursor * 64) evmOutput}" |> returnChecksumAddress)]
+                    let acc =
+                        acc @ [Address ($"{emitSubstringPrepend0x (cursor * 64) evmOutput}" |> returnChecksumAddress)]
                     unpackOutputAndProcess tail evmOutput acc (cursor + 1)
                 
                 | AddressArraySz uArr ->
@@ -1194,12 +1188,6 @@ module ABIFunctions =
         
         unpackOutputAndProcess evmList (evmOutput |> strip0x ) [] 0
 
-    
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // ABI Type Checking
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        
                     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // ABI Binds
@@ -1207,11 +1195,10 @@ module ABIFunctions =
 
     
     ///
-    /// Returns the string representation of the wrapped EVMData value, except
-    /// for bool types, which are handled in `unwrapEVMBool`. EVMDatatypes that
-    /// are lists return a comma-separated concatenated string.
+    /// Returns the string representation of the wrapped EVMData value.
+    /// Formatted as a comma-separated concatenated string.
     /// 
-    let rec public unwrapEVMValue (evmDataType: EVMDatatype) =
+    let rec internal unwrapEVMValue (evmDataType: EVMDatatype) =
         match evmDataType with
         | Address a -> a |> trimParameter
         | AddressArraySz a -> a |> String.concat(",") |> trimParameter
@@ -1228,27 +1215,34 @@ module ABIFunctions =
         | Bytes b -> b |> trimParameter
         | BytesArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
         | BytesArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
-//        | Function f -> f |> trimParameter
-//        | FunctionArraySz l -> l |> String.concat(",") |> trimParameter
-//        | FunctionArray l -> l |> String.concat(",") |> trimParameter
         | String s -> s |> trimParameter
         | StringArraySz b ->  b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
         | StringArray b -> b |> List.map unwrapEVMValue |> String.concat(",") |> trimParameter
+        | Bool b -> match b with | true -> "true" | false -> "false" |> trimParameter
+        | BoolArraySz b ->
+            b
+            |> List.map (fun b' -> match b' with | true -> "true" | false -> "false")
+            |> String.concat(",")
+            |> trimParameter
+        | BoolArray b ->
+            b
+            |> List.map (fun b' -> match b' with | true -> "true" | false -> "false")
+            |> String.concat(",")
+            |> trimParameter
         | x -> $"{x.ToString()}"
 
-
     ///
-    /// Returns the underlying boolean contained in a wrapped Bool EVMDatatype.
-    /// Bools from non-array `Bool` types will return a singleton list.
+    /// Type for exposing a singleton and list-style unwrap for EVMDatatype
+    /// values.
     /// 
-    let public unwrapEVMBool (evmBools: EVMDatatype) =
-        match evmBools with
-        | Bool b -> [b]
-        | BoolArraySz b -> b
-        | BoolArray b -> b
-        | _ -> []
+    type EVMUnwrap = class end
+        with
+        static member value (evmValue: EVMDatatype) = unwrapEVMValue evmValue
+        
+        static member values (evmValues: EVMDatatype list) =
+            evmValues |> List.map unwrapEVMValue
 
-    
+
     ///
     /// Returns a function's outputs from the EVM as an EVMDatatype list. 
     let internal returnOutputAsEVMDatatypes contract functionIndicator output =

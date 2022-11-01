@@ -603,52 +603,105 @@ module RPCFunctions =
         /// 
         static member sendValue destinationAddress (value: Wei) env = sendValue destinationAddress value env
         
+    
+    ///
+    /// Type wrapper for functions providing interactions with Contracts. This
+    /// includes prep, deployment, and calls/transactions.
+    /// 
     type Contract = class end
         with    
         
-        static member prepare env arguments abiAndBytecode =
-            prepareUndeployedContract env arguments abiAndBytecode
+        ///
+        /// Prepares a contract for deployment. The chain supplied via the
+        /// Web3Environment will be the one used for deployment.
+        /// 
+        static member prepare env arguments abiAndBytecode = prepareUndeployedContract env arguments abiAndBytecode
             
+        ///
+        /// Deploys a contract to a chain. The chain used is embedded in the
+        /// contract record.
+        /// 
         static member deploy value contract = deployContract value contract            
         
-        static member connect env abi (address: EthAddress) =
-            loadDeployedContract env abi address
+        ///
+        /// 'Connects' to a deployed contract. 'Connect' is a euphemism for
+        /// binding a particular contract address to a specific signer used as
+        /// the source of transactions and calls. No persistent connection is
+        /// made.
+        /// 
+        static member connect env abi (address: EthAddress) = loadDeployedContract env abi address
         
-        static member call function' arguments contract =
-            contractCall function' arguments contract
+        ///
+        /// Performs a 'call' ('eth_call') to a contract, which is a transaction
+        /// that doesn't change the state of the underlying blockchain.
+        static member call function' arguments contract = contractCall function' arguments contract
         
-        static member tx function' arguments value contract =
-            contractTransaction function' arguments value contract
+        ///
+        /// Performs a transaction ('eth_sendTransaction') to a contract,
+        /// which will change the state of the blockchain and costs gas. 
+        static member tx function' arguments value contract = contractTransaction function' arguments value contract
             
-        static member estimateGas function' arguments contract =
-            estimateGas function' arguments contract 
+        ///
+        /// An RPC method that attempts to determine how many gas units a
+        /// particular transaction will consume. Can be quite inaccurate! When
+        /// manipulating gas limits, it is prudent to add a safety margin to
+        /// this value.
+        ///  
+        static member estimateGas function' arguments contract = estimateGas function' arguments contract 
         
-        static member fallback arguments value contract =
-          contractTransaction Fallback arguments value contract
+        ///
+        /// Calls a contract's fallback method directly. This is typically not
+        /// desirable behavior, but is sometimes useful. Fallback functions
+        /// sometimes take a Bytes argument, and sometimes don't; consult the
+        /// contract's ABI.
+        /// 
+        static member fallback arguments value contract = contractTransaction Fallback arguments value contract
           
-        static member receive value contract =
-            contractTransaction Receive value contract
+        ///
+        /// Calls a contract's receive method directly. This is used to send
+        /// gas tokens (ETH, MATIC, GLMR, etc) to a contract.
+        /// 
+        static member receive value contract = contractTransaction Receive value contract
             
+        ///
+        /// Convenience function for dumping out all of the functions present 
+        /// for a deployed contract, from the ABI.
+        /// 
         static member listFunctions contract =
             contract.functions
             |> List.iter (fun p -> contract.env.log (Library $"{p}" |> Ok) |> ignore)
             
+        ///
+        /// Convenience function for dumping out all of the function inputs on
+        /// a given contract. Useful when creating Bytes4 values for referencing
+        /// functions by selector.
+        /// 
         static member printFunctionInputs contract =
             contract.functions
             |> List.iter(fun f ->
                 contract.env.log (Library $"{f.canonicalInputs |> bindEVMFunctionInputs}" |> Ok )
                 |> ignore)
             
+        ///
+        /// Convenience function for dumping out all of the function outputs on
+        /// a given contract.
+        /// 
         static member printFunctionOutputs contract =
             contract.functions
             |> List.iter(fun f ->
                 contract.env.log (Library $"{f.canonicalOutputs |> bindEVMFunctionOutputs}" |> Ok )
                 |> ignore)        
             
+        ///
+        /// Convenience function for dumping out all of the events listed on a
+        /// contract.
         static member listEvents contract =
             contract.events
             |> List.iter (fun p -> contract.env.log (Library $"{p}" |> Ok) |> ignore)
             
+        ///
+        /// Convenience function for dumping out all of the errors listed on a
+        /// contract.
         static member listErrors contract =
             contract.errors
             |> List.iter (fun p -> contract.env.log (Library $"{p}" |> Ok) |> ignore)
@@ -656,3 +709,4 @@ module RPCFunctions =
     // .dumpStorage (DeployedContract -> ...?)
     // .getLogByTopic (DeployedContract -> ...?)
     // .getSourceCode ...
+    // Maybe a thing that returns Bytes4s for strings?

@@ -649,7 +649,7 @@ module Common =
         /// Returns an unwrapped list of EVMDatatypes from a contract call.
         static member call env result =
             match result |> env.emit with
-            | CallResult evmDatatypes -> evmDatatypes
+            | CallResult evmDatatypes -> evmDatatypes 
             | _ -> [EVMDatatype.String "wrong unwrap or upstream web3 error"]
             
     ///
