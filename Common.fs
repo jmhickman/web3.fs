@@ -597,17 +597,14 @@ module Common =
             fun root ->
                 let result = unpackRoot root
                 match method with
-                | method when
-                    method = EthMethod.GetBlockByHash ||
-                    method = EthMethod.GetBlockByNumber ->
-                        returnEthBlock result |> Block |> Ok
-                | method when
-                    method = EthMethod.GetTransactionByHash ||
-                    method = EthMethod.GetTransactionByBlockHashAndIndex ||
-                    method = EthMethod.GetTransactionByBlockNumberAndIndex ->
-                        returnMinedTransactionRecord result |> Transaction |> Ok
+                | EthMethod.GetBlockByHash
+                | EthMethod.GetBlockByNumber -> returnEthBlock result |> Block |> Ok
+                | EthMethod.GetTransactionByHash
+                | EthMethod.GetTransactionByBlockHashAndIndex
+                | EthMethod.GetTransactionByBlockNumberAndIndex ->
+                    returnMinedTransactionRecord result |> Transaction |> Ok
                 | EthMethod.GetTransactionReceipt ->
-                        returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
+                    returnTransactionReceiptRecord result |> TransactionReceiptResult |> Ok
                 | _ -> returnSimpleValue result |> SimpleValue |> Ok )
         
 

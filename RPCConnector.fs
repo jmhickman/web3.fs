@@ -9,11 +9,6 @@ module RPCConnector =
     open RPCMethodFunctions
     open RPCParamFunctions
     
-    GlobalConfig.defaults
-    |> Config.timeoutInSeconds 28.5
-    |> GlobalConfig.set
-    
-    
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // RPC Helper Functions   
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -30,9 +25,7 @@ module RPCConnector =
     ///
     let private needsBlockArgs method =
         match method with
-        | m when
-            m = EthMethod.Call ||
-            m = EthMethod.EstimateGas -> true
+        | EthMethod.Call | EthMethod.EstimateGas -> true
         | _ -> false
         
 
@@ -44,24 +37,24 @@ module RPCConnector =
         
         let id = RandomNumberGenerator.GetInt32(0, 256)
         match blockArgs with
-        | true -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}, "{blockHeight}"], "id":{id}, chainId: {rpcMsg.chainId}}}"""
-        | false -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}], "id":{id}, chainId: {rpcMsg.chainId}}}"""
+        | true -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}, "{blockHeight}"], "id":{id}, "chainId": "{rpcMsg.chainId}"}}"""
+        | false -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}], "id":{id}, "chainId": "{rpcMsg.chainId}"}}"""
 
 
     ///
     /// Returns a result based on the success or failure of the Http request.
-    let private requestHttpAsync url rjson = async {
-        try
-            let! response =
-                http { POST url
-                       Origin "Web3.fs"
-                       body
-                       json rjson }
-                |> Request.sendAsync
-            let! o = response |> Response.toTextAsync
-            return o |> Ok
-        with e -> return $"{e.Message}" |> HttpClientError |> Error
-    }
+    let private requestHttpAsync url rjson =
+        async { try
+                    let! response =
+                        http { config_timeoutInSeconds 28.5
+                               POST url
+                               Origin "Web3.fs"
+                               body
+                               json rjson }
+                        |> Request.sendAsync
+                    let! o = response |> Response.toTextAsync
+                    return o |> Ok
+                with e -> return $"{e.Message}" |> HttpClientError |> Error }
 
     
     ///
@@ -72,7 +65,9 @@ module RPCConnector =
     ///  
     let private filterNullOrErrorResponse rpcResponse =
         match RPCResponse.Parse(rpcResponse) with
-        | x when x.Result.IsSome  -> x |> Ok
+        | x when x.Result.IsSome  ->
+            printfn $"{x}"
+            x |> Ok
         | x when x.Error.IsSome -> $"RPC error message: {x.Error.Value}" |> RPCResponseError |> Error
         | _ ->  RPCNullResponse |> Error
          
@@ -94,7 +89,7 @@ module RPCConnector =
                 rpcMessage.method
                 |> needsBlockArgs
                 |> formatRPCString rpcMessage rpcMessage.blockHeight
-                //|> fun p -> printfn $"{p}"; p
+                |> fun p -> printfn $"{p}"; p
                 |> requestHttpAsync url
                 |> Async.RunSynchronously                
                 |> Result.bind filterNullOrErrorResponse

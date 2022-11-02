@@ -220,7 +220,7 @@ module RPCFunctions =
     ///
     /// Checks that the value string isn't just empty "".
     let private checkForEmptyValueString (value: Wei) =
-        if value.Length = 0 then () |> Ok else InvalidValueArgumentError |> Error
+        if value.Length = 0 then InvalidValueArgumentError |> Error else () |> Ok
     
     
     ///

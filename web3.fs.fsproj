@@ -12,7 +12,7 @@
     <Description>Functional library for interacting with Web3 facilities</Description>
     <PackageProjectUrl>https://github.com/jmhickman/web3.fs</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageVersion>0.4.0.11</PackageVersion>
+    <PackageVersion>0.4.0.18</PackageVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -36,7 +36,7 @@
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="4.2.7" />
     <PackageReference Include="FSharp.Json" Version="0.4.1" />
-    <PackageReference Include="FsHttp" Version="9.0.6" />
+    <PackageReference Include="FsHttp" Version="9.1.2" />
     <PackageReference Include="SHA3Core" Version="1.0.1" />
     <EmbeddedResource Include="samples/blocksample.json" />
     <EmbeddedResource Include="samples/nullable.json" />
