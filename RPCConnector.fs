@@ -40,14 +40,18 @@ module RPCConnector =
         | true -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}, "{blockHeight}"], "id":{id}, "chainId": "{rpcMsg.chainId}"}}"""
         | false -> $"""{{"jsonrpc":"2.0","method":"{method}","params":[{par}], "id":{id}, "chainId": "{rpcMsg.chainId}"}}"""
 
+    
+    GlobalConfig.defaults
+    |> Config.timeoutInSeconds 28.5
+    |> GlobalConfig.set
+
 
     ///
     /// Returns a result based on the success or failure of the Http request.
     let private requestHttpAsync url rjson =
         async { try
                     let! response =
-                        http { config_timeoutInSeconds 28.5
-                               POST url
+                        http { POST url
                                Origin "Web3.fs"
                                body
                                json rjson }
